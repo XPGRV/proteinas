@@ -194,7 +194,7 @@ function AbatesTab({ data, accent }) {
         <div className="card-head">
           <div>
             <div className="card-eyebrow">SIF · Ciclo pecuário</div>
-            <h3 className="card-title">% Fêmeas no Abate</h3>
+            <h3 className="card-title">Ciclo do Boi</h3>
             <div className="card-sub">Série mensal + média móvel 12 meses (MM12)</div>
           </div>
         </div>
