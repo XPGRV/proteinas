@@ -36,6 +36,7 @@ function App({ data: propData, initialData, initialMeta }) {
   const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = useState(false);
   const [tab, setTab] = useState('precos');
+  const [activeDataset, setActiveDataset] = useState('beef_br');
 
   useEffect(() => {
     const onMsg = (e) => {
@@ -57,7 +58,9 @@ function App({ data: propData, initialData, initialMeta }) {
     });
   };
 
-  const accent = PALETTES[tweaks.palette].accent;
+  const accent = activeDataset === 'beef_us'
+    ? 'oklch(0.72 0.18 240)'
+    : tweaks.accent || PALETTES[tweaks.palette].accent;
   const typeStack = TYPE_STACKS[tweaks.typography];
 
   useEffect(() => {
@@ -69,8 +72,11 @@ function App({ data: propData, initialData, initialMeta }) {
 
   return (
     <div className="app">
-      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={(d, m) => { setData(d); setMeta(m); }}/>
-      {tab === 'precos' ? (
+      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={(d, m) => { setData(d); setMeta(m); }}
+        activeDataset={activeDataset} setActiveDataset={setActiveDataset}/>
+      {activeDataset === 'beef_us' ? (
+        <window.BeefUSTab data={data} accent={accent}/>
+      ) : tab === 'precos' ? (
         <PrecosTab data={data} accent={accent}/>
       ) : (
         <AbatesTab data={data} accent={accent}/>
@@ -80,7 +86,7 @@ function App({ data: propData, initialData, initialMeta }) {
   );
 }
 
-function TopBar({ tab, setTab, meta, onUpload }) {
+function TopBar({ tab, setTab, meta, onUpload, activeDataset, setActiveDataset }) {
   const [brandOpen, setBrandOpen] = useState(false);
   const menuRef = useRef(null);
   React.useEffect(() => {
@@ -88,6 +94,8 @@ function TopBar({ tab, setTab, meta, onUpload }) {
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, []);
+
+  const brandLabel = activeDataset === 'beef_us' ? 'US' : 'BR';
 
   return (
     <header className="topbar">
@@ -99,7 +107,7 @@ function TopBar({ tab, setTab, meta, onUpload }) {
         </div>
         <div style={{position:'relative'}} ref={menuRef}>
           <div className="brand-title brand-dropdown" onClick={() => setBrandOpen(o => !o)}>
-            Beef <span>BR</span>
+            Beef <span>{brandLabel}</span>
             <svg className="brand-caret" viewBox="0 0 10 6" width="10" height="6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 1l4 4 4-4"/>
             </svg>
@@ -107,21 +115,29 @@ function TopBar({ tab, setTab, meta, onUpload }) {
           <div className="brand-sub">acompanhamento setorial · abr/26</div>
           {brandOpen && (
             <div className="brand-menu" style={{display:'block'}}>
-              <div className="brand-menu-item is-active">Beef BR</div>
-              <div className="brand-menu-item brand-menu-soon">Beef US <span className="brand-menu-tag">em breve</span></div>
+              <div className={`brand-menu-item ${activeDataset==='beef_br'?'is-active':''}`}
+                onClick={() => { setActiveDataset('beef_br'); setBrandOpen(false); }}>
+                Beef BR
+              </div>
+              <div className={`brand-menu-item ${activeDataset==='beef_us'?'is-active':''}`}
+                onClick={() => { setActiveDataset('beef_us'); setBrandOpen(false); }}>
+                Beef US
+              </div>
               <div className="brand-menu-item brand-menu-soon">Pork BR <span className="brand-menu-tag">em breve</span></div>
             </div>
           )}
         </div>
       </div>
-      <nav className="tabs">
-        <button className={`tab ${tab==='precos'?'is-on':''}`} onClick={() => setTab('precos')}>
-          <span className="tab-dot"/>Preços & Spreads
-        </button>
-        <button className={`tab ${tab==='abates'?'is-on':''}`} onClick={() => setTab('abates')}>
-          <span className="tab-dot"/>Abates
-        </button>
-      </nav>
+      {activeDataset !== 'beef_us' && (
+        <nav className="tabs">
+          <button className={`tab ${tab==='precos'?'is-on':''}`} onClick={() => setTab('precos')}>
+            <span className="tab-dot"/>Preços & Spreads
+          </button>
+          <button className={`tab ${tab==='abates'?'is-on':''}`} onClick={() => setTab('abates')}>
+            <span className="tab-dot"/>Abates
+          </button>
+        </nav>
+      )}
       <window.UploadWidget onLoad={onUpload} lastUpdate={meta?.updated} currentSource={meta?.source}/>
     </header>
   );
@@ -475,4 +491,4 @@ function TweaksPanel({ tweaks, updateTweak }) {
   );
 }
 
-Object.assign(window, { App });
+Object.assign(window, { App, PriceCard });
