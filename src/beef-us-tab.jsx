@@ -352,10 +352,11 @@ const EdgebeeefCard = ({ data, accent, events }) => {
   const dropRef = React.useRef(null);
 
   React.useEffect(() => {
+    if (!dropOpen) return;
     const close = e => { if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false); };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, []);
+  }, [dropOpen]);
 
   React.useEffect(() => { setPinnedYear(null); }, [selectedYears.join(',')]);
 
@@ -381,7 +382,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
             <button className={`ctrl-btn ${showStats?'is-on':''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
             <button className={`ctrl-btn ${showEvents?'is-on':''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
           </div>
-          <div className="seg" ref={dropRef} style={{position:'relative'}}>
+          <div className="seg">
             {presets.map(p => (
               <button key={p.label}
                 className={`year-seg-btn ${activePreset?.label === p.label ? 'is-on' : ''}`}
@@ -389,29 +390,28 @@ const EdgebeeefCard = ({ data, accent, events }) => {
                 {p.label}
               </button>
             ))}
-            <button
-              className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
-              onClick={() => setDropOpen(o => !o)}>
-              Anos
-              <svg style={{marginLeft:4,verticalAlign:'middle'}} viewBox="0 0 10 6" width="9" height="6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 1l4 4 4-4"/>
-              </svg>
-            </button>
-            {dropOpen && (
-              <div className="year-drop">
-                {[...allYears].reverse().map(yr => (
-                  <label key={yr} className="year-drop-item">
-                    <input type="checkbox" checked={selectedYears.includes(yr)}
-                      onChange={() => setSelectedYears(prev =>
+            <div className="year-drop-wrap" ref={dropRef}>
+              <button
+                className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
+                onClick={() => setDropOpen(o => !o)}>
+                Anos ▾
+              </button>
+              {dropOpen && (
+                <div className="year-drop">
+                  {[...allYears].reverse().map(yr => (
+                    <div key={yr} className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
+                      onClick={() => setSelectedYears(prev =>
                         prev.includes(yr)
                           ? prev.length > 1 ? prev.filter(y => y !== yr) : prev
                           : [...prev, yr]
-                      )}/>
-                    {yr}
-                  </label>
-                ))}
-              </div>
-            )}
+                      )}>
+                      <span className="year-drop-check">{selectedYears.includes(yr) ? '✓' : ''}</span>
+                      {yr}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
