@@ -55,12 +55,11 @@ async function parseWorkbook(arrayBuffer) {
       spread_me: parseNum(r[13]),
       spread_me_usd: parseNum(r[15]),
       spread_me_mi_pct: parseNum(r[17]),
-      abates_total: parseNum(r[21]),
-      abates_yoy: parseNum(r[23]),
-      peso_carcacas: parseNum(r[24]),
-      abates_femeas: parseNum(r[25]),
-      pct_femeas: parseNum(r[26]),
-      usdbrl: parseNum(r[30]),
+      abates_total: parseNum(r[31]),       // SIF col 32
+      abates_yoy: parseNum(r[33]),          // SIF col 34
+      abates_femeas: parseNum(r[34]),       // SIF col 35
+      pct_femeas: (() => { const v = parseNum(r[35]); return v != null ? Math.round(v * 1000) / 10 : null; })(), // SIF col 36, decimal→%
+      usdbrl: parseNum(r[39]),
     });
   }
 
@@ -147,7 +146,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       try {
         localStorage.setItem('dashboard_data', JSON.stringify(data));
         localStorage.setItem('dashboard_meta', JSON.stringify(meta));
-        localStorage.setItem('dashboard_version', '2');
+        localStorage.setItem('dashboard_version', '3');
       } catch (e) {
         // quota — skip persistence
       }
