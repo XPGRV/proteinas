@@ -241,6 +241,15 @@ const SeasonalChart = ({
                     strokeLinecap="round"
                     opacity={seriesOpacity(yr)}
                   />
+                  {/* invisible wide hitbox for easier clicking */}
+                  <path
+                    d={buildPath(values)}
+                    stroke="transparent"
+                    strokeWidth={12}
+                    fill="none"
+                    style={{cursor: 'pointer'}}
+                    onClick={() => setPinnedYear(p => p === yr ? null : yr)}
+                  />
                 </g>
               );
             })}
