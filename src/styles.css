@@ -634,7 +634,15 @@ body {
 .hover-events {
   margin-top: 8px; padding-top: 8px;
   border-top: 1px solid var(--border);
-  font-size: 11px; color: var(--accent);
+  font-size: 11px; color: var(--fg-mute);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.hover-event { display: flex; align-items: baseline; gap: 5px; line-height: 1.3; }
+.hover-event-year {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  color: oklch(0.85 0.18 80);
+  flex-shrink: 0;
 }
 
 /* === Metric dropdown === */

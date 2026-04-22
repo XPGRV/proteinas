@@ -26,11 +26,21 @@
 
 <script type="text/babel">
 (async () => {
+  const DATA_VERSION = '2';
   let data = null, meta = null;
   try {
     const cached = localStorage.getItem('dashboard_data');
     const cachedMeta = localStorage.getItem('dashboard_meta');
-    if (cached) { data = JSON.parse(cached); meta = cachedMeta ? JSON.parse(cachedMeta) : null; }
+    const cachedVersion = localStorage.getItem('dashboard_version');
+    if (cached && cachedVersion === DATA_VERSION) {
+      data = JSON.parse(cached);
+      meta = cachedMeta ? JSON.parse(cachedMeta) : null;
+    } else {
+      // Version mismatch — clear stale cache
+      localStorage.removeItem('dashboard_data');
+      localStorage.removeItem('dashboard_meta');
+      localStorage.removeItem('dashboard_version');
+    }
   } catch {}
   if (!data) {
     const resp = await fetch('public/data.json');

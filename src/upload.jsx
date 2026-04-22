@@ -147,6 +147,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       try {
         localStorage.setItem('dashboard_data', JSON.stringify(data));
         localStorage.setItem('dashboard_meta', JSON.stringify(meta));
+        localStorage.setItem('dashboard_version', '2');
       } catch (e) {
         // quota — skip persistence
       }

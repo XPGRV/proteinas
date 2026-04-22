@@ -134,7 +134,7 @@ const SeasonalChart = ({
     setHover(Math.max(0, Math.min(11, pos)));
   };
 
-  const eventsInView = showEvents ? events.filter(e => selectedYears.includes(e.year)) : [];
+  const EVENT_COLOR = 'oklch(0.85 0.18 80)'; // amber — distinct from any year series color
   const gradId = `grad-${dataset}-${field}`.replace(/[^a-z0-9-]/gi, '');
   const fmtOpts = { decimals, big };
 
@@ -200,15 +200,6 @@ const SeasonalChart = ({
           </g>
         )}
 
-        {/* Events */}
-        {eventsInView.map((ev, i) => (
-          <g key={i}>
-            <line x1={x(ev.month-1)} x2={x(ev.month-1)} y1={padT} y2={H - padB}
-              stroke={accent} strokeWidth="1" strokeDasharray="2 4" opacity="0.35"/>
-            <circle cx={x(ev.month-1)} cy={padT + 6} r="3.5" fill={accent}/>
-          </g>
-        ))}
-
         {/* Year series */}
         {chartStyle === 'bars' ? (
           <g clipPath={`url(#clip-${gradId})`}>
@@ -255,6 +246,42 @@ const SeasonalChart = ({
             })}
           </g>
         )}
+
+        {/* Event dots — always above series lines */}
+        {showEvents && sortedAsc.filter(yr => !pinnedYear || yr === pinnedYear).map(yr => {
+          const yearEvents = events.filter(e => e.year === yr);
+          return yearEvents.map((ev, i) => {
+            const v = seasonal[yr]?.[ev.month - 1];
+            if (v == null) return null;
+            const cx = chartStyle === 'bars' ? xBar(ev.month - 1) : x(ev.month - 1);
+            const cy = y(v);
+            const isPinned = yr === pinnedYear;
+            const labelText = ev.label;
+            const nearRight = cx > W - padR - 80;
+            const nearLeft  = cx < padL + 80;
+            const anchor = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
+            const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
+            const labelY = padT + 2;
+            return (
+              <g key={`ev-${yr}-${i}`}>
+                {isPinned && (
+                  <line x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
+                    stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
+                )}
+                <circle cx={cx} cy={cy}
+                  r={isPinned ? 5 : 3}
+                  fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
+                  stroke={EVENT_COLOR} strokeWidth={1.5}/>
+                {isPinned && (
+                  <text x={lx} y={labelY}
+                    textAnchor={anchor} dominantBaseline="hanging"
+                    style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600, letterSpacing:'0.01em'}}
+                  >{labelText}</text>
+                )}
+              </g>
+            );
+          });
+        })}
 
         {/* Data labels for pinned year */}
         {pinnedYear && seasonal[pinnedYear] && seasonal[pinnedYear].map((v, mi) => {
@@ -348,11 +375,12 @@ const SeasonalChart = ({
           years={selectedYears}
           seasonal={seasonal}
           stats={showStats && !hideAvg ? stats[hover] : null}
-          events={eventsInView.filter(e => e.month - 1 === hover)}
+          events={showEvents ? events.filter(e => selectedYears.includes(e.year) && e.month - 1 === hover) : []}
           fmtOpts={fmtOpts}
           unit={unit}
           xFrac={x(hover) / W}
           highlightYear={dotHoverYear}
+          yearColor={yearColor}
         />
       )}
 
@@ -403,7 +431,7 @@ const SeasonalChart = ({
   );
 };
 
-const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xFrac, highlightYear }) => {
+const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xFrac, highlightYear, yearColor }) => {
   const sorted = [...years].sort((a,b) => b-a);
   const style = {
     left: `calc(${(xFrac * 100).toFixed(1)}% + 18px)`,
@@ -416,10 +444,10 @@ const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xFrac
       <div className="hover-rows">
         {sorted.map(yr => {
           const v = seasonal[yr]?.[month];
-          const isHighlighted = highlightYear === yr;
+          const color = yearColor ? yearColor(yr) : undefined;
           return (
             <div key={yr} className="hover-row">
-              <span className="hover-year" style={isHighlighted ? {color: 'var(--accent)'} : {}}>{yr}</span>
+              <span className="hover-year" style={{color}}>{yr}</span>
               <span className="hover-val">{window.fmt(v, fmtOpts)}<span className="hover-unit"> {unit}</span></span>
             </div>
           );
@@ -433,7 +461,12 @@ const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xFrac
       </div>
       {events.length > 0 && (
         <div className="hover-events">
-          {events.map((e, i) => <div key={i} className="hover-event">● {e.label}</div>)}
+          {events.map((e, i) => (
+            <div key={i} className="hover-event">
+              <span className="hover-event-year">{e.year}</span>
+              {e.label}
+            </div>
+          ))}
         </div>
       )}
     </div>
