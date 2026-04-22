@@ -21,7 +21,8 @@ const EdgebeeefChart = ({ data, accent }) => {
   const tMin = points[0].t;
   const tMax = points[points.length - 1].t;
   const vals = points.map(p => p.value);
-  const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+  const rawMin = vals.reduce((a, b) => Math.min(a, b), Infinity);
+  const rawMax = vals.reduce((a, b) => Math.max(a, b), -Infinity);
   const step = rawMax - rawMin > 800 ? 200 : rawMax - rawMin > 400 ? 100 : 50;
   const vMin = Math.floor(rawMin / step) * step;
   const vMax = Math.ceil(rawMax / step) * step;
