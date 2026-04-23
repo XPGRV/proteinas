@@ -264,8 +264,15 @@ const SeasonalChart = ({
           return yearEvents.map((ev, i) => {
             const v = seasonal[yr]?.[ev.month - 1];
             if (v == null) return null;
-            const cx = chartStyle === 'bars' ? xBar(ev.month - 1) : x(ev.month - 1);
-            const cy = y(v);
+            let cx, cy;
+            if (chartStyle === 'bars') {
+              const idx = sortedAsc.indexOf(yr);
+              cx = xBar(ev.month - 1) - (selectedYears.length * barW) / 2 + idx * barW + (barW - 1) / 2;
+              cy = y(v);
+            } else {
+              cx = x(ev.month - 1);
+              cy = y(v);
+            }
             const isPinned = yr === pinnedYear;
             const labelText = ev.label;
             const nearRight = cx > W - padR - 80;
