@@ -61,8 +61,8 @@ function ProductionControls({
 
   return (
     <div className="card-controls">
-      {/* Row 1: year presets + comparison dropdown */}
       <div className="card-ctrl-row">
+        {/* Historical year presets */}
         <div className="year-seg">
           {presets.map(p => (
             <button key={p.label}
@@ -113,7 +113,6 @@ function ProductionControls({
         </div>
       </div>
 
-      {/* Row 2: toggles + chart style */}
       <div className="card-ctrl-row">
         <div className="ctrl-btn-group">
           <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>
@@ -133,8 +132,10 @@ function ProductionControls({
 
 // ── ProductionChart ───────────────────────────────────────────────────────────
 function ProductionChart({
-  histSeries, seriesA, seriesB,
-  compYears, selectedHistYears,
+  histSeries,          // { year: [q1..q4] }  — pure-historical context lines
+  indexedA, indexedB,  // { year: { values:[..], forecast:[..] } } — both snapshots
+  compYears,           // years that have forecast in at least one snapshot (both have data)
+  selectedHistYears,   // pure-historical years selected for context
   pair, showStats, chartStyle, accent,
 }) {
   const W = 1000, H = 340;
@@ -142,37 +143,37 @@ function ProductionChart({
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  const latestHistYear = Math.max(0, ...selectedHistYears.filter(y => histSeries[y]));
+  // Unified palette across ALL visible years (hist + forecast)
+  const allShownYears = [...new Set([...selectedHistYears, ...compYears])].sort((a,b) => a-b);
+  const latestYear    = allShownYears.length ? Math.max(...allShownYears) : 0;
 
   const yearColor = yr => {
-    const age = latestHistYear - yr;
-    if (age === 0) return accent;
     const palette = [
-      'oklch(0.75 0.15 200)', 'oklch(0.68 0.16 255)',
-      'oklch(0.74 0.15 310)', 'oklch(0.78 0.17 35)',
-      'oklch(0.80 0.15 60)',  'oklch(0.72 0.16 0)',
-      'oklch(0.76 0.13 170)',
+      'oklch(0.75 0.15 200)', // age 1
+      'oklch(0.68 0.16 255)', // age 2
+      'oklch(0.74 0.15 310)', // age 3
+      'oklch(0.78 0.17 35)',  // age 4
+      'oklch(0.80 0.15 60)',  // age 5
+      'oklch(0.72 0.16 0)',   // age 6
+      'oklch(0.76 0.13 170)', // age 7
     ];
+    const age = latestYear - yr;
+    if (age === 0) return accent;
     return age - 1 < palette.length ? palette[age - 1] : 'oklch(0.48 0.01 260)';
   };
 
-  const COLOR_A = 'oklch(0.65 0.11 255)'; // azul — snapshot antigo
-  const COLOR_B = 'oklch(0.76 0.20 140)'; // verde — snapshot novo
-
   // Y range
   const allVals = [];
-  for (const yr of selectedHistYears) {
-    (histSeries[yr] || []).forEach(v => v != null && allVals.push(v));
-  }
+  for (const yr of selectedHistYears) (histSeries[yr] || []).forEach(v => v != null && allVals.push(v));
   for (const yr of compYears) {
-    (seriesA[yr]?.values || []).forEach(v => v != null && allVals.push(v));
-    (seriesB[yr]?.values || []).forEach(v => v != null && allVals.push(v));
+    (indexedA[yr]?.values || []).forEach(v => v != null && allVals.push(v));
+    (indexedB[yr]?.values || []).forEach(v => v != null && allVals.push(v));
   }
-  if (!allVals.length) return <div style={{padding:40,color:'var(--fg-dim)'}}>Sem dados</div>;
+  if (!allVals.length) return <div style={{padding:40, color:'var(--fg-dim)'}}>Sem dados de produção</div>;
 
   const lo = Math.min(...allVals), hi = Math.max(...allVals);
   const rng = hi - lo || 1;
-  const yMin = lo - rng * 0.05, yMax = hi + rng * 0.15;
+  const yMin = lo - rng * 0.05, yMax = hi + rng * 0.18;
 
   const x = qi => padL + (qi / 3) * chartW;
   const y = v  => padT + (1 - (v - yMin) / (yMax - yMin)) * chartH;
@@ -193,11 +194,10 @@ function ProductionChart({
     return pts.map((p, i) => `${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   };
 
-  // Splits a series into solid (historical) + dashed (forecast) paths
+  // Split a series into solid (historical) and dashed (forecast) paths.
+  // The dashed path anchors from the last solid point for visual continuity.
   const buildMixed = (values, forecast) => {
     const solid = [], dashed = [];
-    let lastHistIdx = -1;
-    for (let i = 0; i < 4; i++) { if (values[i] != null && !forecast[i]) lastHistIdx = i; }
     for (let i = 0; i < 4; i++) {
       if (values[i] == null) continue;
       if (!forecast[i]) {
@@ -211,43 +211,38 @@ function ProductionChart({
     return { solidPath: toPath(solid), dashedPath: toPath(dashed) };
   };
 
-  const buildAreaPath = (vals) => {
+  const buildAreaPath = vals => {
     const pts = vals.map((v, i) => v != null ? [x(i), y(v)] : null).filter(Boolean);
     if (!pts.length) return '';
     const top = pts.map((p, i) => `${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
     return top + ` L${pts[pts.length-1][0].toFixed(1)},${y(yMin).toFixed(1)} L${pts[0][0].toFixed(1)},${y(yMin).toFixed(1)} Z`;
   };
 
-  const [hover, setHover] = React.useState(null);
-  const onMove = e => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) * (W / rect.width);
-    const qi = Math.round(((px - padL) / chartW) * 3);
-    setHover(Math.max(0, Math.min(3, qi)));
-  };
-
-  const fmtVal = v => v == null ? '—' : Math.round(v).toLocaleString('pt-BR');
-
-  // Stats (historical band)
+  // Stats band over historical context years
   const stats = React.useMemo(() => {
     if (!showStats) return null;
     const byQ = [[], [], [], []];
     for (const yr of selectedHistYears) {
-      const v = histSeries[yr];
-      if (!v) continue;
-      v.forEach((val, qi) => { if (val != null) byQ[qi].push(val); });
+      (histSeries[yr] || []).forEach((v, qi) => { if (v != null) byQ[qi].push(v); });
     }
     return byQ.map(vals => {
       if (vals.length < 2) return null;
       const s = [...vals].sort((a, b) => a - b);
-      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-      return { min: s[0], max: s[s.length-1], p25: s[Math.floor(s.length*0.25)], p75: s[Math.floor(s.length*0.75)], mean };
+      return { min: s[0], max: s[s.length-1], p25: s[Math.floor(s.length*.25)], p75: s[Math.floor(s.length*.75)], mean: vals.reduce((a,b)=>a+b,0)/vals.length };
     });
   }, [showStats, histSeries, selectedHistYears]);
 
-  // Sorted hist years for rendering
-  const sortedHist = [...selectedHistYears].sort((a, b) => a - b).filter(yr => histSeries[yr]);
+  const [hover, setHover] = React.useState(null);
+  const onMove = e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (W / rect.width);
+    setHover(Math.max(0, Math.min(3, Math.round(((px - padL) / chartW) * 3))));
+  };
 
+  const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo] || mo) + '-' + yr; };
+  const fmtVal  = v => v == null ? '—' : Math.round(v).toLocaleString('pt-BR');
+
+  const sortedHist = [...selectedHistYears].sort((a,b) => a-b).filter(yr => histSeries[yr]);
   const gradId = 'prod-grad';
 
   return (
@@ -258,13 +253,13 @@ function ProductionChart({
         <defs>
           {sortedHist.map(yr => (
             <linearGradient key={yr} id={`${gradId}-${yr}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%"   stopColor={yearColor(yr)} stopOpacity="0.22"/>
+              <stop offset="0%"   stopColor={yearColor(yr)} stopOpacity="0.20"/>
               <stop offset="100%" stopColor={yearColor(yr)} stopOpacity="0"/>
             </linearGradient>
           ))}
         </defs>
 
-        {/* Y grid */}
+        {/* Y grid + ticks */}
         {yTicks.map(v => (
           <g key={v}>
             <line x1={padL} x2={W-padR} y1={y(v)} y2={y(v)} className="grid-line"/>
@@ -282,66 +277,66 @@ function ProductionChart({
           </g>
         ))}
 
-        {/* Historical stats band */}
+        {/* Stats band */}
         {stats && (
           <g>
-            <path
-              d={(() => {
-                const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.max)}` : '').join(' ');
-                const bot = [...stats].map((s,i)=>s?`L${x(i)},${y(s.min)}`:'').reverse().join(' ');
-                return top + ' ' + bot + ' Z';
-              })()}
-              fill="var(--fg)" opacity="0.05"/>
-            <path
-              d={(() => {
-                const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.p75)}` : '').join(' ');
-                const bot = [...stats].map((s,i)=>s?`L${x(i)},${y(s.p25)}`:'').reverse().join(' ');
-                return top + ' ' + bot + ' Z';
-              })()}
-              fill="var(--fg)" opacity="0.08"/>
-            <path
-              d={stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
+            <path d={(() => {
+              const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.max)}` : '').join(' ');
+              const bot = [...stats].map((s,i) => s ? `L${x(i)},${y(s.min)}` : '').reverse().join(' ');
+              return top + ' ' + bot + ' Z';
+            })()} fill="var(--fg)" opacity="0.05"/>
+            <path d={(() => {
+              const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.p75)}` : '').join(' ');
+              const bot = [...stats].map((s,i) => s ? `L${x(i)},${y(s.p25)}` : '').reverse().join(' ');
+              return top + ' ' + bot + ' Z';
+            })()} fill="var(--fg)" opacity="0.08"/>
+            <path d={stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
               stroke="var(--fg)" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 3" fill="none"/>
           </g>
         )}
 
-        {/* Historical year series */}
+        {/* ── Pure-historical context years (single solid line) ── */}
         {sortedHist.map(yr => {
           const vals = histSeries[yr];
-          const isLatest = yr === latestHistYear;
-          const clr = yearColor(yr);
+          const clr  = yearColor(yr);
+          const isLatest = yr === Math.max(...sortedHist);
           return (
             <g key={yr}>
               {chartStyle === 'area' && (
                 <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`} opacity={isLatest ? 0.9 : 0.6}/>
               )}
               <path d={buildPath(vals)} fill="none" stroke={clr}
-                strokeWidth={isLatest ? 2 : 1.25} opacity={isLatest ? 1 : 0.75}
+                strokeWidth={isLatest ? 2 : 1.25}
+                opacity={isLatest ? 1 : 0.8}
                 strokeLinejoin="round" strokeLinecap="round"/>
             </g>
           );
         })}
 
-        {/* Comparison snapshot lines (mixed solid + dashed) */}
+        {/* ── Comparison years (both A and B lines per year) ── */}
         {compYears.map(yr => {
-          const a = seriesA[yr], b = seriesB[yr];
+          const clr = yearColor(yr);
+          const a   = indexedA[yr];
+          const b   = indexedB[yr];
           return (
             <g key={yr}>
+              {/* Line A — older snapshot, muted (40% opacity) */}
               {a && (() => {
                 const { solidPath, dashedPath } = buildMixed(a.values, a.forecast);
                 return (
-                  <g>
-                    {solidPath  && <path d={solidPath}  fill="none" stroke={COLOR_A} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.8}/>}
-                    {dashedPath && <path d={dashedPath} fill="none" stroke={COLOR_A} strokeWidth={1.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round" opacity={0.8}/>}
+                  <g opacity={0.38}>
+                    {solidPath  && <path d={solidPath}  fill="none" stroke={clr} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>}
+                    {dashedPath && <path d={dashedPath} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round"/>}
                   </g>
                 );
               })()}
+              {/* Line B — newer snapshot, full opacity */}
               {b && (() => {
                 const { solidPath, dashedPath } = buildMixed(b.values, b.forecast);
                 return (
                   <g>
-                    {solidPath  && <path d={solidPath}  fill="none" stroke={COLOR_B} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                    {dashedPath && <path d={dashedPath} fill="none" stroke={COLOR_B} strokeWidth={2.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round"/>}
+                    {solidPath  && <path d={solidPath}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
+                    {dashedPath && <path d={dashedPath} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round"/>}
                   </g>
                 );
               })()}
@@ -359,12 +354,13 @@ function ProductionChart({
               return <circle key={yr} cx={x(hover)} cy={y(v)} r={3.5} fill="var(--bg)" stroke={yearColor(yr)} strokeWidth={1.5}/>;
             })}
             {compYears.map(yr => {
-              const va = seriesA[yr]?.values[hover];
-              const vb = seriesB[yr]?.values[hover];
+              const clr = yearColor(yr);
+              const va  = indexedA[yr]?.values[hover];
+              const vb  = indexedB[yr]?.values[hover];
               return (
                 <g key={yr}>
-                  {va != null && <circle cx={x(hover)} cy={y(va)} r={4} fill="var(--bg)" stroke={COLOR_A} strokeWidth={1.5}/>}
-                  {vb != null && <circle cx={x(hover)} cy={y(vb)} r={4.5} fill="var(--bg)" stroke={COLOR_B} strokeWidth={2}/>}
+                  {va != null && <circle cx={x(hover)} cy={y(va)} r={4}   fill="var(--bg)" stroke={clr} strokeWidth={1.5} opacity={0.5}/>}
+                  {vb != null && <circle cx={x(hover)} cy={y(vb)} r={4.5} fill="var(--bg)" stroke={clr} strokeWidth={2}/>}
                 </g>
               );
             })}
@@ -378,25 +374,27 @@ function ProductionChart({
       {/* Hover card */}
       {hover != null && (() => {
         const rows = [];
+        // Comparison years first (newest on top)
+        for (const yr of [...compYears].reverse()) {
+          const clr = yearColor(yr);
+          const va  = indexedA[yr]?.values[hover];
+          const vb  = indexedB[yr]?.values[hover];
+          const fcA = indexedA[yr]?.forecast[hover];
+          const fcB = indexedB[yr]?.forecast[hover];
+          if (vb != null) rows.push({ label: `${yr} · ${fmtSnap(pair?.b)}${fcB?' (fc)':''}`, color: clr, val: vb });
+          if (va != null) rows.push({ label: `${yr} · ${fmtSnap(pair?.a)}${fcA?' (fc)':''}`, color: clr, val: va, muted: true });
+        }
+        // Historical context
         for (const yr of [...sortedHist].reverse()) {
           const v = histSeries[yr]?.[hover];
           if (v != null) rows.push({ label: String(yr), color: yearColor(yr), val: v });
         }
-        for (const yr of compYears) {
-          const va = seriesA[yr]?.values[hover];
-          const vb = seriesB[yr]?.values[hover];
-          const isFcA = seriesA[yr]?.forecast[hover];
-          const isFcB = seriesB[yr]?.forecast[hover];
-          if (va != null) rows.unshift({ label: `${pair?.a} ${isFcA?'(fc)':''}`, color: COLOR_A, val: va });
-          if (vb != null) rows.unshift({ label: `${pair?.b} ${isFcB?'(fc)':''}`, color: COLOR_B, val: vb });
-        }
-        const xPct = (x(hover) / W * 100).toFixed(1);
         return (
-          <div className="hover-card" style={{left:`calc(${xPct}% + 14px)`}}>
+          <div className="hover-card" style={{left:`calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}}>
             <div className="hover-month">{QUARTERS[hover]}</div>
             <div className="hover-rows">
               {rows.map((r, i) => (
-                <div key={i} className="hover-row">
+                <div key={i} className="hover-row" style={r.muted ? {opacity:0.5} : {}}>
                   <span className="hover-year" style={{color: r.color}}>{r.label}</span>
                   <span className="hover-val">{fmtVal(r.val)}<span className="hover-unit"> 000 lb</span></span>
                 </div>
@@ -408,24 +406,31 @@ function ProductionChart({
 
       {/* Legend */}
       <div className="ciclo-legend" style={{flexWrap:'wrap', gap:4}}>
+        {/* Historical context years */}
         {[...sortedHist].reverse().map(yr => (
-          <span key={yr} className="legend-year" style={{padding:'2px 6px', opacity: yr===latestHistYear?1:0.7, userSelect:'none'}}>
+          <span key={yr} className="legend-year" style={{padding:'2px 6px', opacity: yr===Math.max(...sortedHist)?1:0.75, userSelect:'none'}}>
             <span className="legend-line" style={{background: yearColor(yr)}}/>
             {yr}
           </span>
         ))}
-        {pair && (
-          <>
-            <span className="legend-year" style={{padding:'2px 6px', userSelect:'none'}}>
-              <span style={{display:'inline-block',width:22,height:0,borderTop:`2px dashed ${COLOR_A}`,verticalAlign:'middle',marginRight:4,opacity:0.8}}/>
-              {pair.a}
-            </span>
-            <span className="legend-year" style={{padding:'2px 6px', userSelect:'none'}}>
-              <span style={{display:'inline-block',width:22,height:0,borderTop:`2.5px solid ${COLOR_B}`,verticalAlign:'middle',marginRight:4}}/>
-              {pair.b}
-            </span>
-          </>
-        )}
+        {/* Comparison years */}
+        {compYears.map(yr => {
+          const clr = yearColor(yr);
+          return (
+            <React.Fragment key={yr}>
+              {/* B — newer, full */}
+              <span className="legend-year" style={{padding:'2px 6px', userSelect:'none'}}>
+                <span style={{display:'inline-block',width:22,height:0,borderTop:`2.5px solid ${clr}`,verticalAlign:'middle',marginRight:4}}/>
+                {yr} {fmtSnap(pair?.b)}
+              </span>
+              {/* A — older, muted */}
+              <span className="legend-year" style={{padding:'2px 6px', opacity:0.45, userSelect:'none'}}>
+                <span style={{display:'inline-block',width:22,height:0,borderTop:`1.5px dashed ${clr}`,verticalAlign:'middle',marginRight:4}}/>
+                {yr} {fmtSnap(pair?.a)}
+              </span>
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
@@ -439,12 +444,11 @@ function ProductionCard({ data, accent }) {
 
   const { snapshots, bySnapshot } = production;
 
-  // Build indexed { year: { values: [q1..q4], forecast: [bool x4] } } per snapshot
   const toByYQ = records => {
     const out = {};
     for (const r of (records || [])) {
-      if (!out[r.year]) out[r.year] = { values: [null,null,null,null], forecast: [false,false,false,false] };
-      out[r.year].values[r.quarter - 1]  = r.value;
+      if (!out[r.year]) out[r.year] = { values:[null,null,null,null], forecast:[false,false,false,false] };
+      out[r.year].values[r.quarter - 1]   = r.value;
       out[r.year].forecast[r.quarter - 1] = r.isForecast;
     }
     return out;
@@ -463,32 +467,37 @@ function ProductionCard({ data, accent }) {
   const indexedA = useMemo(() => toByYQ(pair ? bySnapshot[pair.a] : []), [bySnapshot, pair?.a]);
   const indexedB = useMemo(() => toByYQ(pair ? bySnapshot[pair.b] : []), [bySnapshot, pair?.b]);
 
-  // Pure historical years: all 4 quarters are non-forecast in both snapshots
-  const histYears = useMemo(() => {
-    const ys = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
-    return [...ys].filter(yr => {
-      const a = indexedA[yr], b = indexedB[yr];
-      return (!a || a.forecast.every(f => !f)) && (!b || b.forecast.every(f => !f));
-    }).sort((a, b) => a - b);
-  }, [indexedA, indexedB]);
-
-  // Comparison years: at least one forecast quarter in either snapshot
+  // (i) Comparison years: have at least one forecast quarter in either snapshot
+  //     AND both A and B have at least one non-null value for this year
   const compYears = useMemo(() => {
-    const ys = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
-    return [...ys].filter(yr => {
+    const allYrs = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
+    return [...allYrs].filter(yr => {
       const a = indexedA[yr], b = indexedB[yr];
+      const hasA = a && a.values.some(v => v != null);
+      const hasB = b && b.values.some(v => v != null);
+      if (!hasA || !hasB) return false; // (i) skip if either snapshot has no data
       return (a && a.forecast.some(f => f)) || (b && b.forecast.some(f => f));
     }).sort((a, b) => a - b);
   }, [indexedA, indexedB]);
 
-  const [selectedHistYears, setSelectedHistYears] = useState(() => histYears.slice(-5));
-  const [showStats, setShowStats] = useState(false);
-  const [chartStyle, setChartStyle] = useState('line');
+  // Pure historical years: all 4 quarters non-forecast in both, and not a comp year
+  const histYears = useMemo(() => {
+    const compSet = new Set(compYears);
+    const allYrs  = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
+    return [...allYrs].filter(yr => {
+      if (compSet.has(yr)) return false;
+      const a = indexedA[yr], b = indexedB[yr];
+      return (!a || a.forecast.every(f => !f)) && (!b || b.forecast.every(f => !f));
+    }).sort((a, b) => a - b);
+  }, [indexedA, indexedB, compYears]);
 
-  // Reset history selection when pair changes
+  const [selectedHistYears, setSelectedHistYears] = useState(() => histYears.slice(-5));
+  const [showStats, setShowStats]                 = useState(false);
+  const [chartStyle, setChartStyle]               = useState('line');
+
   useEffect(() => { setSelectedHistYears(histYears.slice(-5)); }, [pairIdx, histYears.join(',')]);
 
-  // Historical series from the newer snapshot (more accurate for historical data)
+  // Historical series from the newer snapshot (B) for accuracy
   const histSeries = useMemo(() => {
     const out = {};
     for (const yr of selectedHistYears) {
@@ -498,6 +507,8 @@ function ProductionCard({ data, accent }) {
     return out;
   }, [indexedA, indexedB, selectedHistYears]);
 
+  const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo]||mo)+'-'+yr; };
+
   return (
     <section className="card card-full">
       <div className="card-head">
@@ -505,7 +516,8 @@ function ProductionCard({ data, accent }) {
           <div className="card-eyebrow">USDA · Produção bovina trimestral · 000 lb</div>
           <h3 className="card-title">Revisão de Forecast</h3>
           <div className="card-sub">
-            {pair ? `${pair.b} vs ${pair.a}` : ''} · linha contínua = realizado · tracejado = projeção
+            {pair ? `${fmtSnap(pair.b)} vs ${fmtSnap(pair.a)}` : ''}
+            {' · '}contínuo = realizado · tracejado = projeção
           </div>
         </div>
         <ProductionControls
@@ -518,7 +530,7 @@ function ProductionCard({ data, accent }) {
       </div>
       <ProductionChart
         histSeries={histSeries}
-        seriesA={indexedA} seriesB={indexedB}
+        indexedA={indexedA} indexedB={indexedB}
         compYears={compYears}
         selectedHistYears={selectedHistYears}
         pair={pair}
