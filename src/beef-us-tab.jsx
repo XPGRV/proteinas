@@ -74,7 +74,7 @@ const EdgebeeefChart = ({
   const y = v   => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
 
   const yearColor = yr => {
-    if (yr === (pinnedYear || latestYear)) return accent;
+    if (yr === latestYear) return accent;
     const palette = ['oklch(0.75 0.15 200)','oklch(0.68 0.16 255)','oklch(0.74 0.15 310)','oklch(0.78 0.17 35)','oklch(0.80 0.15 60)','oklch(0.72 0.16 0)','oklch(0.76 0.13 170)'];
     const age = latestYear - yr;
     return age - 1 < palette.length ? palette[age - 1] : 'oklch(0.48 0.01 260)';
@@ -104,9 +104,9 @@ const EdgebeeefChart = ({
   // Stats band paths
   const statsDoys = Object.keys(stats).map(Number).sort((a,b)=>a-b);
   const statsMaxPath  = statsDoys.map((d,i) => `${i===0?'M':'L'}${x(d).toFixed(1)},${y(stats[d].max).toFixed(1)}`).join(' ');
-  const statsMinPath  = [...statsDoys].reverse().map((d,i) => `${i===0?'M':'L'}${x(d).toFixed(1)},${y(stats[d].min).toFixed(1)}`).join(' ');
+  const statsMinPath  = [...statsDoys].reverse().map(d => `L${x(d).toFixed(1)},${y(stats[d].min).toFixed(1)}`).join(' ');
   const statsP75Path  = statsDoys.map((d,i) => `${i===0?'M':'L'}${x(d).toFixed(1)},${y(stats[d].p75).toFixed(1)}`).join(' ');
-  const statsP25Path  = [...statsDoys].reverse().map((d,i) => `${i===0?'M':'L'}${x(d).toFixed(1)},${y(stats[d].p25).toFixed(1)}`).join(' ');
+  const statsP25Path  = [...statsDoys].reverse().map(d => `L${x(d).toFixed(1)},${y(stats[d].p25).toFixed(1)}`).join(' ');
   const statsMeanPath = statsDoys.map((d,i) => `${i===0?'M':'L'}${x(d).toFixed(1)},${y(stats[d].mean).toFixed(1)}`).join(' ');
 
   // Events: position at mid-month doy
@@ -374,43 +374,51 @@ const EdgebeeefCard = ({ data, accent, events }) => {
           <div className="card-sub">Série diária · USD/cwt</div>
         </div>
         <div className="card-controls">
-          <div className="ctrl-btn-group">
-            <div className="seg">
-              <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
-              <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
+          {/* Row 1: ano presets + dropdown */}
+          <div className="card-ctrl-row">
+            <div className="year-seg">
+              {presets.map(p => (
+                <button key={p.label}
+                  className={`year-seg-btn ${activePreset?.label === p.label ? 'is-on' : ''}`}
+                  onClick={() => setSelectedYears(p.yrs.filter(y => allYears.includes(y)))}>
+                  {p.label}
+                </button>
+              ))}
+              <div className="year-drop-wrap" ref={dropRef}>
+                <button
+                  className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
+                  onClick={() => setDropOpen(o => !o)}>
+                  Anos ▾
+                </button>
+                {dropOpen && (
+                  <div className="year-drop">
+                    {[...allYears].reverse().map(yr => (
+                      <div key={yr} className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
+                        onClick={() => setSelectedYears(prev =>
+                          prev.includes(yr)
+                            ? prev.length > 1 ? prev.filter(y => y !== yr) : prev
+                            : [...prev, yr].sort((a, b) => a - b)
+                        )}>
+                        <span className="year-drop-check">{selectedYears.includes(yr) ? '✓' : ''}</span>
+                        {yr}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <button className={`ctrl-btn ${showStats?'is-on':''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
-            <button className={`ctrl-btn ${showEvents?'is-on':''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
           </div>
-          <div className="seg">
-            {presets.map(p => (
-              <button key={p.label}
-                className={`year-seg-btn ${activePreset?.label === p.label ? 'is-on' : ''}`}
-                onClick={() => setSelectedYears(p.yrs.filter(y => allYears.includes(y)))}>
-                {p.label}
-              </button>
-            ))}
-            <div className="year-drop-wrap" ref={dropRef}>
-              <button
-                className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
-                onClick={() => setDropOpen(o => !o)}>
-                Anos ▾
-              </button>
-              {dropOpen && (
-                <div className="year-drop">
-                  {[...allYears].reverse().map(yr => (
-                    <div key={yr} className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
-                      onClick={() => setSelectedYears(prev =>
-                        prev.includes(yr)
-                          ? prev.length > 1 ? prev.filter(y => y !== yr) : prev
-                          : [...prev, yr]
-                      )}>
-                      <span className="year-drop-check">{selectedYears.includes(yr) ? '✓' : ''}</span>
-                      {yr}
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* Row 2: toggles + chart style */}
+          <div className="card-ctrl-row">
+            <div className="ctrl-btn-group">
+              <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
+              <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
+            </div>
+            <div style={{marginLeft: 16}}>
+              <div className="seg">
+                <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
+                <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
+              </div>
             </div>
           </div>
         </div>
