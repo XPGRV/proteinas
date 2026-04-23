@@ -23,7 +23,7 @@ function trimEmpty(arr) {
   );
 }
 
-async function parseWorkbook(arrayBuffer) {
+async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {}) {
   if (!window.XLSX) {
     await new Promise((res, rej) => {
       const s = document.createElement('script');
@@ -37,7 +37,7 @@ async function parseWorkbook(arrayBuffer) {
   const result = {};
 
   // ── BeefBR (abas: BeefBR, SECEX, Abates) ────────────────────────────────────
-  if (sheets.includes('BeefBR')) {
+  if (parseBR && sheets.includes('BeefBR')) {
     const beefRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefBR'], { header: 1, raw: false });
     const beef = [];
     for (let i = 4; i < beefRaw.length; i++) {
@@ -68,7 +68,7 @@ async function parseWorkbook(arrayBuffer) {
     result.beef = trimEmpty(beef);
   }
 
-  if (sheets.includes('SECEX')) {
+  if (parseBR && sheets.includes('SECEX')) {
     const secexRaw = XLSX.utils.sheet_to_json(wb.Sheets['SECEX'], { header: 1, raw: false });
     const secex = [];
     for (let i = 2; i < secexRaw.length; i++) {
@@ -99,7 +99,7 @@ async function parseWorkbook(arrayBuffer) {
     result.secex = trimEmpty(secex);
   }
 
-  if (sheets.includes('Abates')) {
+  if (parseBR && sheets.includes('Abates')) {
     const abatesRaw = XLSX.utils.sheet_to_json(wb.Sheets['Abates'], { header: 1, raw: false });
     const abates = [];
     for (let i = 2; i < abatesRaw.length; i++) {
@@ -127,7 +127,7 @@ async function parseWorkbook(arrayBuffer) {
   }
 
   // ── BeefUS (abas: BBG_Dados, BeefUS) ────────────────────────────────────────
-  if (sheets.includes('BBG_Dados')) {
+  if (parseUS && sheets.includes('BBG_Dados')) {
     // Edgebeef diário: col A=ano, col C=mês, col D=data completa (dia), col E=valor
     const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets['BBG_Dados'], { header: 1, raw: true });
     const edgebeef_daily = [];
@@ -144,7 +144,7 @@ async function parseWorkbook(arrayBuffer) {
     result.edgebeef_daily = edgebeef_daily;
   }
 
-  if (sheets.includes('BeefUS')) {
+  if (parseUS && sheets.includes('BeefUS')) {
     // Mensal: col B=data (Date), col H=pct_femeas (decimal), col P=boi_bezerro_mm12
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefUS'], { header: 1, raw: true });
     const beef_us = [];
@@ -175,7 +175,12 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
     setStatus({ kind: 'loading', msg: 'Processando ' + file.name + '…' });
     try {
       const ab = await file.arrayBuffer();
-      const parsed = await parseWorkbook(ab);
+      // Detecção pelo nome do arquivo para evitar ler abas erradas
+      // (BeefBR.xlsm também tem BBG_Dados mas não deve atualizar o BeefUS)
+      const nameLC = file.name.toLowerCase();
+      const forceUS = nameLC.includes('beefus');
+      const forceBR = nameLC.includes('beefbr') || (!forceUS);
+      const parsed = await parseWorkbook(ab, { parseBR: forceBR && !forceUS, parseUS: forceUS });
 
       // Mescla com dados existentes para preservar beef_us / edgebeef_daily
       const fullData = { ...(window.__dashboardData || {}), ...parsed };
@@ -184,9 +189,11 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       const meta = {
         source: file.name,
         updated: new Date().toISOString(),
-        beefRows: parsed.beef.length,
-        secexRows: parsed.secex.length,
-        abatesRows: parsed.abates.length,
+        beefRows:          parsed.beef?.length           ?? null,
+        secexRows:         parsed.secex?.length          ?? null,
+        abatesRows:        parsed.abates?.length         ?? null,
+        edgebeefRows:      parsed.edgebeef_daily?.length ?? null,
+        beefUsRows:        parsed.beef_us?.length        ?? null,
       };
 
       // 1. Salva localmente (versão corrigida para '5')
