@@ -469,7 +469,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
           <div className="card-price">
             {latestRaw && (<>
               <span className="card-value">{latestRaw.value.toFixed(1)}</span>
-              <span className="card-unit" style={{color: accent, borderColor: `color-mix(in oklch, ${accent} 40%, transparent)`}}>USD/cwt</span>
+              <span className="card-unit">USD/cwt</span>
               <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
                 {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
               </span>
@@ -507,7 +507,14 @@ const CicloBoiUS = ({ data, accent }) => {
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  const secondaryColor = 'oklch(0.68 0.16 255)';
+  // Mesma lógica de cores do CicloDoBoi do BeefBR
+  function accentHue(c) {
+    const m = /oklch\([^)]+\)/.exec(c);
+    if (!m) return 160;
+    const parts = m[0].match(/[\d.]+/g);
+    return parts ? parseFloat(parts[2]) : 160;
+  }
+  const rawColor = `oklch(0.60 0.07 ${accentHue(accent) + 200})`;
 
   const femPoints = React.useMemo(() => {
     return (data.beef_us || [])
@@ -592,14 +599,16 @@ const CicloBoiUS = ({ data, accent }) => {
           </g>
         ))}
 
-        <path d={femPath} fill="none" stroke={accent} strokeWidth="1.2" strokeOpacity="0.6" strokeLinejoin="round"/>
-        <path d={boiPath} fill="none" stroke={secondaryColor} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+        {/* %Fêmeas — fino, muted (igual rawPath do CicloDoBoi) */}
+        <path d={femPath} fill="none" stroke={rawColor} strokeWidth="1" strokeOpacity="0.5" strokeLinejoin="round"/>
+        {/* Boi/Bezerro MM12M — grosso, accent (igual mmPath do CicloDoBoi) */}
+        <path d={boiPath} fill="none" stroke={accent} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
 
         {hover && (
           <g>
             <line x1={xs(hover.t)} x2={xs(hover.t)} y1={padT} y2={H-padB} stroke="var(--fg)" strokeOpacity="0.15" strokeWidth="1"/>
-            <circle cx={xs(hover.t)} cy={ysLeft(hover.v)} r={4} fill="var(--bg)" stroke={accent} strokeWidth="1.5"/>
-            {hoverBoi && <circle cx={xs(hoverBoi.t)} cy={ysRight(hoverBoi.v)} r={4} fill="var(--bg)" stroke={secondaryColor} strokeWidth="2"/>}
+            <circle cx={xs(hover.t)} cy={ysLeft(hover.v)} r={4} fill="var(--bg)" stroke={rawColor} strokeWidth="1.5"/>
+            {hoverBoi && <circle cx={xs(hoverBoi.t)} cy={ysRight(hoverBoi.v)} r={4} fill="var(--bg)" stroke={accent} strokeWidth="2"/>}
           </g>
         )}
 
@@ -613,12 +622,12 @@ const CicloBoiUS = ({ data, accent }) => {
           <div className="hover-month">{window.MONTHS_PT[hover.month-1]}/{hover.year}</div>
           <div className="hover-rows">
             <div className="hover-row">
-              <span className="hover-year" style={{color:accent}}>%Fêmeas</span>
+              <span className="hover-year" style={{color:rawColor}}>%Fêmeas</span>
               <span className="hover-val">{hover.v.toFixed(1)}<span className="hover-unit"> %</span></span>
             </div>
             {hoverBoi && (
               <div className="hover-row">
-                <span className="hover-year" style={{color:secondaryColor}}>Boi/Bezerro</span>
+                <span className="hover-year" style={{color:accent}}>Boi/Bezerro</span>
                 <span className="hover-val">{hoverBoi.v.toFixed(3)}</span>
               </div>
             )}
@@ -628,11 +637,11 @@ const CicloBoiUS = ({ data, accent }) => {
 
       <div className="ciclo-legend">
         <span className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
-          <span className="legend-line" style={{background:accent, opacity:0.7}}/>
+          <span className="legend-line" style={{background:rawColor, opacity:0.7}}/>
           %Fêmeas (mensal)
         </span>
         <span className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
-          <span className="legend-line" style={{background:secondaryColor}}/>
+          <span className="legend-line" style={{background:accent}}/>
           Boi/Bezerro MM12M (eixo direito)
         </span>
       </div>
