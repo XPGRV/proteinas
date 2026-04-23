@@ -33,95 +33,135 @@ async function parseWorkbook(arrayBuffer) {
     });
   }
   const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  const sheets = wb.SheetNames;
+  const result = {};
 
-  // BeefBR
-  const beefRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefBR'], { header: 1, raw: false });
-  const beef = [];
-  for (let i = 4; i < beefRaw.length; i++) {
-    const r = beefRaw[i];
-    if (!r || !r[1]) continue;
-    const md = parseMonthTag(r[1]);
-    if (!md) continue;
-    beef.push({
-      year: md.year, month: md.month,
-      beef_carcass_brl_kg: parseNum(r[3]),
-      beef_me_usd_kg: parseNum(r[4]),
-      beef_me_brl_kg: parseNum(r[5]),
-      cattle_brl_arroba: parseNum(r[6]),
-      cattle_brl_kg: parseNum(r[7]),
-      cattle_usd_kg: parseNum(r[8]),
-      px_secex_brl_kg: parseNum(r[9]),
-      spread_mi: parseNum(r[11]),
-      spread_me: parseNum(r[13]),
-      spread_me_usd: parseNum(r[15]),
-      spread_me_mi_pct: parseNum(r[17]),
-      abates_total: parseNum(r[31]),       // SIF col 32
-      abates_yoy: parseNum(r[33]),          // SIF col 34
-      abates_femeas: parseNum(r[34]),       // SIF col 35
-      pct_femeas: (() => { const v = parseNum(r[35]); return v != null ? Math.round(v * 1000) / 10 : null; })(), // SIF col 36, decimal→%
-      usdbrl: parseNum(r[39]),
-    });
+  // ── BeefBR (abas: BeefBR, SECEX, Abates) ────────────────────────────────────
+  if (sheets.includes('BeefBR')) {
+    const beefRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefBR'], { header: 1, raw: false });
+    const beef = [];
+    for (let i = 4; i < beefRaw.length; i++) {
+      const r = beefRaw[i];
+      if (!r || !r[1]) continue;
+      const md = parseMonthTag(r[1]);
+      if (!md) continue;
+      beef.push({
+        year: md.year, month: md.month,
+        beef_carcass_brl_kg: parseNum(r[3]),
+        beef_me_usd_kg:      parseNum(r[4]),
+        beef_me_brl_kg:      parseNum(r[5]),
+        cattle_brl_arroba:   parseNum(r[6]),
+        cattle_brl_kg:       parseNum(r[7]),
+        cattle_usd_kg:       parseNum(r[8]),
+        px_secex_brl_kg:     parseNum(r[9]),
+        spread_mi:           parseNum(r[11]),
+        spread_me:           parseNum(r[13]),
+        spread_me_usd:       parseNum(r[15]),
+        spread_me_mi_pct:    parseNum(r[17]),
+        abates_total:        parseNum(r[31]),
+        abates_yoy:          parseNum(r[33]),
+        abates_femeas:       parseNum(r[34]),
+        pct_femeas: (() => { const v = parseNum(r[35]); return v != null ? Math.round(v * 1000) / 10 : null; })(),
+        usdbrl:              parseNum(r[39]),
+      });
+    }
+    result.beef = trimEmpty(beef);
   }
 
-  // SECEX
-  const secexRaw = XLSX.utils.sheet_to_json(wb.Sheets['SECEX'], { header: 1, raw: false });
-  const secex = [];
-  for (let i = 2; i < secexRaw.length; i++) {
-    const r = secexRaw[i];
-    if (!r || !r[1]) continue;
-    const md = parseMonthTag(r[1]);
-    if (!md) continue;
-    secex.push({
-      year: md.year, month: md.month,
-      vol_suina_br: parseNum(r[3]),
-      vol_bovina_br: parseNum(r[4]),
-      vol_frango_br: parseNum(r[5]),
-      px_suina_usd: parseNum(r[7]),
-      px_suina_brl: parseNum(r[8]),
-      px_bovina_usd: parseNum(r[9]),
-      px_bovina_brl: parseNum(r[10]),
-      px_frango_usd: parseNum(r[11]),
-      px_frango_brl: parseNum(r[12]),
-      fx: parseNum(r[14]),
-      vol_suina_eua: parseNum(r[17]),
-      vol_bovina_eua: parseNum(r[18]),
-      vol_frango_eua: parseNum(r[19]),
-      px_suina_eua: parseNum(r[21]),
-      px_bovina_eua: parseNum(r[22]),
-      px_frango_eua: parseNum(r[23]),
-    });
+  if (sheets.includes('SECEX')) {
+    const secexRaw = XLSX.utils.sheet_to_json(wb.Sheets['SECEX'], { header: 1, raw: false });
+    const secex = [];
+    for (let i = 2; i < secexRaw.length; i++) {
+      const r = secexRaw[i];
+      if (!r || !r[1]) continue;
+      const md = parseMonthTag(r[1]);
+      if (!md) continue;
+      secex.push({
+        year: md.year, month: md.month,
+        vol_suina_br:    parseNum(r[3]),
+        vol_bovina_br:   parseNum(r[4]),
+        vol_frango_br:   parseNum(r[5]),
+        px_suina_usd:    parseNum(r[7]),
+        px_suina_brl:    parseNum(r[8]),
+        px_bovina_usd:   parseNum(r[9]),
+        px_bovina_brl:   parseNum(r[10]),
+        px_frango_usd:   parseNum(r[11]),
+        px_frango_brl:   parseNum(r[12]),
+        fx:              parseNum(r[14]),
+        vol_suina_eua:   parseNum(r[17]),
+        vol_bovina_eua:  parseNum(r[18]),
+        vol_frango_eua:  parseNum(r[19]),
+        px_suina_eua:    parseNum(r[21]),
+        px_bovina_eua:   parseNum(r[22]),
+        px_frango_eua:   parseNum(r[23]),
+      });
+    }
+    result.secex = trimEmpty(secex);
   }
 
-  // Abates
-  const abatesRaw = XLSX.utils.sheet_to_json(wb.Sheets['Abates'], { header: 1, raw: false });
-  const abates = [];
-  for (let i = 2; i < abatesRaw.length; i++) {
-    const r = abatesRaw[i];
-    if (!r || !r[1]) continue;
-    const md = parseMonthTag(r[1]);
-    if (!md) continue;
-    abates.push({
-      year: md.year, month: md.month,
-      bois: parseNum(r[2]),
-      vacas: parseNum(r[3]),
-      novilhos: parseNum(r[4]),
-      novilhas: parseNum(r[5]),
-      vitelos: parseNum(r[6]),
-      total: parseNum(r[7]),
-      pct_bois: parseNum(r[8]),
-      pct_vacas: parseNum(r[9]),
-      pct_novilhos: parseNum(r[10]),
-      pct_novilhas: parseNum(r[11]),
-      pct_vitelos: parseNum(r[12]),
-      peso_total: parseNum(r[19]),
-    });
+  if (sheets.includes('Abates')) {
+    const abatesRaw = XLSX.utils.sheet_to_json(wb.Sheets['Abates'], { header: 1, raw: false });
+    const abates = [];
+    for (let i = 2; i < abatesRaw.length; i++) {
+      const r = abatesRaw[i];
+      if (!r || !r[1]) continue;
+      const md = parseMonthTag(r[1]);
+      if (!md) continue;
+      abates.push({
+        year: md.year, month: md.month,
+        bois:        parseNum(r[2]),
+        vacas:       parseNum(r[3]),
+        novilhos:    parseNum(r[4]),
+        novilhas:    parseNum(r[5]),
+        vitelos:     parseNum(r[6]),
+        total:       parseNum(r[7]),
+        pct_bois:    parseNum(r[8]),
+        pct_vacas:   parseNum(r[9]),
+        pct_novilhos: parseNum(r[10]),
+        pct_novilhas: parseNum(r[11]),
+        pct_vitelos: parseNum(r[12]),
+        peso_total:  parseNum(r[19]),
+      });
+    }
+    result.abates = trimEmpty(abates);
   }
 
-  return {
-    beef: trimEmpty(beef),
-    secex: trimEmpty(secex),
-    abates: trimEmpty(abates),
-  };
+  // ── BeefUS (abas: BBG_Dados, BeefUS) ────────────────────────────────────────
+  if (sheets.includes('BBG_Dados')) {
+    // Edgebeef diário: col A=ano, col C=mês, col D=data completa (dia), col E=valor
+    const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets['BBG_Dados'], { header: 1, raw: true });
+    const edgebeef_daily = [];
+    for (let i = 4; i < bbgRaw.length; i++) {
+      const r = bbgRaw[i];
+      if (!r || r[0] == null) continue;
+      const year  = Number(r[0]);
+      const month = Number(r[2]);
+      const day   = r[3] instanceof Date ? r[3].getDate() : null;
+      const value = parseNum(r[4]);
+      if (!isFinite(year) || !isFinite(month) || !day || value == null) continue;
+      edgebeef_daily.push({ year, month, day, value });
+    }
+    result.edgebeef_daily = edgebeef_daily;
+  }
+
+  if (sheets.includes('BeefUS')) {
+    // Mensal: col B=data (Date), col H=pct_femeas (decimal), col P=boi_bezerro_mm12
+    const usRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefUS'], { header: 1, raw: true });
+    const beef_us = [];
+    for (let i = 4; i < usRaw.length; i++) {
+      const r = usRaw[i];
+      if (!r || !(r[1] instanceof Date)) continue;
+      const year  = r[1].getFullYear();
+      const month = r[1].getMonth() + 1;
+      const pct_femeas       = (() => { const v = parseNum(r[7]);  return v != null ? Math.round(v * 1000) / 10 : null; })();
+      const boi_bezerro_mm12 = parseNum(r[15]);
+      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
+    }
+    result.beef_us = beef_us;
+  }
+
+  if (Object.keys(result).length === 0) throw new Error('Nenhuma aba reconhecida (BeefBR, SECEX, Abates, BBG_Dados, BeefUS)');
+  return result;
 }
 
 // Upload widget component
@@ -180,8 +220,14 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       }
 
       onLoad(fullData, meta);
+      const parts = [];
+      if (parsed.beef)           parts.push(`${parsed.beef.length}L BeefBR`);
+      if (parsed.secex)          parts.push(`${parsed.secex.length} SECEX`);
+      if (parsed.abates)         parts.push(`${parsed.abates.length} Abates`);
+      if (parsed.edgebeef_daily) parts.push(`${parsed.edgebeef_daily.length} Edgebeef diário`);
+      if (parsed.beef_us)        parts.push(`${parsed.beef_us.length}L BeefUS`);
       const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
-      setStatus({ kind: 'ok', msg: `✓ ${parsed.beef.length}L BeefBR · ${parsed.secex.length} SECEX · ${parsed.abates.length} Abates${cloudBadge}` });
+      setStatus({ kind: 'ok', msg: `✓ ${parts.join(' · ')}${cloudBadge}` });
       setTimeout(() => setStatus(null), 5000);
     } catch (e) {
       console.error(e);
