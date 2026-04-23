@@ -78,6 +78,18 @@
     } catch {}
   }
 
+  // Normaliza pct_femeas: dados antigos foram salvos como 3925 em vez de 39.25
+  // pct_femeas válido é sempre < 100; se > 100, divide por 100 para corrigir
+  if (data) {
+    const fixPct = rows => rows?.map(r =>
+      r.pct_femeas != null && r.pct_femeas > 100
+        ? { ...r, pct_femeas: Math.round(r.pct_femeas * 10) / 1000 }
+        : r
+    );
+    if (data.beef)    data.beef    = fixPct(data.beef);
+    if (data.beef_us) data.beef_us = fixPct(data.beef_us);
+  }
+
   // Migra meta antigo (plano) para novo formato { br, us }
   if (meta && !meta.br && !meta.us && meta.updated) meta = { br: meta };
 
