@@ -19,8 +19,15 @@ const TYPE_STACKS = {
 
 
 function App({ data: propData, initialData, initialMeta }) {
+  const TWEAK_DEFAULTS = { palette: 'neon', typography: 'modern', density: 'comfortable' };
+
+  // ── Todos os hooks ANTES de qualquer return condicional ──────────────────────
   const [data, setData] = useState(propData || initialData);
   const [meta, setMeta] = useState(initialMeta || null);
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+  const [editMode, setEditMode] = useState(false);
+  const [tab, setTab] = useState('precos');
+  const [activeDataset, setActiveDataset] = useState('beef_br');
 
   useEffect(() => {
     const onUpload = (e) => {
@@ -29,14 +36,6 @@ function App({ data: propData, initialData, initialMeta }) {
     window.addEventListener('dashboard-data-updated', onUpload);
     return () => window.removeEventListener('dashboard-data-updated', onUpload);
   }, []);
-
-  if (!data) return <div style={{padding: 40, color: 'var(--fg-dim)'}}>Carregando…</div>;
-
-  const TWEAK_DEFAULTS = { palette: 'neon', typography: 'modern', density: 'comfortable' };
-  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
-  const [editMode, setEditMode] = useState(false);
-  const [tab, setTab] = useState('precos');
-  const [activeDataset, setActiveDataset] = useState('beef_br');
 
   useEffect(() => {
     const onMsg = (e) => {
@@ -70,9 +69,39 @@ function App({ data: propData, initialData, initialMeta }) {
     document.documentElement.style.setProperty('--font-mono', typeStack.mono);
   }, [accent, typeStack, tweaks.density]);
 
+  const onUpload = (d, m) => { setData(d); setMeta(m); window.__dashboardData = d; window.__dashboardMeta = m; };
+
+  if (!data) {
+    return (
+      <div className="app">
+        <header className="topbar">
+          <div className="brand">
+            <div className="brand-mark">
+              <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" fill="none">
+                <path d="M21.8508 21.1616H25.2486C26.5193 21.1616 27.4033 20.5815 27.4033 19.3936C27.4033 18.2058 26.5193 17.6257 25.2486 17.6257H21.8508V21.1616ZM21.8508 27.3218H26.3812C28.7845 27.3218 30.0276 26.0787 30.0276 23.6754V21.1616H29.9448C29.2541 23.2611 27.4586 23.8964 25.3315 23.8964H21.9613C21.8785 23.8964 21.8508 23.924 21.8508 24.0069V27.3218ZM15.4696 19.3936L18.9503 22.7638V16.0235L15.4696 19.3936ZM3.64641 27.3218H18.9503V26.5483C18.9503 25.1948 19.4199 24.4213 20.4972 24.0069V23.924H16.2155C15.9945 23.924 15.9116 23.8964 15.7459 23.7307L13.5083 21.4102L11.1878 23.7583C11.0773 23.8688 10.9945 23.924 10.7735 23.924H7.32044C7.12707 23.924 7.12707 23.8135 7.23757 23.703L11.6575 19.4213L7.1547 15.0566C7.0442 14.9461 7.07182 14.8356 7.26519 14.8356H10.7459C10.9392 14.8356 11.0221 14.8633 11.1326 15.0014L13.5635 17.4323L15.8564 15.0014C15.9669 14.8909 16.0497 14.8356 16.2155 14.8356H25.3039C27.4033 14.8356 29.2541 15.5262 29.9448 17.6257H30.0276V3.89641C30.0276 1.49309 28.7845 0.25 26.3812 0.25H3.64641C1.24309 0.25 0 1.49309 0 3.89641V23.703C0 26.0787 1.24309 27.3218 3.64641 27.3218Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div>
+              <div className="brand-title">Beef BR</div>
+              <div className="brand-sub">acompanhamento setorial</div>
+            </div>
+          </div>
+          <window.UploadWidget onLoad={onUpload} lastUpdate={null} currentSource={null}/>
+        </header>
+        <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M12 16V4M8 8l4-4 4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+          </svg>
+          <div style={{fontSize:16,fontWeight:500,color:'var(--fg)'}}>Nenhum dado encontrado</div>
+          <div style={{fontSize:13,textAlign:'center',maxWidth:320}}>Faça upload da planilha BeefBR.xlsm ou BeefUS.xlsm para começar.</div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={(d, m) => { setData(d); setMeta(m); window.__dashboardData = d; window.__dashboardMeta = m; }}
+      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={onUpload}
         activeDataset={activeDataset} setActiveDataset={setActiveDataset}/>
       {activeDataset === 'beef_us' ? (
         <window.BeefUSTab data={data} accent={accent}/>

@@ -61,7 +61,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         abates_total:        parseNum(r[31]),
         abates_yoy:          parseNum(r[33]),
         abates_femeas:       parseNum(r[34]),
-        pct_femeas: (() => { const v = parseNum(r[35]); return v != null ? Math.round(v * 1000) / 10 : null; })(),
+        pct_femeas: (() => { const v = parseNum(r[35]); if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })(),
         usdbrl:              parseNum(r[39]),
       });
     }
@@ -153,7 +153,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       if (!r || !(r[1] instanceof Date)) continue;
       const year  = r[1].getFullYear();
       const month = r[1].getMonth() + 1;
-      const pct_femeas       = (() => { const v = parseNum(r[7]);  return v != null ? Math.round(v * 1000) / 10 : null; })();
+      const pct_femeas       = (() => { const v = parseNum(r[7]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
       const boi_bezerro_mm12 = parseNum(r[15]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
