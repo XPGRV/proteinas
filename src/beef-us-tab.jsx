@@ -426,6 +426,32 @@ const EdgebeeefCard = ({ data, accent, events }) => {
 
   const allYears = React.useMemo(() => Object.keys(byYear).map(Number).sort((a,b)=>a-b), [byYear]);
 
+  // Latest data point and YoY
+  const latestRaw = React.useMemo(() => {
+    const rows = (data.edgebeef_daily || []).slice().sort((a, b) =>
+      a.year !== b.year ? a.year - b.year : a.month !== b.month ? a.month - b.month : a.day - b.day
+    );
+    return rows[rows.length - 1] || null;
+  }, [data]);
+
+  const yoyRaw = React.useMemo(() => {
+    if (!latestRaw) return null;
+    const candidates = (data.edgebeef_daily || []).filter(r =>
+      r.year === latestRaw.year - 1 && r.month === latestRaw.month
+    );
+    let best = null, bestD = Infinity;
+    for (const r of candidates) {
+      const d = Math.abs(r.day - latestRaw.day);
+      if (d < bestD) { bestD = d; best = r; }
+    }
+    return best;
+  }, [data, latestRaw]);
+
+  const yoy = latestRaw && yoyRaw
+    ? (latestRaw.value - yoyRaw.value) / Math.abs(yoyRaw.value)
+    : null;
+  const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+
   const [selectedYears, setSelectedYears] = React.useState(() => allYears.slice(-5));
   const [chartStyle, setChartStyle]       = React.useState('line');
   const [showStats, setShowStats]         = React.useState(false);
@@ -438,9 +464,20 @@ const EdgebeeefCard = ({ data, accent, events }) => {
     <section className="card card-full">
       <div className="card-head">
         <div>
-          <div className="card-eyebrow">Bloomberg · Margem dos frigoríficos</div>
-          <h3 className="card-title">Edgebeef</h3>
-          <div className="card-sub">Série diária · USD/cwt</div>
+          <div className="card-eyebrow">Bloomberg · EDGEBEEF Index · Margem dos Frigoríficos</div>
+          <h3 className="card-title">EdgeBeef</h3>
+          <div className="card-price">
+            {latestRaw && (<>
+              <span className="card-value">{latestRaw.value.toFixed(1)}</span>
+              <span className="card-unit" style={{color: accent, borderColor: `color-mix(in oklch, ${accent} 40%, transparent)`}}>USD/cwt</span>
+              <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
+                {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
+              </span>
+              <span className="card-date">
+                {window.MONTHS_PT[latestRaw.month - 1]}/{String(latestRaw.year).slice(-2)}
+              </span>
+            </>)}
+          </div>
         </div>
         <EdgebeeefControls
           years={allYears}
