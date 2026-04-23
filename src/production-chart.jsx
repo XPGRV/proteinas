@@ -340,13 +340,6 @@ function ProductionChart({
               {/* Invisible wide click target */}
               <path d={buildPath(vals)} fill="none" stroke="transparent" strokeWidth={12}
                 style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
-              {/* Dots */}
-              {vals.map((v, qi) => v != null ? (
-                <circle key={qi} cx={x(qi)} cy={y(v)} r={isSel ? 4.5 : 3}
-                  fill={isSel ? clr : 'var(--bg)'} stroke={clr} strokeWidth={1.5}
-                  opacity={dimmed ? 0.2 : 1}
-                  style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
-              ) : null)}
               {/* (iii) Data labels when year is selected */}
               {isSel && vals.map((v, qi) => v != null ? (
                 <text key={qi} x={x(qi)} y={y(v) - 10} textAnchor="middle"
@@ -367,7 +360,7 @@ function ProductionChart({
           const dimmed = selYear != null && !isSel;
           const { solidPath: aSolid, dashedPath: aDashed } = a ? buildMixed(a.values, a.forecast) : {};
           const { solidPath: bSolid, dashedPath: bDashed } = b ? buildMixed(b.values, b.forecast) : {};
-          const bFullPath = [bSolid, bDashed].filter(Boolean).join(' ');
+          // no bFullPath needed — click targets built individually below
           return (
             <g key={yr}>
               {/* Line A — older snapshot, muted */}
@@ -382,22 +375,13 @@ function ProductionChart({
                 <g opacity={dimmed ? 0.12 : 1}>
                   {bSolid  && <path d={bSolid}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
                   {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round"/>}
-                  {/* Invisible wide click target on B line */}
-                  {bFullPath && <path d={bFullPath} fill="none" stroke="transparent" strokeWidth={12}
-                    style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>}
                 </g>
               )}
-              {/* Dots for B */}
-              {b && b.values.map((v, qi) => {
-                if (v == null) return null;
-                if (!showForecast && b.forecast[qi]) return null;
-                return (
-                  <circle key={qi} cx={x(qi)} cy={y(v)} r={isSel ? 5 : 3.5}
-                    fill={isSel ? clr : 'var(--bg)'} stroke={clr} strokeWidth={2}
-                    opacity={dimmed ? 0.15 : 1}
-                    style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
-                );
-              })}
+              {/* (iii) Click targets — cover solid + dashed for BOTH A and B */}
+              {[aSolid, aDashed, bSolid, bDashed].filter(Boolean).map((d, i) => (
+                <path key={i} d={d} fill="none" stroke="transparent" strokeWidth={12}
+                  style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
+              ))}
               {/* (iii) Data labels when year is selected */}
               {isSel && (
                 <g>
@@ -421,8 +405,10 @@ function ProductionChart({
                     const txt   = delta != null
                       ? (delta >= 0 ? '+' : '') + Math.round(delta).toLocaleString('pt-BR')
                       : fmtLabel(v);
+                    // (iv) Anchor delta below the lower of A and B points to avoid overlapping the B label
+                    const yLabelA = Math.max(y(v), vB != null ? y(vB) : y(v)) + 18;
                     return (
-                      <text key={`a-${qi}`} x={x(qi)} y={y(v) + 18} textAnchor="middle"
+                      <text key={`a-${qi}`} x={x(qi)} y={yLabelA} textAnchor="middle"
                         style={{fontSize:10, fill:clr, opacity:0.55, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
                         {txt}
                       </text>
@@ -481,7 +467,12 @@ function ProductionChart({
         }
         if (!rows.length) return null;
         return (
-          <div className="hover-card" style={{left:`calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}}>
+          {/* (ii) Flip card to the left for Q3/Q4 so it doesn't overflow */}
+          <div className="hover-card" style={
+            hover <= 1
+              ? {left:  `calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}
+              : {right: `calc(${((W - x(hover))/W*100).toFixed(1)}% + 14px)`}
+          }>
             <div className="hover-month">{QUARTERS[hover]}</div>
             <div className="hover-rows">
               {rows.map((r, i) => (
