@@ -74,8 +74,12 @@
     meta = { source: 'planilha inicial', updated: null };
   }
 
-  // Expõe para upload.jsx poder mesclar beef_us / edgebeef_daily ao atualizar planilha
+  // Migra meta antigo (plano) para novo formato { br, us }
+  if (meta && !meta.br && !meta.us && meta.updated) meta = { br: meta };
+
+  // Expõe globals para upload.jsx
   window.__dashboardData = data;
+  window.__dashboardMeta = meta || {};
 
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(<window.App initialData={data} initialMeta={meta}/>);

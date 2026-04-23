@@ -72,7 +72,7 @@ function App({ data: propData, initialData, initialMeta }) {
 
   return (
     <div className="app">
-      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={(d, m) => { setData(d); setMeta(m); }}
+      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={(d, m) => { setData(d); setMeta(m); window.__dashboardData = d; window.__dashboardMeta = m; }}
         activeDataset={activeDataset} setActiveDataset={setActiveDataset}/>
       {activeDataset === 'beef_us' ? (
         <window.BeefUSTab data={data} accent={accent}/>
@@ -138,7 +138,14 @@ function TopBar({ tab, setTab, meta, onUpload, activeDataset, setActiveDataset }
           </button>
         </nav>
       )}
-      <window.UploadWidget onLoad={onUpload} lastUpdate={meta?.updated} currentSource={meta?.source}/>
+      {(() => {
+        // meta = { br: {source, updated}, us: {source, updated} }
+        // Mostra o log da planilha da aba actual; migra formato antigo (meta plano sem .br/.us)
+        const currentMeta = activeDataset === 'beef_us'
+          ? (meta?.us ?? null)
+          : (meta?.br ?? (meta?.updated ? meta : null)); // compat com meta plano legado
+        return <window.UploadWidget onLoad={onUpload} lastUpdate={currentMeta?.updated} currentSource={currentMeta?.source}/>;
+      })()}
     </header>
   );
 }

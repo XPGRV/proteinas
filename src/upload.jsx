@@ -186,20 +186,17 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       const fullData = { ...(window.__dashboardData || {}), ...parsed };
       window.__dashboardData = fullData;
 
-      const meta = {
-        source: file.name,
-        updated: new Date().toISOString(),
-        beefRows:          parsed.beef?.length           ?? null,
-        secexRows:         parsed.secex?.length          ?? null,
-        abatesRows:        parsed.abates?.length         ?? null,
-        edgebeefRows:      parsed.edgebeef_daily?.length ?? null,
-        beefUsRows:        parsed.beef_us?.length        ?? null,
-      };
+      // Meta separado por planilha — não sobrescreve o log da outra aba
+      const metaEntry = { source: file.name, updated: new Date().toISOString() };
+      const metaKey   = forceUS ? 'us' : 'br';
+      const prevMeta  = window.__dashboardMeta || {};
+      const fullMeta  = { ...prevMeta, [metaKey]: metaEntry };
+      window.__dashboardMeta = fullMeta;
 
-      // 1. Salva localmente (versão corrigida para '5')
+      // 1. Salva localmente
       try {
         localStorage.setItem('dashboard_data', JSON.stringify(fullData));
-        localStorage.setItem('dashboard_meta', JSON.stringify(meta));
+        localStorage.setItem('dashboard_meta', JSON.stringify(fullMeta));
         localStorage.setItem('dashboard_version', '5');
       } catch (_) {}
 
@@ -207,7 +204,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       setStatus({ kind: 'loading', msg: '☁ Salvando na nuvem…' });
       let cloudOk = false;
       try {
-        const payload = JSON.stringify({ data: fullData, meta });
+        const payload = JSON.stringify({ data: fullData, meta: fullMeta });
         const res = await fetch(
           `${window.__SB_URL}/storage/v1/object/dashboard/data.json`,
           {
@@ -226,7 +223,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
         console.warn('Supabase upload falhou:', e);
       }
 
-      onLoad(fullData, meta);
+      onLoad(fullData, fullMeta);
       const parts = [];
       if (parsed.beef)           parts.push(`${parsed.beef.length}L BeefBR`);
       if (parsed.secex)          parts.push(`${parsed.secex.length} SECEX`);
