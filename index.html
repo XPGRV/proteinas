@@ -28,26 +28,55 @@
 <script type="text/babel">
 (async () => {
   const DATA_VERSION = '5';
+
+  // ── Supabase Storage ─────────────────────────────────────────────────────────
+  // A URL pública permite leitura sem autenticação; a key é a anon (segura no client).
+  const SB_URL = 'https://wmxjdveucxbousoquwmc.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndteGpkdmV1Y3hib3Vzb3F1d21jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NDAwMDMsImV4cCI6MjA5MjUxNjAwM30.tCSFE_aRcjrVRziuyqINPuxBYFEbG8AQjTdX2vHiwfw';
+  window.__SB_URL = SB_URL;
+  window.__SB_KEY = SB_KEY;
+
   let data = null, meta = null;
+
+  // 1. Supabase — sempre a versão mais recente do último upload
   try {
-    const cached = localStorage.getItem('dashboard_data');
-    const cachedMeta = localStorage.getItem('dashboard_meta');
-    const cachedVersion = localStorage.getItem('dashboard_version');
-    if (cached && cachedVersion === DATA_VERSION) {
-      data = JSON.parse(cached);
-      meta = cachedMeta ? JSON.parse(cachedMeta) : null;
-    } else {
-      // Version mismatch — clear stale cache
-      localStorage.removeItem('dashboard_data');
-      localStorage.removeItem('dashboard_meta');
-      localStorage.removeItem('dashboard_version');
+    const resp = await fetch(
+      `${SB_URL}/storage/v1/object/public/dashboard/data.json?t=${Date.now()}`,
+      { cache: 'no-store' }
+    );
+    if (resp.ok) {
+      const json = await resp.json();
+      if (json && json.data) { data = json.data; meta = json.meta || null; }
     }
   } catch {}
+
+  // 2. localStorage — cache local do browser
+  if (!data) {
+    try {
+      const cached        = localStorage.getItem('dashboard_data');
+      const cachedMeta    = localStorage.getItem('dashboard_meta');
+      const cachedVersion = localStorage.getItem('dashboard_version');
+      if (cached && cachedVersion === DATA_VERSION) {
+        data = JSON.parse(cached);
+        meta = cachedMeta ? JSON.parse(cachedMeta) : null;
+      } else {
+        localStorage.removeItem('dashboard_data');
+        localStorage.removeItem('dashboard_meta');
+        localStorage.removeItem('dashboard_version');
+      }
+    } catch {}
+  }
+
+  // 3. Fallback — data.json embutido no repositório
   if (!data) {
     const resp = await fetch('public/data.json');
     data = await resp.json();
     meta = { source: 'planilha inicial', updated: null };
   }
+
+  // Expõe para upload.jsx poder mesclar beef_us / edgebeef_daily ao atualizar planilha
+  window.__dashboardData = data;
+
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(<window.App initialData={data} initialMeta={meta}/>);
 })();

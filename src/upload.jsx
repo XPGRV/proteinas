@@ -135,24 +135,54 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
     setStatus({ kind: 'loading', msg: 'Processando ' + file.name + '…' });
     try {
       const ab = await file.arrayBuffer();
-      const data = await parseWorkbook(ab);
+      const parsed = await parseWorkbook(ab);
+
+      // Mescla com dados existentes para preservar beef_us / edgebeef_daily
+      const fullData = { ...(window.__dashboardData || {}), ...parsed };
+      window.__dashboardData = fullData;
+
       const meta = {
         source: file.name,
         updated: new Date().toISOString(),
-        beefRows: data.beef.length,
-        secexRows: data.secex.length,
-        abatesRows: data.abates.length,
+        beefRows: parsed.beef.length,
+        secexRows: parsed.secex.length,
+        abatesRows: parsed.abates.length,
       };
+
+      // 1. Salva localmente (versão corrigida para '5')
       try {
-        localStorage.setItem('dashboard_data', JSON.stringify(data));
+        localStorage.setItem('dashboard_data', JSON.stringify(fullData));
         localStorage.setItem('dashboard_meta', JSON.stringify(meta));
-        localStorage.setItem('dashboard_version', '3');
+        localStorage.setItem('dashboard_version', '5');
+      } catch (_) {}
+
+      // 2. Sobe para Supabase Storage
+      setStatus({ kind: 'loading', msg: '☁ Salvando na nuvem…' });
+      let cloudOk = false;
+      try {
+        const payload = JSON.stringify({ data: fullData, meta });
+        const res = await fetch(
+          `${window.__SB_URL}/storage/v1/object/dashboard/data.json`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${window.__SB_KEY}`,
+              'Content-Type': 'application/json',
+              'x-upsert': 'true',
+            },
+            body: payload,
+          }
+        );
+        cloudOk = res.ok;
+        if (!res.ok) console.warn('Supabase upload HTTP', res.status, await res.text());
       } catch (e) {
-        // quota — skip persistence
+        console.warn('Supabase upload falhou:', e);
       }
-      onLoad(data, meta);
-      setStatus({ kind: 'ok', msg: `✓ ${data.beef.length} linhas BeefBR · ${data.secex.length} SECEX · ${data.abates.length} Abates` });
-      setTimeout(() => setStatus(null), 4000);
+
+      onLoad(fullData, meta);
+      const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
+      setStatus({ kind: 'ok', msg: `✓ ${parsed.beef.length}L BeefBR · ${parsed.secex.length} SECEX · ${parsed.abates.length} Abates${cloudBadge}` });
+      setTimeout(() => setStatus(null), 5000);
     } catch (e) {
       console.error(e);
       setStatus({ kind: 'err', msg: 'Erro: ' + (e.message || 'falha ao ler planilha') });
