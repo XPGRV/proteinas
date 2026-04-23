@@ -73,10 +73,12 @@ const EdgebeeefChart = ({
   const x = doy => padL + ((doy - 1) / 364) * chartW;
   const y = v   => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
 
+  // (ii) Cada ano mantém sua cor de paleta ao ser pinado; só o latestYear recebe
+  // o accent quando nenhum ano está pinado — igual ao SeasonalChart do BeefBR.
   const yearColor = yr => {
-    if (yr === latestYear) return accent;
     const palette = ['oklch(0.75 0.15 200)','oklch(0.68 0.16 255)','oklch(0.74 0.15 310)','oklch(0.78 0.17 35)','oklch(0.80 0.15 60)','oklch(0.72 0.16 0)','oklch(0.76 0.13 170)'];
     const age = latestYear - yr;
+    if (age === 0) return accent;                        // ano mais recente = accent
     return age - 1 < palette.length ? palette[age - 1] : 'oklch(0.48 0.01 260)';
   };
 
@@ -322,6 +324,94 @@ const EdgebeeefChart = ({
   );
 };
 
+// ── Edgebeef Controls — componente separado, igual ao ChartControls do BeefBR ──
+function EdgebeeefControls({
+  years, selectedYears, setSelectedYears,
+  showStats, setShowStats,
+  showEvents, setShowEvents,
+  chartStyle, setChartStyle,
+}) {
+  const { useState, useEffect, useRef } = React;
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef(null);
+
+  const presets = [
+    { label: '3a',    yrs: years.slice(-3) },
+    { label: '5a',    yrs: years.slice(-5) },
+    { label: '10a',   yrs: years.slice(-10) },
+    { label: 'Todos', yrs: years },
+  ];
+
+  const activePreset = presets.find(p => {
+    const valid = p.yrs.filter(y => years.includes(y));
+    return valid.length === selectedYears.length && valid.every(y => selectedYears.includes(y));
+  });
+
+  const toggleYear = yr => setSelectedYears(prev =>
+    prev.includes(yr)
+      ? (prev.length === 1 ? prev : prev.filter(y => y !== yr))
+      : [...prev, yr].sort((a, b) => a - b)
+  );
+
+  useEffect(() => {
+    if (!dropOpen) return;
+    const handler = e => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropOpen]);
+
+  return (
+    <div className="card-controls">
+      {/* Row 1: presets de ano + dropdown */}
+      <div className="card-ctrl-row">
+        <div className="year-seg">
+          {presets.map(p => (
+            <button key={p.label}
+              className={`year-seg-btn ${activePreset?.label === p.label ? 'is-on' : ''}`}
+              onClick={() => setSelectedYears(p.yrs.filter(y => years.includes(y)))}>
+              {p.label}
+            </button>
+          ))}
+          <div className="year-drop-wrap" ref={dropRef}>
+            <button
+              className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
+              onClick={() => setDropOpen(o => !o)}>
+              Anos ▾
+            </button>
+            {dropOpen && (
+              <div className="year-drop">
+                {years.slice().reverse().map(yr => (
+                  <div key={yr}
+                    className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
+                    onClick={() => toggleYear(yr)}>
+                    <span className="year-drop-check">{selectedYears.includes(yr) ? '✓' : ''}</span>
+                    {yr}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      {/* Row 2: toggles + estilo */}
+      <div className="card-ctrl-row">
+        <div className="ctrl-btn-group">
+          <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
+          <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
+        </div>
+        <div style={{marginLeft: 16}}>
+          <div className="seg">
+            <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
+            <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Edgebeef Card (state + controls + chart) ──────────────────────────────────
 const EdgebeeefCard = ({ data, accent, events }) => {
   const byYear = React.useMemo(() => {
@@ -336,34 +426,13 @@ const EdgebeeefCard = ({ data, accent, events }) => {
 
   const allYears = React.useMemo(() => Object.keys(byYear).map(Number).sort((a,b)=>a-b), [byYear]);
 
-  const presets = React.useMemo(() => [
-    { label: '3a',   yrs: allYears.slice(-3) },
-    { label: '5a',   yrs: allYears.slice(-5) },
-    { label: '10a',  yrs: allYears.slice(-10) },
-    { label: 'Todos', yrs: allYears },
-  ], [allYears]);
-
   const [selectedYears, setSelectedYears] = React.useState(() => allYears.slice(-5));
   const [chartStyle, setChartStyle]       = React.useState('line');
   const [showStats, setShowStats]         = React.useState(false);
   const [showEvents, setShowEvents]       = React.useState(false);
   const [pinnedYear, setPinnedYear]       = React.useState(null);
-  const [dropOpen, setDropOpen]           = React.useState(false);
-  const dropRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!dropOpen) return;
-    const close = e => { if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false); };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [dropOpen]);
 
   React.useEffect(() => { setPinnedYear(null); }, [selectedYears.join(',')]);
-
-  const activePreset = presets.find(p => {
-    const valid = p.yrs.filter(y => allYears.includes(y));
-    return valid.length === selectedYears.length && valid.every(y => selectedYears.includes(y));
-  });
 
   return (
     <section className="card card-full">
@@ -373,55 +442,13 @@ const EdgebeeefCard = ({ data, accent, events }) => {
           <h3 className="card-title">Edgebeef</h3>
           <div className="card-sub">Série diária · USD/cwt</div>
         </div>
-        <div className="card-controls">
-          {/* Row 1: ano presets + dropdown */}
-          <div className="card-ctrl-row">
-            <div className="year-seg">
-              {presets.map(p => (
-                <button key={p.label}
-                  className={`year-seg-btn ${activePreset?.label === p.label ? 'is-on' : ''}`}
-                  onClick={() => setSelectedYears(p.yrs.filter(y => allYears.includes(y)))}>
-                  {p.label}
-                </button>
-              ))}
-              <div className="year-drop-wrap" ref={dropRef}>
-                <button
-                  className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
-                  onClick={() => setDropOpen(o => !o)}>
-                  Anos ▾
-                </button>
-                {dropOpen && (
-                  <div className="year-drop">
-                    {[...allYears].reverse().map(yr => (
-                      <div key={yr} className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
-                        onClick={() => setSelectedYears(prev =>
-                          prev.includes(yr)
-                            ? prev.length > 1 ? prev.filter(y => y !== yr) : prev
-                            : [...prev, yr].sort((a, b) => a - b)
-                        )}>
-                        <span className="year-drop-check">{selectedYears.includes(yr) ? '✓' : ''}</span>
-                        {yr}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          {/* Row 2: toggles + chart style */}
-          <div className="card-ctrl-row">
-            <div className="ctrl-btn-group">
-              <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
-              <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
-            </div>
-            <div style={{marginLeft: 16}}>
-              <div className="seg">
-                <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
-                <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <EdgebeeefControls
+          years={allYears}
+          selectedYears={selectedYears} setSelectedYears={setSelectedYears}
+          showStats={showStats} setShowStats={setShowStats}
+          showEvents={showEvents} setShowEvents={setShowEvents}
+          chartStyle={chartStyle} setChartStyle={setChartStyle}
+        />
       </div>
       <EdgebeeefChart
         byYear={byYear} allYears={allYears}
