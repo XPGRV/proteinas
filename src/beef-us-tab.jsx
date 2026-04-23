@@ -665,6 +665,7 @@ function BeefUSTab({ data, accent }) {
         </div>
         <CicloBoiUS data={data} accent={chartAccent}/>
       </section>
+      <window.ProductionCard data={data} accent={chartAccent}/>
     </main>
   );
 }

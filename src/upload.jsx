@@ -32,7 +32,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       document.head.appendChild(s);
     });
   }
-  const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+  const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true, cellStyles: true });
   const sheets = wb.SheetNames;
   const result = {};
 
@@ -160,7 +160,78 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     result.beef_us = beef_us;
   }
 
-  if (Object.keys(result).length === 0) throw new Error('Nenhuma aba reconhecida (BeefBR, SECEX, Abates, BBG_Dados, BeefUS)');
+  // ── Production (aba: Production) ─────────────────────────────────────────────
+  if (parseUS && sheets.includes('Production')) {
+    const ws   = wb.Sheets['Production'];
+    const raw  = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: null });
+
+    // Portuguese months (lowercase) → number
+    const PT_MO = { jan:1, fev:2, mar:3, abr:4, mai:5, jun:6, jul:7, ago:8, set:9, out:10, nov:11, dez:12 };
+
+    // Row 0: "Total Production          dez-25" — extract trailing "mmm-yy" token
+    const hdrRow = raw[0] || [];
+    const snapshotCols = [];
+    for (let c = 2; c < hdrRow.length; c++) {
+      const h = String(hdrRow[c] || '').trim();
+      const token = h.split(/\s+/).pop() || '';
+      const m = token.match(/^([a-z]{3})-(\d{2})$/i);
+      if (m) {
+        const mo = PT_MO[m[1].toLowerCase()];
+        const yr = 2000 + parseInt(m[2]);
+        if (mo && yr) snapshotCols.push({ col: c, label: token.toLowerCase(), year: yr, month: mo });
+      }
+    }
+
+    if (snapshotCols.length >= 1) {
+      // Detect forecast via font color (orange = theme 5 / #ED7D31 = forecast; green = historical)
+      const isForecastCell = (ri, ci) => {
+        try {
+          const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })];
+          if (!cell?.s) return null;
+          const fc = cell.s.font?.color || {};
+          if (fc.theme === 5 || fc.theme === 4) return true;
+          const rgb = (fc.rgb || '').toUpperCase().replace(/^FF/, '');
+          if (['ED7D31','E36C09','FFC000','F79646','E26B0A'].some(c => rgb.startsWith(c))) return true;
+          if (['00B050','70AD47','92D050'].some(c => rgb.startsWith(c))) return false;
+        } catch (_) {}
+        return null;
+      };
+
+      // Quarter label format: "1Q25" → quarter=1, year=2025
+      const QTR_RE = /^([1-4])Q(\d{2})$/;
+
+      const snapshots  = snapshotCols.map(s => s.label);
+      const bySnapshot = {};
+
+      for (let ri = 2; ri < raw.length; ri++) {
+        const row    = raw[ri];
+        const qLabel = String(row[1] || '').trim();
+        const qm     = qLabel.match(QTR_RE);
+        if (!qm) continue;
+        const quarter = parseInt(qm[1]);
+        const year    = 2000 + parseInt(qm[2]);
+
+        for (const snap of snapshotCols) {
+          const v = parseNum(row[snap.col]);
+          if (v == null) continue;
+
+          let forecast = isForecastCell(ri, snap.col);
+          // Date-based fallback: if quarter ends at or after snapshot month → forecast
+          if (forecast === null) {
+            const qEndMonth = quarter * 3;
+            forecast = year > snap.year || (year === snap.year && qEndMonth >= snap.month);
+          }
+
+          if (!bySnapshot[snap.label]) bySnapshot[snap.label] = [];
+          bySnapshot[snap.label].push({ year, quarter, value: v, isForecast: !!forecast });
+        }
+      }
+
+      result.production = { snapshots, bySnapshot };
+    }
+  }
+
+  if (Object.keys(result).length === 0) throw new Error('Nenhuma aba reconhecida (BeefBR, SECEX, Abates, BBG_Dados, BeefUS, Production)');
   return result;
 }
 
