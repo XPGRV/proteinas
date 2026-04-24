@@ -271,6 +271,11 @@ const EdgebeeefChart = ({
           .filter(r => r.pt);
         if (!rows.length) return null;
         const statEntry = stats[hover] || stats[hover-1] || stats[hover+1];
+        let hoverMo = 0;
+        for (let i = 11; i >= 0; i--) { if (hover > MONTH_DOY[i]) { hoverMo = i; break; } }
+        const nearEvents = showEvents
+          ? (events||[]).filter(ev => ev.month - 1 === hoverMo && selectedYears.includes(ev.year))
+          : [];
         return (
           <div className="hover-card" style={{left:`calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}}>
             <div className="hover-month">{doyToLabel(hover)}</div>
@@ -288,6 +293,16 @@ const EdgebeeefChart = ({
                 </div>
               )}
             </div>
+            {nearEvents.length > 0 && (
+              <div className="hover-events">
+                {nearEvents.map((ev, i) => (
+                  <div key={i} className="hover-event">
+                    <span className="hover-event-year">{ev.year}</span>
+                    {ev.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })()}
@@ -609,7 +624,12 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
           </g>
         ))}
 
-        {/* Event markers — linhas verticais dashed com dot na base */}
+        {/* %Fêmeas — fino, muted (igual rawPath do CicloDoBoi) */}
+        <path d={femPath} fill="none" stroke={rawColor} strokeWidth="1" strokeOpacity="0.5" strokeLinejoin="round"/>
+        {/* Boi/Bezerro MM12M — grosso, accent (igual mmPath do CicloDoBoi) */}
+        <path d={boiPath} fill="none" stroke={accent} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+
+        {/* Event markers — na frente dos paths, dot no eixo + label abaixo do eixo */}
         {events.map((ev, i) => {
           const evT = ev.year + (ev.month - 1) / 12;
           if (evT < tMin || evT > tMax) return null;
@@ -622,15 +642,13 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
           return (
             <g key={i}>
               <line x1={cx} x2={cx} y1={padT} y2={H-padB}
-                stroke={EVENT_COLOR}
-                strokeOpacity={isNear ? 0.5 : 0.18}
+                stroke={EVENT_COLOR} strokeOpacity={isNear ? 0.5 : 0.18}
                 strokeWidth={1} strokeDasharray="3 3"/>
               <circle cx={cx} cy={H-padB} r={isNear ? 5 : 3}
                 fill={isNear ? 'var(--bg)' : EVENT_COLOR}
-                stroke={EVENT_COLOR} strokeWidth={1.5}
-                strokeOpacity={isNear ? 1 : 0.7}/>
+                stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isNear ? 1 : 0.7}/>
               {isNear && (
-                <text x={lx} y={padT+2} textAnchor={anchor} dominantBaseline="hanging"
+                <text x={lx} y={H-padB+28} textAnchor={anchor}
                   style={{fontSize:9.5, fill:EVENT_COLOR, fontWeight:600, fontFamily:'var(--font-mono)'}}>
                   {ev.label}
                 </text>
@@ -638,11 +656,6 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
             </g>
           );
         })}
-
-        {/* %Fêmeas — fino, muted (igual rawPath do CicloDoBoi) */}
-        <path d={femPath} fill="none" stroke={rawColor} strokeWidth="1" strokeOpacity="0.5" strokeLinejoin="round"/>
-        {/* Boi/Bezerro MM12M — grosso, accent (igual mmPath do CicloDoBoi) */}
-        <path d={boiPath} fill="none" stroke={accent} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
 
         {hover && (
           <g>
@@ -672,6 +685,14 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
               </div>
             )}
           </div>
+          {nearEvent && (
+            <div className="hover-events">
+              <div className="hover-event">
+                <span className="hover-event-year">{nearEvent.year}</span>
+                {nearEvent.label}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -705,7 +726,7 @@ function BeefUSTab({ data, accent }) {
         </div>
         <CicloBoiUS data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
       </section>
-      <window.ProductionCard data={data} accent={chartAccent}/>
+      <window.ProductionCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
     </main>
   );
 }

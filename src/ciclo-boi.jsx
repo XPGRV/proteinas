@@ -1,6 +1,6 @@
 // Ciclo do Boi — série temporal contínua: %Fêmeas no abate + MM12
 
-const CicloDoBoi = ({ data, accent }) => {
+const CicloDoBoi = ({ data, accent, events = [] }) => {
   const W = 1000, H = 340;
   const padL = 52, padR = 24, padT = 20, padB = 40;
   const chartW = W - padL - padR;
@@ -67,6 +67,10 @@ const CicloDoBoi = ({ data, accent }) => {
     return parts ? parseFloat(parts[2]) : 160;
   }
   const rawColor = `oklch(0.60 0.07 ${accentHue(accent) + 200})`;
+  const EVENT_COLOR = 'oklch(0.85 0.18 80)';
+  const nearEvent = hover
+    ? events.find(ev => { const evT = ev.year + (ev.month - 1) / 12; return Math.abs(hover.t - evT) < 0.09; })
+    : null;
 
   return (
     <div className="chart-wrap">
@@ -105,6 +109,34 @@ const CicloDoBoi = ({ data, accent }) => {
           </g>
         )}
 
+        {/* Event markers — na frente das linhas, dot no eixo + label abaixo */}
+        {events.map((ev, i) => {
+          const evT = ev.year + (ev.month - 1) / 12;
+          if (evT < tMin || evT > tMax) return null;
+          const cx = xs(evT);
+          const isNear = nearEvent === ev;
+          const nearRight = cx > W - padR - 90;
+          const nearLeft  = cx < padL + 90;
+          const anchor = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
+          const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
+          return (
+            <g key={i}>
+              <line x1={cx} x2={cx} y1={padT} y2={H-padB}
+                stroke={EVENT_COLOR} strokeOpacity={isNear ? 0.5 : 0.15}
+                strokeWidth={1} strokeDasharray="3 3"/>
+              <circle cx={cx} cy={H-padB} r={isNear ? 5 : 3}
+                fill={isNear ? 'var(--bg)' : EVENT_COLOR}
+                stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isNear ? 1 : 0.7}/>
+              {isNear && (
+                <text x={lx} y={H-padB+28} textAnchor={anchor}
+                  style={{fontSize:9.5, fill:EVENT_COLOR, fontWeight:600, fontFamily:'var(--font-mono)'}}>
+                  {ev.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
         {/* Hover */}
         {hover && (
           <g>
@@ -142,6 +174,14 @@ const CicloDoBoi = ({ data, accent }) => {
               );
             })()}
           </div>
+          {nearEvent && (
+            <div className="hover-events">
+              <div className="hover-event">
+                <span className="hover-event-year">{nearEvent.year}</span>
+                {nearEvent.label}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

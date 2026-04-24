@@ -249,7 +249,7 @@ function AbatesTab({ data, accent }) {
             <div className="card-sub">Série mensal + média móvel 12 meses (MM12)</div>
           </div>
         </div>
-        <window.CicloDoBoi data={data} accent={accent}/>
+        <window.CicloDoBoi data={data} accent={accent} events={window.EVENTS || []}/>
       </section>
 
       <PriceCard

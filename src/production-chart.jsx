@@ -143,6 +143,7 @@ function ProductionChart({
   selectedHistYears,
   pair, showStats, chartStyle, accent,
   showForecast,
+  events = [],
 }) {
   const W = 1000, H = 340;
   const padL = 72, padR = 24, padT = 20, padB = 32;
@@ -269,6 +270,11 @@ function ProductionChart({
 
   const sortedHist = [...selectedHistYears].sort((a,b) => a-b).filter(yr => histSeries[yr]);
   const gradId = 'prod-grad';
+  const EVENT_COLOR = 'oklch(0.85 0.18 80)';
+  // Events that fall in the hovered quarter among visible years
+  const eventsInHoverQ = hover != null
+    ? events.filter(ev => Math.ceil(ev.month / 3) - 1 === hover && allShownYears.includes(ev.year))
+    : [];
 
   return (
     <div className="chart-wrap">
@@ -445,6 +451,18 @@ function ProductionChart({
           </g>
         )}
 
+        {/* Event dots — um por trimestre, quando há eventos em anos visíveis */}
+        {[0,1,2,3].map(qi => {
+          const qEvs = events.filter(ev => Math.ceil(ev.month/3)-1 === qi && allShownYears.includes(ev.year));
+          if (!qEvs.length) return null;
+          const isHov = hover === qi;
+          return (
+            <circle key={qi} cx={x(qi)} cy={H-padB} r={isHov ? 5 : 3}
+              fill={isHov ? 'var(--bg)' : EVENT_COLOR}
+              stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isHov ? 1 : 0.7}/>
+          );
+        })}
+
         <line x1={padL} x2={W-padR} y1={H-padB} y2={H-padB} className="axis-line"/>
         <line x1={padL} x2={padL}   y1={padT}    y2={H-padB} className="axis-line"/>
       </svg>
@@ -481,6 +499,16 @@ function ProductionChart({
                 </div>
               ))}
             </div>
+            {eventsInHoverQ.length > 0 && (
+              <div className="hover-events">
+                {eventsInHoverQ.map((ev, i) => (
+                  <div key={i} className="hover-event">
+                    <span className="hover-event-year">{ev.year}</span>
+                    {ev.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })()}
@@ -526,7 +554,7 @@ function ProductionChart({
 }
 
 // ── ProductionCard ────────────────────────────────────────────────────────────
-function ProductionCard({ data, accent }) {
+function ProductionCard({ data, accent, events = [] }) {
   const { useState, useMemo, useEffect } = React;
 
   // Extract early — hooks must all fire before any conditional return
@@ -626,6 +654,7 @@ function ProductionCard({ data, accent }) {
         showStats={showStats} chartStyle={chartStyle}
         accent={accent}
         showForecast={showForecast}
+        events={events}
       />
     </section>
   );
