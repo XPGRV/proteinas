@@ -634,9 +634,16 @@ function ProductionCard({ data, accent, events = [] }) {
   const [summaries, setSummaries] = useState({});
   useEffect(() => {
     fetch('ldp_pdf_summaries.txt')
-      .then(r => r.ok ? r.text() : '')
-      .then(text => { if (text) setSummaries(parseLDPSummaries(text)); })
-      .catch(() => {});
+      .then(r => {
+        console.log('[LDP] fetch status:', r.status, r.ok);
+        return r.ok ? r.text() : '';
+      })
+      .then(text => {
+        const parsed = text ? parseLDPSummaries(text) : {};
+        console.log('[LDP] parsed keys:', Object.keys(parsed));
+        setSummaries(parsed);
+      })
+      .catch(e => console.error('[LDP] fetch error:', e));
   }, []);
 
   // Extract early — hooks must all fire before any conditional return
@@ -741,6 +748,10 @@ function ProductionCard({ data, accent, events = [] }) {
         events={events}
         showEvents={showEvents}
       />
+      {/* debug — remover depois */}
+      <div style={{padding:'4px 24px', fontSize:10, fontFamily:'monospace', color:'var(--fg-dim)', opacity:0.5}}>
+        pair.b: {pair?.b || '—'} | keys: {Object.keys(summaries).join(', ') || '(vazio)'}
+      </div>
       {pair?.b && summaries[pair.b] && (
         <div className="forecast-summary">
           <div className="forecast-summary-label">
