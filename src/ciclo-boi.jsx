@@ -22,6 +22,7 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
   }, [points]);
 
   const [hover, setHover] = React.useState(null);
+  const [showEvents, setShowEvents] = React.useState(true);
 
   if (!points.length) return null;
 
@@ -68,7 +69,7 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
   }
   const rawColor = `oklch(0.60 0.07 ${accentHue(accent) + 200})`;
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
-  const nearEvent = hover
+  const nearEvent = hover && showEvents
     ? events.find(ev => { const evT = ev.year + (ev.month - 1) / 12; return Math.abs(hover.t - evT) < 0.09; })
     : null;
 
@@ -127,7 +128,7 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
         <line x1={padL} x2={padL} y1={padT} y2={H - padB} className="axis-line"/>
 
         {/* Event markers — after axis lines so dots sit on top */}
-        {events.map((ev, i) => {
+        {showEvents && events.map((ev, i) => {
           const evT = ev.year + (ev.month - 1) / 12;
           if (evT < tMin || evT > tMax) return null;
           const cx = xs(evT);
@@ -194,6 +195,11 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
           <span className="legend-line" style={{background: accent}}/>
           MM12
         </span>
+        <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`}
+          style={{marginLeft:8}}
+          onClick={() => setShowEvents(s => !s)}>
+          EVENTOS
+        </button>
       </div>
     </div>
   );

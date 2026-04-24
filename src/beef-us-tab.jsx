@@ -546,6 +546,7 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
   }, [data]);
 
   const [hover, setHover] = React.useState(null);
+  const [showEvents, setShowEvents] = React.useState(true);
 
   if (!femPoints.length) return null;
 
@@ -596,7 +597,7 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
 
   // Evento mais próximo do hover (tolerância ±1 mês)
-  const nearEvent = hover
+  const nearEvent = hover && showEvents
     ? events.find(ev => {
         const evT = ev.year + (ev.month - 1) / 12;
         return Math.abs(hover.t - evT) < 0.09;
@@ -642,7 +643,7 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
         <line x1={W-padR} x2={W-padR} y1={padT}  y2={H-padB} className="axis-line" strokeOpacity="0.4"/>
 
         {/* Event markers — after axis lines so dots sit on top */}
-        {events.map((ev, i) => {
+        {showEvents && events.map((ev, i) => {
           const evT = ev.year + (ev.month - 1) / 12;
           if (evT < tMin || evT > tMax) return null;
           const cx      = xs(evT);
@@ -705,6 +706,11 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
           <span className="legend-line" style={{background:accent}}/>
           Boi/Bezerro MM12M (eixo direito)
         </span>
+        <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`}
+          style={{marginLeft:8}}
+          onClick={() => setShowEvents(s => !s)}>
+          EVENTOS
+        </button>
       </div>
     </div>
   );

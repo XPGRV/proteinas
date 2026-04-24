@@ -14,6 +14,7 @@ function ProductionControls({
   showStats, setShowStats,
   chartStyle, setChartStyle,
   showForecast, setShowForecast,
+  showEvents, setShowEvents,
 }) {
   const { useState, useEffect, useRef } = React;
   const [histDropOpen, setHistDropOpen] = useState(false);
@@ -119,6 +120,9 @@ function ProductionControls({
           <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>
             MÉDIA + FAIXA
           </button>
+          <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>
+            EVENTOS
+          </button>
           {/* (iv) Hide forecast toggle */}
           <button className={`ctrl-btn ${!showForecast ? 'is-on' : ''}`} onClick={() => setShowForecast(s => !s)}>
             SEM FORECAST
@@ -144,6 +148,7 @@ function ProductionChart({
   pair, showStats, chartStyle, accent,
   showForecast,
   events = [],
+  showEvents = true,
 }) {
   const W = 1000, H = 340;
   const padL = 72, padR = 24, padT = 20, padB = 32;
@@ -272,7 +277,7 @@ function ProductionChart({
   const gradId = 'prod-grad';
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
   // Events that fall in the hovered quarter among visible years
-  const eventsInHoverQ = hover != null
+  const eventsInHoverQ = hover != null && showEvents
     ? events.filter(ev => Math.ceil(ev.month / 3) - 1 === hover && allShownYears.includes(ev.year))
     : [];
 
@@ -454,27 +459,38 @@ function ProductionChart({
         <line x1={padL} x2={W-padR} y1={H-padB} y2={H-padB} className="axis-line"/>
         <line x1={padL} x2={padL}   y1={padT}    y2={H-padB} className="axis-line"/>
 
-        {/* Event dots — on the year's line at the matching quarter, after axes */}
-        {events.flatMap((ev, i) => {
+        {/* Event markers — after axes; hover defers to crosshair, selection adds outer ring */}
+        {showEvents && events.flatMap((ev, i) => {
           const qi = Math.ceil(ev.month / 3) - 1;
-          const isHov = hover === qi;
-          const dots = [];
-          if (selectedHistYears.includes(ev.year)) {
-            const v = histSeries[ev.year]?.[qi];
-            if (v != null) dots.push(
-              <circle key={`ev-h-${i}`} cx={x(qi)} cy={y(v)} r={isHov ? 5 : 3.5}
-                fill={EVENT_COLOR} stroke="var(--bg)" strokeWidth={1.5} opacity={isHov ? 1 : 0.75}/>
-            );
+          const isHovQ = hover === qi;
+          const isSel  = selYear === ev.year;
+
+          const getV = () => {
+            if (selectedHistYears.includes(ev.year)) return histSeries[ev.year]?.[qi] ?? null;
+            if (compYears.includes(ev.year)) {
+              const vb = indexedB[ev.year]?.values[qi];
+              const fcB = indexedB[ev.year]?.forecast[qi];
+              return (vb != null && (showForecast || !fcB)) ? vb : null;
+            }
+            return null;
+          };
+          const v = getV();
+          if (v == null) return [];
+
+          if (isHovQ) {
+            // Hover quarter: inner dot handled by crosshair — just show outer ring for event
+            return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
+              r={isSel ? 8 : 6.5} fill="none"
+              stroke={EVENT_COLOR} strokeWidth={isSel ? 2 : 1.5} opacity={0.85}/>];
           }
-          if (compYears.includes(ev.year)) {
-            const vb  = indexedB[ev.year]?.values[qi];
-            const fcB = indexedB[ev.year]?.forecast[qi];
-            if (vb != null && (showForecast || !fcB)) dots.push(
-              <circle key={`ev-c-${i}`} cx={x(qi)} cy={y(vb)} r={isHov ? 5 : 3.5}
-                fill={EVENT_COLOR} stroke="var(--bg)" strokeWidth={1.5} opacity={isHov ? 1 : 0.75}/>
-            );
+          if (isSel) {
+            // Year selected, not hovering: hollow ring
+            return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
+              r={6.5} fill="var(--bg)" stroke={EVENT_COLOR} strokeWidth={2} opacity={1}/>];
           }
-          return dots;
+          // Static: small filled dot
+          return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
+            r={3.5} fill={EVENT_COLOR} stroke="var(--bg)" strokeWidth={1.5} opacity={0.75}/>];
         })}
       </svg>
 
@@ -591,6 +607,7 @@ function ProductionCard({ data, accent, events = [] }) {
 
   const [pairIdx, setPairIdx]         = useState(0);
   const [showStats, setShowStats]     = useState(false);
+  const [showEvents, setShowEvents]   = useState(true);
   const [chartStyle, setChartStyle]   = useState('line');
   const [showForecast, setShowForecast] = useState(true);
 
@@ -652,6 +669,7 @@ function ProductionCard({ data, accent, events = [] }) {
           selectedHistYears={selectedHistYears} setSelectedHistYears={setSelectedHistYears}
           pairs={pairs} pairIdx={pairIdx} setPairIdx={setPairIdx}
           showStats={showStats} setShowStats={setShowStats}
+          showEvents={showEvents} setShowEvents={setShowEvents}
           chartStyle={chartStyle} setChartStyle={setChartStyle}
           showForecast={showForecast} setShowForecast={setShowForecast}
         />
@@ -666,6 +684,7 @@ function ProductionCard({ data, accent, events = [] }) {
         accent={accent}
         showForecast={showForecast}
         events={events}
+        showEvents={showEvents}
       />
     </section>
   );
