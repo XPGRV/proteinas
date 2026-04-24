@@ -614,16 +614,29 @@ const MONTH_EN_PT = {
 
 function parseLDPSummaries(text) {
   const map = {};
-  const blocks = text.split(/(?=={3})/);
-  for (const block of blocks) {
-    const hdr = block.match(/={3}\s+Livestock[^:]+:\s+(\w+)\s+(\d{4})/i);
-    if (!hdr) continue;
-    const ptMonth = MONTH_EN_PT[hdr[1].toLowerCase()];
-    if (!ptMonth) continue;
-    const key = `${ptMonth}-${hdr[2].slice(-2)}`;
-    const lines = block.split('\n').slice(1).map(l => l.trim()).filter(l => l && !l.startsWith('PDF:'));
-    map[key] = lines.join(' ');
+  const lines = text.split(/\r?\n/);
+  let key = null, buf = [];
+
+  const flush = () => {
+    if (key) {
+      const body = buf.filter(l => l && !l.startsWith('PDF:')).join(' ').trim();
+      if (body) map[key] = body;
+    }
+    buf = [];
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    const hdr = line.match(/^={3}\s+Livestock[^:]+:\s+(\w+)\s+(\d{4})/i);
+    if (hdr) {
+      flush();
+      const pt = MONTH_EN_PT[hdr[1].toLowerCase()];
+      key = pt ? `${pt}-${hdr[2].slice(-2)}` : null;
+    } else {
+      buf.push(line);
+    }
   }
+  flush();
   return map;
 }
 
@@ -634,16 +647,9 @@ function ProductionCard({ data, accent, events = [] }) {
   const [summaries, setSummaries] = useState({});
   useEffect(() => {
     fetch('ldp_pdf_summaries.txt')
-      .then(r => {
-        console.log('[LDP] fetch status:', r.status, r.ok);
-        return r.ok ? r.text() : '';
-      })
-      .then(text => {
-        const parsed = text ? parseLDPSummaries(text) : {};
-        console.log('[LDP] parsed keys:', Object.keys(parsed));
-        setSummaries(parsed);
-      })
-      .catch(e => console.error('[LDP] fetch error:', e));
+      .then(r => r.ok ? r.text() : '')
+      .then(text => { if (text) setSummaries(parseLDPSummaries(text)); })
+      .catch(() => {});
   }, []);
 
   // Extract early — hooks must all fire before any conditional return
@@ -748,10 +754,6 @@ function ProductionCard({ data, accent, events = [] }) {
         events={events}
         showEvents={showEvents}
       />
-      {/* debug — remover depois */}
-      <div style={{padding:'4px 24px', fontSize:10, fontFamily:'monospace', color:'var(--fg-dim)', opacity:0.5}}>
-        pair.b: {pair?.b || '—'} | keys: {Object.keys(summaries).join(', ') || '(vazio)'}
-      </div>
       {pair?.b && summaries[pair.b] && (
         <div className="forecast-summary">
           <div className="forecast-summary-label">
