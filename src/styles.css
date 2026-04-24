@@ -519,6 +519,30 @@ body {
 
 .main > .card { margin-bottom: var(--gap); }
 
+/* === Forecast summary === */
+.forecast-summary {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.forecast-summary-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-bottom: 8px;
+}
+.forecast-summary-text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--fg);
+  opacity: 0.82;
+  margin: 0;
+  max-width: 900px;
+}
+
 /* === Chart === */
 .chart-wrap { position: relative; }
 .chart-svg {

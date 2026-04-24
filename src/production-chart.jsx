@@ -605,9 +605,39 @@ function ProductionChart({
   );
 }
 
+// ── LDP summary parser ────────────────────────────────────────────────────────
+const MONTH_EN_PT = {
+  january:'jan', february:'fev', march:'mar', april:'abr',
+  may:'mai', june:'jun', july:'jul', august:'ago',
+  september:'set', october:'out', november:'nov', december:'dez',
+};
+
+function parseLDPSummaries(text) {
+  const map = {};
+  const blocks = text.split(/(?=={3})/);
+  for (const block of blocks) {
+    const hdr = block.match(/={3}\s+Livestock[^:]+:\s+(\w+)\s+(\d{4})/i);
+    if (!hdr) continue;
+    const ptMonth = MONTH_EN_PT[hdr[1].toLowerCase()];
+    if (!ptMonth) continue;
+    const key = `${ptMonth}-${hdr[2]}`;
+    const lines = block.split('\n').slice(1).map(l => l.trim()).filter(l => l && !l.startsWith('PDF:'));
+    map[key] = lines.join(' ');
+  }
+  return map;
+}
+
 // ── ProductionCard ────────────────────────────────────────────────────────────
 function ProductionCard({ data, accent, events = [] }) {
   const { useState, useMemo, useEffect } = React;
+
+  const [summaries, setSummaries] = useState({});
+  useEffect(() => {
+    fetch('ldp_pdf_summaries.txt')
+      .then(r => r.ok ? r.text() : '')
+      .then(text => { if (text) setSummaries(parseLDPSummaries(text)); })
+      .catch(() => {});
+  }, []);
 
   // Extract early — hooks must all fire before any conditional return
   const production  = data?.production;
@@ -711,6 +741,14 @@ function ProductionCard({ data, accent, events = [] }) {
         events={events}
         showEvents={showEvents}
       />
+      {pair?.b && summaries[pair.b] && (
+        <div className="forecast-summary">
+          <div className="forecast-summary-label">
+            Motivo da revisão · {fmtSnap(pair.b)}
+          </div>
+          <p className="forecast-summary-text">{summaries[pair.b]}</p>
+        </div>
+      )}
     </section>
   );
 }
