@@ -459,11 +459,12 @@ function ProductionChart({
         <line x1={padL} x2={W-padR} y1={H-padB} y2={H-padB} className="axis-line"/>
         <line x1={padL} x2={padL}   y1={padT}    y2={H-padB} className="axis-line"/>
 
-        {/* Event markers — after axes; hover defers to crosshair, selection adds outer ring */}
+        {/* Event markers — after axes; hover defers to crosshair, selection adds ring + label */}
         {showEvents && events.flatMap((ev, i) => {
           const qi = Math.ceil(ev.month / 3) - 1;
           const isHovQ = hover === qi;
           const isSel  = selYear === ev.year;
+          const cx     = x(qi);
 
           const getV = () => {
             if (selectedHistYears.includes(ev.year)) return histSeries[ev.year]?.[qi] ?? null;
@@ -477,19 +478,42 @@ function ProductionChart({
           const v = getV();
           if (v == null) return [];
 
+          const cy       = y(v);
+          const labelY   = padT + 2;
+          const nearRight = cx > W - padR - 100;
+          const nearLeft  = cx < padL + 100;
+          const anchor   = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
+          const lx       = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
+
           if (isHovQ) {
-            // Hover: crosshair already renders a normal dot — show ring only if year is selected
+            // Hover: crosshair renders normal dot — show ring + label only if year selected
             if (!isSel) return [];
-            return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
-              r={8} fill="none" stroke={EVENT_COLOR} strokeWidth={2} opacity={0.9}/>];
+            return [
+              <line key={`ev-vl-${i}`} x1={cx} x2={cx} y1={labelY + 14} y2={cy - 6}
+                stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>,
+              <circle key={`ev-${i}`} cx={cx} cy={cy}
+                r={8} fill="none" stroke={EVENT_COLOR} strokeWidth={2} opacity={0.9}/>,
+              <text key={`ev-lbl-${i}`} x={lx} y={labelY} textAnchor={anchor} dominantBaseline="hanging"
+                style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600}}>
+                {ev.label}
+              </text>,
+            ];
           }
           if (isSel) {
-            // Year selected, not hovering: hollow ring
-            return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
-              r={6.5} fill="var(--bg)" stroke={EVENT_COLOR} strokeWidth={2} opacity={1}/>];
+            // Selected, not hovering: hollow ring + label + dashed line
+            return [
+              <line key={`ev-vl-${i}`} x1={cx} x2={cx} y1={labelY + 14} y2={cy - 8}
+                stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>,
+              <circle key={`ev-${i}`} cx={cx} cy={cy}
+                r={6.5} fill="var(--bg)" stroke={EVENT_COLOR} strokeWidth={2} opacity={1}/>,
+              <text key={`ev-lbl-${i}`} x={lx} y={labelY} textAnchor={anchor} dominantBaseline="hanging"
+                style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600}}>
+                {ev.label}
+              </text>,
+            ];
           }
           // Static: small filled dot
-          return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
+          return [<circle key={`ev-${i}`} cx={cx} cy={cy}
             r={3.5} fill={EVENT_COLOR} stroke="var(--bg)" strokeWidth={1.5} opacity={0.75}/>];
         })}
       </svg>
