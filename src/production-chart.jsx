@@ -474,7 +474,7 @@ function ProductionChart({
               els.push(
                 <circle key={`ev-dt-${yr}-${i}`} cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
-                  fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
+                  fill={isPinned ? 'none' : EVENT_COLOR}
                   stroke={EVENT_COLOR} strokeWidth={1.5}/>
               );
               if (isPinned) {
