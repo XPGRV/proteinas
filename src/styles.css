@@ -540,7 +540,6 @@ body {
   color: var(--fg);
   opacity: 0.82;
   margin: 0;
-  max-width: 900px;
 }
 
 /* === Chart === */
