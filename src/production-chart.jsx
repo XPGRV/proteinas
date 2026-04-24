@@ -351,12 +351,15 @@ function ProductionChart({
               {/* Invisible wide click target */}
               <path d={buildPath(vals)} fill="none" stroke="transparent" strokeWidth={12}
                 style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
-              {/* (iii) Data labels when year is selected */}
+              {/* Dots + labels when year is selected */}
               {isSel && vals.map((v, qi) => v != null ? (
-                <text key={qi} x={x(qi)} y={y(v) - 10} textAnchor="middle"
-                  style={{fontSize:11, fill:clr, fontWeight:600, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
-                  {fmtLabel(v)}
-                </text>
+                <g key={qi}>
+                  <circle cx={x(qi)} cy={y(v)} r={3.5} fill={clr} opacity={0.9}/>
+                  <text x={x(qi)} y={y(v) - 10} textAnchor="middle"
+                    style={{fontSize:11, fill:clr, fontWeight:600, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
+                    {fmtLabel(v)}
+                  </text>
+                </g>
               ) : null)}
             </g>
           );
@@ -393,21 +396,24 @@ function ProductionChart({
                 <path key={i} d={d} fill="none" stroke="transparent" strokeWidth={12}
                   style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
               ))}
-              {/* (iii) Data labels when year is selected */}
+              {/* Dots + labels when year is selected */}
               {isSel && (
                 <g>
-                  {/* B labels above each point */}
+                  {/* B dots + labels */}
                   {b && b.values.map((v, qi) => {
                     if (v == null) return null;
                     if (!showForecast && b.forecast[qi]) return null;
                     return (
-                      <text key={`b-${qi}`} x={x(qi)} y={y(v) - 10} textAnchor="middle"
-                        style={{fontSize:11, fill:clr, fontWeight:600, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
-                        {fmtLabel(v)}
-                      </text>
+                      <g key={`b-${qi}`}>
+                        <circle cx={x(qi)} cy={y(v)} r={3.5} fill={clr} opacity={0.9}/>
+                        <text x={x(qi)} y={y(v) - 10} textAnchor="middle"
+                          style={{fontSize:11, fill:clr, fontWeight:600, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
+                          {fmtLabel(v)}
+                        </text>
+                      </g>
                     );
                   })}
-                  {/* A labels — show delta vs B (revision amount) */}
+                  {/* A dots + delta labels */}
                   {a && a.values.map((v, qi) => {
                     if (v == null) return null;
                     if (!showForecast && a.forecast[qi]) return null;
@@ -416,13 +422,15 @@ function ProductionChart({
                     const txt   = delta != null
                       ? (delta >= 0 ? '+' : '') + Math.round(delta).toLocaleString('pt-BR')
                       : fmtLabel(v);
-                    // (iv) Anchor delta below the lower of A and B points to avoid overlapping the B label
                     const yLabelA = Math.max(y(v), vB != null ? y(vB) : y(v)) + 18;
                     return (
-                      <text key={`a-${qi}`} x={x(qi)} y={yLabelA} textAnchor="middle"
-                        style={{fontSize:10, fill:clr, opacity:0.55, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
-                        {txt}
-                      </text>
+                      <g key={`a-${qi}`}>
+                        <circle cx={x(qi)} cy={y(v)} r={2.5} fill={clr} opacity={0.45}/>
+                        <text x={x(qi)} y={yLabelA} textAnchor="middle"
+                          style={{fontSize:10, fill:clr, opacity:0.55, fontFamily:'var(--font-mono)', pointerEvents:'none'}}>
+                          {txt}
+                        </text>
+                      </g>
                     );
                   })}
                 </g>
