@@ -114,8 +114,8 @@ const EdgebeeefChart = ({
   // Events: position at mid-month doy
   const eventsInView = React.useMemo(() => {
     if (!showEvents) return [];
-    return (window.EVENTS || []).filter(e => selectedYears.includes(e.year) && (!pinnedYear || e.year === pinnedYear));
-  }, [showEvents, selectedYears, pinnedYear]);
+    return (events || []).filter(e => selectedYears.includes(e.year) && (!pinnedYear || e.year === pinnedYear));
+  }, [showEvents, selectedYears, pinnedYear, events]);
 
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
 
@@ -654,7 +654,7 @@ function BeefUSTab({ data, accent }) {
   const chartAccent = 'oklch(0.78 0.15 160)';
   return (
     <main className="main">
-      <EdgebeeefCard data={data} accent={chartAccent} events={window.EVENTS || []}/>
+      <EdgebeeefCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
       <section className="card card-full">
         <div className="card-head">
           <div>

@@ -86,4 +86,24 @@ function getValue(data, dataset, field, year, month) {
   return r ? r[field] : null;
 }
 
-Object.assign(window, { MONTHS_PT, EVENTS, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue });
+// ── Eventos mercado bovino EUA ────────────────────────────────────────────────
+const EVENTS_US = [
+  // Choques de demanda / acesso a mercados
+  { year: 2003, month: 12, label: 'BSE EUA — Japão e Coreia fecham importações', severity: 'high' },
+  { year: 2012, month: 3,  label: '"Pink slime" — choque de demanda doméstica',  severity: 'med'  },
+  { year: 2015, month: 12, label: 'Fim do COOL — reentrada Canada/México',        severity: 'med'  },
+
+  // Choques de oferta / capacidade
+  { year: 2019, month: 8,  label: 'Incêndio Tyson Holcomb — 5% cap. abate EUA',  severity: 'high' },
+  { year: 2020, month: 4,  label: 'COVID-19 — fechamento plantas + pico EdgeBeef', severity: 'high' },
+
+  // Ciclo pecuário
+  { year: 2014, month: 2,  label: 'Boi gordo em máxima histórica — herd shortage', severity: 'med' },
+  { year: 2021, month: 7,  label: 'Seca Grandes Planícies — liquidação do rebanho', severity: 'med' },
+  { year: 2023, month: 1,  label: 'Rebanho EUA: menor nível desde 1951',           severity: 'high' },
+
+  // Outros
+  { year: 2024, month: 3,  label: 'HPAI confirmada em bovinos de leite',           severity: 'med'  },
+];
+
+Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue });
