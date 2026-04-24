@@ -342,7 +342,7 @@ function ProductionChart({
           return (
             <g key={yr}>
               {chartStyle === 'area' && (
-                <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`} opacity={dimmed ? 0.15 : (isLast ? 0.9 : 0.6)}/>
+                <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`} opacity={dimmed ? 0.15 : (isLast ? 0.9 : 0.6)} pointerEvents="none"/>
               )}
               <path d={buildPath(vals)} fill="none" stroke={clr}
                 strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
