@@ -455,7 +455,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
   const [selectedYears, setSelectedYears] = React.useState(() => allYears.slice(-5));
   const [chartStyle, setChartStyle]       = React.useState('line');
   const [showStats, setShowStats]         = React.useState(false);
-  const [showEvents, setShowEvents]       = React.useState(false);
+  const [showEvents, setShowEvents]       = React.useState(true);
   const [pinnedYear, setPinnedYear]       = React.useState(null);
 
   React.useEffect(() => { setPinnedYear(null); }, [selectedYears.join(',')]);
@@ -501,7 +501,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
 };
 
 // ── Ciclo do Boi US ───────────────────────────────────────────────────────────
-const CicloBoiUS = ({ data, accent }) => {
+const CicloBoiUS = ({ data, accent, events = [] }) => {
   const W = 1000, H = 340;
   const padL = 56, padR = 64, padT = 20, padB = 40;
   const chartW = W - padL - padR;
@@ -578,6 +578,16 @@ const CicloBoiUS = ({ data, accent }) => {
 
   const hoverBoi = hover ? boiPoints.find(p => p.year === hover.year && p.month === hover.month) : null;
 
+  const EVENT_COLOR = 'oklch(0.85 0.18 80)';
+
+  // Evento mais próximo do hover (tolerância ±1 mês)
+  const nearEvent = hover
+    ? events.find(ev => {
+        const evT = ev.year + (ev.month - 1) / 12;
+        return Math.abs(hover.t - evT) < 0.09;
+      })
+    : null;
+
   return (
     <div className="chart-wrap">
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
@@ -598,6 +608,36 @@ const CicloBoiUS = ({ data, accent }) => {
             <text x={xs(yr)} y={H-padB+14} className="tick-label" textAnchor="middle">{yr}</text>
           </g>
         ))}
+
+        {/* Event markers — linhas verticais dashed com dot na base */}
+        {events.map((ev, i) => {
+          const evT = ev.year + (ev.month - 1) / 12;
+          if (evT < tMin || evT > tMax) return null;
+          const cx      = xs(evT);
+          const isNear  = nearEvent === ev;
+          const nearRight = cx > W - padR - 90;
+          const nearLeft  = cx < padL + 90;
+          const anchor  = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
+          const lx      = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
+          return (
+            <g key={i}>
+              <line x1={cx} x2={cx} y1={padT} y2={H-padB}
+                stroke={EVENT_COLOR}
+                strokeOpacity={isNear ? 0.5 : 0.18}
+                strokeWidth={1} strokeDasharray="3 3"/>
+              <circle cx={cx} cy={H-padB} r={isNear ? 5 : 3}
+                fill={isNear ? 'var(--bg)' : EVENT_COLOR}
+                stroke={EVENT_COLOR} strokeWidth={1.5}
+                strokeOpacity={isNear ? 1 : 0.7}/>
+              {isNear && (
+                <text x={lx} y={padT+2} textAnchor={anchor} dominantBaseline="hanging"
+                  style={{fontSize:9.5, fill:EVENT_COLOR, fontWeight:600, fontFamily:'var(--font-mono)'}}>
+                  {ev.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
 
         {/* %Fêmeas — fino, muted (igual rawPath do CicloDoBoi) */}
         <path d={femPath} fill="none" stroke={rawColor} strokeWidth="1" strokeOpacity="0.5" strokeLinejoin="round"/>
@@ -663,7 +703,7 @@ function BeefUSTab({ data, accent }) {
             <div className="card-sub">%Fêmeas no Abate + Boi/Bezerro MM12M</div>
           </div>
         </div>
-        <CicloBoiUS data={data} accent={chartAccent}/>
+        <CicloBoiUS data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
       </section>
       <window.ProductionCard data={data} accent={chartAccent}/>
     </main>
