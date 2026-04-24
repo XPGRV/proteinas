@@ -467,8 +467,7 @@ function ProductionChart({
         }
         if (!rows.length) return null;
         return (
-          {/* (ii) Flip card to the left for Q3/Q4 so it doesn't overflow */}
-          <div className="hover-card" style={
+          <div className="hover-card" style={/* flip left for Q3/Q4 */
             hover <= 1
               ? {left:  `calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}
               : {right: `calc(${((W - x(hover))/W*100).toFixed(1)}% + 14px)`}
