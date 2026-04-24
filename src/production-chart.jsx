@@ -620,7 +620,7 @@ function parseLDPSummaries(text) {
     if (!hdr) continue;
     const ptMonth = MONTH_EN_PT[hdr[1].toLowerCase()];
     if (!ptMonth) continue;
-    const key = `${ptMonth}-${hdr[2]}`;
+    const key = `${ptMonth}-${hdr[2].slice(-2)}`;
     const lines = block.split('\n').slice(1).map(l => l.trim()).filter(l => l && !l.startsWith('PDF:'));
     map[key] = lines.join(' ');
   }
