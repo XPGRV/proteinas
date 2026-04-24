@@ -619,8 +619,10 @@ function parseLDPSummaries(text) {
 
   const flush = () => {
     if (key) {
+      const pdfLine = buf.find(l => l.startsWith('PDF:'));
+      const pdf = pdfLine ? pdfLine.replace(/^PDF:\s*/, '').trim() : null;
       const body = buf.filter(l => l && !l.startsWith('PDF:')).join(' ').trim();
-      if (body) map[key] = body;
+      if (body) map[key] = { text: body, pdf };
     }
     buf = [];
   };
@@ -754,12 +756,17 @@ function ProductionCard({ data, accent, events = [] }) {
         events={events}
         showEvents={showEvents}
       />
-      {pair?.b && summaries[pair.b] && (
+      {showForecast && pair?.b && summaries[pair.b] && (
         <div className="forecast-summary">
           <div className="forecast-summary-label">
             Motivo da revisão · {fmtSnap(pair.b)}
+            {summaries[pair.b].pdf && (
+              <a href={summaries[pair.b].pdf} target="_blank" rel="noreferrer" className="forecast-summary-link">
+                Ver relatório ↗
+              </a>
+            )}
           </div>
-          <p className="forecast-summary-text">{summaries[pair.b]}</p>
+          <p className="forecast-summary-text">{summaries[pair.b].text}</p>
         </div>
       )}
     </section>

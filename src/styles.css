@@ -533,7 +533,21 @@ body {
   text-transform: uppercase;
   color: var(--fg-dim);
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+.forecast-summary-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.forecast-summary-link:hover { opacity: 1; }
 .forecast-summary-text {
   font-size: 13px;
   line-height: 1.65;
