@@ -109,7 +109,24 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
           </g>
         )}
 
-        {/* Event markers — na frente das linhas, dot no eixo + label abaixo */}
+        {/* Hover */}
+        {hover && (
+          <g>
+            <line x1={xs(hover.t)} x2={xs(hover.t)} y1={padT} y2={H - padB}
+              stroke="var(--fg)" strokeOpacity="0.15" strokeWidth="1"/>
+            <circle cx={xs(hover.t)} cy={ys(hover.v)} r={4}
+              fill="var(--bg)" stroke={rawColor} strokeWidth="1.5"/>
+            {mm12.find(p => p.year === hover.year && p.month === hover.month) && (() => {
+              const mm = mm12.find(p => p.year === hover.year && p.month === hover.month);
+              return <circle cx={xs(mm.t)} cy={ys(mm.mm)} r={4} fill="var(--bg)" stroke={accent} strokeWidth="2"/>;
+            })()}
+          </g>
+        )}
+
+        <line x1={padL} x2={W - padR} y1={H - padB} y2={H - padB} className="axis-line"/>
+        <line x1={padL} x2={padL} y1={padT} y2={H - padB} className="axis-line"/>
+
+        {/* Event markers — after axis lines so dots sit on top */}
         {events.map((ev, i) => {
           const evT = ev.year + (ev.month - 1) / 12;
           if (evT < tMin || evT > tMax) return null;
@@ -136,23 +153,6 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
             </g>
           );
         })}
-
-        {/* Hover */}
-        {hover && (
-          <g>
-            <line x1={xs(hover.t)} x2={xs(hover.t)} y1={padT} y2={H - padB}
-              stroke="var(--fg)" strokeOpacity="0.15" strokeWidth="1"/>
-            <circle cx={xs(hover.t)} cy={ys(hover.v)} r={4}
-              fill="var(--bg)" stroke={rawColor} strokeWidth="1.5"/>
-            {mm12.find(p => p.year === hover.year && p.month === hover.month) && (() => {
-              const mm = mm12.find(p => p.year === hover.year && p.month === hover.month);
-              return <circle cx={xs(mm.t)} cy={ys(mm.mm)} r={4} fill="var(--bg)" stroke={accent} strokeWidth="2"/>;
-            })()}
-          </g>
-        )}
-
-        <line x1={padL} x2={W - padR} y1={H - padB} y2={H - padB} className="axis-line"/>
-        <line x1={padL} x2={padL} y1={padT} y2={H - padB} className="axis-line"/>
       </svg>
 
       {hover && (

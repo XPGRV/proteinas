@@ -451,20 +451,31 @@ function ProductionChart({
           </g>
         )}
 
-        {/* Event dots — um por trimestre, quando há eventos em anos visíveis */}
-        {[0,1,2,3].map(qi => {
-          const qEvs = events.filter(ev => Math.ceil(ev.month/3)-1 === qi && allShownYears.includes(ev.year));
-          if (!qEvs.length) return null;
-          const isHov = hover === qi;
-          return (
-            <circle key={qi} cx={x(qi)} cy={H-padB} r={isHov ? 5 : 3}
-              fill={isHov ? 'var(--bg)' : EVENT_COLOR}
-              stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isHov ? 1 : 0.7}/>
-          );
-        })}
-
         <line x1={padL} x2={W-padR} y1={H-padB} y2={H-padB} className="axis-line"/>
         <line x1={padL} x2={padL}   y1={padT}    y2={H-padB} className="axis-line"/>
+
+        {/* Event dots — on the year's line at the matching quarter, after axes */}
+        {events.flatMap((ev, i) => {
+          const qi = Math.ceil(ev.month / 3) - 1;
+          const isHov = hover === qi;
+          const dots = [];
+          if (selectedHistYears.includes(ev.year)) {
+            const v = histSeries[ev.year]?.[qi];
+            if (v != null) dots.push(
+              <circle key={`ev-h-${i}`} cx={x(qi)} cy={y(v)} r={isHov ? 5 : 3.5}
+                fill={EVENT_COLOR} stroke="var(--bg)" strokeWidth={1.5} opacity={isHov ? 1 : 0.75}/>
+            );
+          }
+          if (compYears.includes(ev.year)) {
+            const vb  = indexedB[ev.year]?.values[qi];
+            const fcB = indexedB[ev.year]?.forecast[qi];
+            if (vb != null && (showForecast || !fcB)) dots.push(
+              <circle key={`ev-c-${i}`} cx={x(qi)} cy={y(vb)} r={isHov ? 5 : 3.5}
+                fill={EVENT_COLOR} stroke="var(--bg)" strokeWidth={1.5} opacity={isHov ? 1 : 0.75}/>
+            );
+          }
+          return dots;
+        })}
       </svg>
 
       {/* Hover card */}
