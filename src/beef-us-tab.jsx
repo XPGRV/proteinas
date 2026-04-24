@@ -516,7 +516,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
 };
 
 // ── Ciclo do Boi US ───────────────────────────────────────────────────────────
-const CicloBoiUS = ({ data, accent, events = [] }) => {
+const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
   const W = 1000, H = 340;
   const padL = 56, padR = 64, padT = 20, padB = 40;
   const chartW = W - padL - padR;
@@ -546,7 +546,6 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
   }, [data]);
 
   const [hover, setHover] = React.useState(null);
-  const [showEvents, setShowEvents] = React.useState(true);
 
   if (!femPoints.length) return null;
 
@@ -706,11 +705,6 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
           <span className="legend-line" style={{background:accent}}/>
           Boi/Bezerro MM12M (eixo direito)
         </span>
-        <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`}
-          style={{marginLeft:8}}
-          onClick={() => setShowEvents(s => !s)}>
-          EVENTOS
-        </button>
       </div>
     </div>
   );
@@ -719,6 +713,7 @@ const CicloBoiUS = ({ data, accent, events = [] }) => {
 // ── Tab ───────────────────────────────────────────────────────────────────────
 function BeefUSTab({ data, accent }) {
   const chartAccent = 'oklch(0.78 0.15 160)';
+  const [showEventsCiclo, setShowEventsCiclo] = React.useState(true);
   return (
     <main className="main">
       <EdgebeeefCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
@@ -729,8 +724,13 @@ function BeefUSTab({ data, accent }) {
             <h3 className="card-title">Ciclo do Boi</h3>
             <div className="card-sub">%Fêmeas no Abate + Boi/Bezerro MM12M</div>
           </div>
+          <div className="card-controls" style={{alignSelf:'center'}}>
+            <div className="ctrl-btn-group">
+              <button className={`ctrl-btn ${showEventsCiclo ? 'is-on' : ''}`} onClick={() => setShowEventsCiclo(v => !v)}>EVENTOS</button>
+            </div>
+          </div>
         </div>
-        <CicloBoiUS data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
+        <CicloBoiUS data={data} accent={chartAccent} events={window.EVENTS_US || []} showEvents={showEventsCiclo}/>
       </section>
       <window.ProductionCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
     </main>

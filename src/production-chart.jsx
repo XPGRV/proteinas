@@ -478,10 +478,10 @@ function ProductionChart({
           if (v == null) return [];
 
           if (isHovQ) {
-            // Hover quarter: inner dot handled by crosshair — just show outer ring for event
+            // Hover: crosshair already renders a normal dot — show ring only if year is selected
+            if (!isSel) return [];
             return [<circle key={`ev-${i}`} cx={x(qi)} cy={y(v)}
-              r={isSel ? 8 : 6.5} fill="none"
-              stroke={EVENT_COLOR} strokeWidth={isSel ? 2 : 1.5} opacity={0.85}/>];
+              r={8} fill="none" stroke={EVENT_COLOR} strokeWidth={2} opacity={0.9}/>];
           }
           if (isSel) {
             // Year selected, not hovering: hollow ring

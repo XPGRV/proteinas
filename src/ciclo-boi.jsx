@@ -1,6 +1,6 @@
 // Ciclo do Boi — série temporal contínua: %Fêmeas no abate + MM12
 
-const CicloDoBoi = ({ data, accent, events = [] }) => {
+const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
   const W = 1000, H = 340;
   const padL = 52, padR = 24, padT = 20, padB = 40;
   const chartW = W - padL - padR;
@@ -22,7 +22,6 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
   }, [points]);
 
   const [hover, setHover] = React.useState(null);
-  const [showEvents, setShowEvents] = React.useState(true);
 
   if (!points.length) return null;
 
@@ -195,11 +194,6 @@ const CicloDoBoi = ({ data, accent, events = [] }) => {
           <span className="legend-line" style={{background: accent}}/>
           MM12
         </span>
-        <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`}
-          style={{marginLeft:8}}
-          onClick={() => setShowEvents(s => !s)}>
-          EVENTOS
-        </button>
       </div>
     </div>
   );

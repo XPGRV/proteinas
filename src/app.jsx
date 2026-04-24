@@ -221,6 +221,7 @@ function PrecosTab({ data, accent }) {
 // ---------------- Abates Tab ----------------
 function AbatesTab({ data, accent }) {
   const [abatesSource, setAbatesSource] = useState('sidra');
+  const [showEventsCiclo, setShowEventsCiclo] = useState(true);
   const abatesDataset = abatesSource === 'sidra' ? 'abates' : 'beef';
   const abatesField   = abatesSource === 'sidra' ? 'total'  : 'abates_total';
   const abatesSub     = abatesSource === 'sidra' ? 'SIDRA · Cabeças abatidas' : 'SIF · Cabeças abatidas';
@@ -248,8 +249,13 @@ function AbatesTab({ data, accent }) {
             <h3 className="card-title">Ciclo do Boi</h3>
             <div className="card-sub">Série mensal + média móvel 12 meses (MM12)</div>
           </div>
+          <div className="card-controls" style={{alignSelf:'center'}}>
+            <div className="ctrl-btn-group">
+              <button className={`ctrl-btn ${showEventsCiclo ? 'is-on' : ''}`} onClick={() => setShowEventsCiclo(v => !v)}>EVENTOS</button>
+            </div>
+          </div>
         </div>
-        <window.CicloDoBoi data={data} accent={accent} events={window.EVENTS || []}/>
+        <window.CicloDoBoi data={data} accent={accent} events={window.EVENTS || []} showEvents={showEventsCiclo}/>
       </section>
 
       <PriceCard
