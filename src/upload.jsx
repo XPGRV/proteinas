@@ -253,9 +253,16 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const snapshots  = snapshotCols.map(s => s.label);
       const bySnapshot = {};
 
+      // Detecta em qual coluna (0-4) ficam os labels de trimestre
+      let qLabelCol = 1;
+      for (let ri = 2; ri < Math.min(10, raw.length); ri++) {
+        for (let c = 0; c <= 4; c++) {
+          if (parseQLabel(String(raw[ri]?.[c] || '').trim())) { qLabelCol = c; break; }
+        }
+      }
       for (let ri = 2; ri < raw.length; ri++) {
         const row    = raw[ri];
-        const qLabel = String(row[1] || '').trim();
+        const qLabel = String(row[qLabelCol] || '').trim();
         const qm     = parseQLabel(qLabel);
         if (!qm) continue;
         const quarter = qm.q;

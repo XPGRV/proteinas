@@ -473,6 +473,13 @@ const EdgebeeefCard = ({ data, accent, events }) => {
   const [showEvents, setShowEvents]       = React.useState(true);
   const [pinnedYear, setPinnedYear]       = React.useState(null);
 
+  // Auto-popula quando dados chegam após o mount (upload pós-carregamento inicial vazio)
+  React.useEffect(() => {
+    if (allYears.length > 0 && selectedYears.filter(y => allYears.includes(y)).length === 0) {
+      setSelectedYears(allYears.slice(-5));
+    }
+  }, [allYears.join(',')]);
+
   React.useEffect(() => { setPinnedYear(null); }, [selectedYears.join(',')]);
 
   return (
