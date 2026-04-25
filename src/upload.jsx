@@ -164,6 +164,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   if (parseUS && findSheet('BeefUS')) {
     // Mensal: col B=data (Date), col H=pct_femeas (decimal), col P=boi_bezerro_mm12
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
+    console.log('[BeefUS] linhas 0-6:', usRaw.slice(0,7).map((r,i) => `[${i}] ${JSON.stringify(r?.slice(0,18))}`).join('\n'));
     const beef_us = [];
     for (let i = 4; i < usRaw.length; i++) {
       const r = usRaw[i];
@@ -186,6 +187,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const PT_MO = { jan:1, fev:2, mar:3, abr:4, mai:5, jun:6, jul:7, ago:8, set:9, out:10, nov:11, dez:12 };
 
     // Row 0: "Total Production          dez-25" — extract trailing "mmm-yy" token
+    console.log('[Production] linhas 0-4:', raw.slice(0,5).map((r,i) => `[${i}] ${JSON.stringify(r?.slice(0,12))}`).join('\n'));
     const hdrRow = raw[0] || [];
     const snapshotCols = [];
     for (let c = 2; c < hdrRow.length; c++) {
