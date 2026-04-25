@@ -140,6 +140,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       }
       return null;
     };
+    // Debug: mostra as primeiras linhas pra entender o layout
+    console.log('[BBG] primeiras linhas:', bbgRaw.slice(0, 7).map((r,i) => `[${i}] ${JSON.stringify(r?.slice(0,6))}`).join('\n'));
     const edgebeef_daily = [];
     for (let i = 4; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
