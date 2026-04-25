@@ -19,7 +19,7 @@ const TYPE_STACKS = {
 
 
 function App({ data: propData, initialData, initialMeta }) {
-  const TWEAK_DEFAULTS = { palette: 'neon', typography: 'modern', density: 'comfortable', theme: 'refined' };
+  const TWEAK_DEFAULTS = { palette: 'neon', typography: 'modern', density: 'comfortable', theme: 'aurora' };
 
   // ── Todos os hooks ANTES de qualquer return condicional ──────────────────────
   const [data, setData] = useState(propData || initialData);
