@@ -199,8 +199,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const boi_bezerro_mm12 = parseNum(r[bbCol]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
-    console.log(`[BeefUS] ok=${beef_us.length} | dateCol=${dateCol} pctCol=${pctCol} bbCol=${bbCol}`);
-    console.log('[BeefUS] amostra últimos 2:', JSON.stringify(beef_us.slice(-2)));
+    console.log('[BeefUS] headers rows 0-4:', usRaw.slice(0,5).map((r,i)=>`[${i}]${JSON.stringify(r?.slice(0,20))}`).join('\n'));
+    console.log(`[BeefUS] ok=${beef_us.length} | dateCol=${dateCol} pctCol=${pctCol} bbCol=${bbCol} | amostra:`, JSON.stringify(beef_us.slice(-2)));
     result.beef_us = beef_us;
   }
 
@@ -244,10 +244,17 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       // Quarter label: "1Q25", "Q1 25", "1T25", "T1 25", "1Q2025", etc.
       const parseQLabel = s => {
         let m;
-        if ((m = s.match(/^([1-4])[QT](\d{2})$/i)))   return { q: +m[1], y: 2000 + +m[2] };
+        if ((m = s.match(/^([1-4])[QT](\d{2})$/i)))    return { q: +m[1], y: 2000 + +m[2] };
         if ((m = s.match(/^[QT]([1-4])\s*(\d{2})$/i))) return { q: +m[1], y: 2000 + +m[2] };
-        if ((m = s.match(/^([1-4])[QT](\d{4})$/i)))   return { q: +m[1], y: +m[2] };
+        if ((m = s.match(/^([1-4])[QT](\d{4})$/i)))    return { q: +m[1], y: +m[2] };
         if ((m = s.match(/^[QT]([1-4])\s*(\d{4})$/i))) return { q: +m[1], y: +m[2] };
+        // "Jan-00", "Apr-25" → Q1-Q4 (mês inicial do trimestre)
+        if ((m = s.match(/^([a-z]{3})-(\d{2})$/i))) {
+          const Q = {jan:1,feb:1,mar:1,apr:2,may:2,jun:2,jul:3,aug:3,sep:3,oct:4,nov:4,dec:4,
+                     fev:1,abr:2,mai:2,ago:3,set:3,out:4,dez:4};
+          const q = Q[m[1].toLowerCase()];
+          if (q) return { q, y: 2000 + +m[2] };
+        }
         return null;
       };
 
