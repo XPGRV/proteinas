@@ -162,17 +162,33 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
 
   if (parseUS && findSheet('BeefUS')) {
-    // Mensal: col B=data (Date), col H=pct_femeas (decimal), col P=boi_bezerro_mm12
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
-    console.log('[BeefUS] linhas 0-6:', usRaw.slice(0,7).map((r,i) => `[${i}] ${JSON.stringify(r?.slice(0,18))}`).join('\n'));
+    // Encontra col da data (primeira col com Date em linhas 4-8) e cols por header keyword
+    let dateCol = 1;
+    let pctCol = 7, bbCol = 15;
+    for (let i = 1; i < 4; i++) {
+      for (let c = 0; c < (usRaw[i]?.length || 0); c++) {
+        const h = String(usRaw[i][c] || '').toLowerCase();
+        if (h.includes('femea') || h.includes('fêmea') || h.includes('cow') || h.includes('vaca')) pctCol = c;
+        if (h.includes('bezerro') || h.includes('calf') || h.includes('feeder') || h.includes('mm12')) bbCol = c;
+      }
+    }
+    for (let i = 4; i < Math.min(10, usRaw.length); i++) {
+      const r = usRaw[i];
+      if (!r) continue;
+      for (let c = 0; c < r.length; c++) {
+        if (r[c] instanceof Date) { dateCol = c; break; }
+      }
+      break;
+    }
     const beef_us = [];
     for (let i = 4; i < usRaw.length; i++) {
       const r = usRaw[i];
-      if (!r || !(r[1] instanceof Date)) continue;
-      const year  = r[1].getFullYear();
-      const month = r[1].getMonth() + 1;
-      const pct_femeas       = (() => { const v = parseNum(r[7]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
-      const boi_bezerro_mm12 = parseNum(r[15]);
+      if (!r || !(r[dateCol] instanceof Date)) continue;
+      const year  = r[dateCol].getFullYear();
+      const month = r[dateCol].getMonth() + 1;
+      const pct_femeas       = (() => { const v = parseNum(r[pctCol]); if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
+      const boi_bezerro_mm12 = parseNum(r[bbCol]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
     result.beef_us = beef_us;
@@ -187,7 +203,6 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const PT_MO = { jan:1, fev:2, mar:3, abr:4, mai:5, jun:6, jul:7, ago:8, set:9, out:10, nov:11, dez:12 };
 
     // Row 0: "Total Production          dez-25" — extract trailing "mmm-yy" token
-    console.log('[Production] linhas 0-4:', raw.slice(0,5).map((r,i) => `[${i}] ${JSON.stringify(r?.slice(0,12))}`).join('\n'));
     const hdrRow = raw[0] || [];
     const snapshotCols = [];
     for (let c = 2; c < hdrRow.length; c++) {
@@ -216,8 +231,15 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         return null;
       };
 
-      // Quarter label format: "1Q25" → quarter=1, year=2025
-      const QTR_RE = /^([1-4])Q(\d{2})$/;
+      // Quarter label: "1Q25", "Q1 25", "1T25", "T1 25", "1Q2025", etc.
+      const parseQLabel = s => {
+        let m;
+        if ((m = s.match(/^([1-4])[QT](\d{2})$/i)))   return { q: +m[1], y: 2000 + +m[2] };
+        if ((m = s.match(/^[QT]([1-4])\s*(\d{2})$/i))) return { q: +m[1], y: 2000 + +m[2] };
+        if ((m = s.match(/^([1-4])[QT](\d{4})$/i)))   return { q: +m[1], y: +m[2] };
+        if ((m = s.match(/^[QT]([1-4])\s*(\d{4})$/i))) return { q: +m[1], y: +m[2] };
+        return null;
+      };
 
       const snapshots  = snapshotCols.map(s => s.label);
       const bySnapshot = {};
@@ -225,10 +247,10 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       for (let ri = 2; ri < raw.length; ri++) {
         const row    = raw[ri];
         const qLabel = String(row[1] || '').trim();
-        const qm     = qLabel.match(QTR_RE);
+        const qm     = parseQLabel(qLabel);
         if (!qm) continue;
-        const quarter = parseInt(qm[1]);
-        const year    = 2000 + parseInt(qm[2]);
+        const quarter = qm.q;
+        const year    = qm.y;
 
         for (const snap of snapshotCols) {
           const v = parseNum(row[snap.col]);
