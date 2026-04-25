@@ -145,20 +145,36 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       }
       return null;
     };
-    // Debug: últimas 4 linhas pra ver se há valores reais
-    console.log('[BBG] últimas linhas:', bbgRaw.slice(-4).map((r,i) => JSON.stringify(r?.slice(0,7))).join('\n'));
+    // Células mescladas: ano (r[0]) e mês (r[2]) só aparecem na 1ª linha do grupo;
+    // r[3] pode ser data completa (Date/ISO) OU apenas o número do dia.
     const edgebeef_daily = [];
-    let dbgDateFail = 0, dbgValFail = 0;
+    let curYear = null, curMonth = null;
     for (let i = 3; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
       if (!r) continue;
-      const dt    = parseDate(r[3]);
-      if (!dt) { dbgDateFail++; continue; }
+      // Atualiza ano/mês quando aparecem (1ª linha do grupo de células mescladas)
+      if (r[0] != null && isFinite(Number(r[0]))) curYear  = Number(r[0]);
+      if (r[2] != null && isFinite(Number(r[2]))) curMonth = Number(r[2]);
+      // r[3]: data completa ou número do dia
+      let day = null;
+      const d3 = r[3];
+      if (d3 instanceof Date) {
+        curYear = d3.getFullYear(); curMonth = d3.getMonth()+1; day = d3.getDate();
+      } else if (typeof d3 === 'string') {
+        const d = new Date(d3);
+        if (!isNaN(d)) { curYear = d.getUTCFullYear(); curMonth = d.getUTCMonth()+1; day = d.getUTCDate(); }
+      } else if (typeof d3 === 'number') {
+        if (d3 > 40000) {
+          try { const p = XLSX.SSF.parse_date_code(d3); if (p) { curYear = p.y; curMonth = p.m; day = p.d; } } catch(_) {}
+        } else if (d3 >= 1 && d3 <= 31) {
+          day = d3; // número do dia simples
+        }
+      }
+      if (!curYear || !curMonth || !day) continue;
       const value = parseNum(r[4]);
-      if (value == null) { dbgValFail++; continue; }
-      edgebeef_daily.push({ year: dt.year, month: dt.month, day: dt.day, value });
+      if (value == null) continue;
+      edgebeef_daily.push({ year: curYear, month: curMonth, day, value });
     }
-    console.log(`[BBG] total linhas: ${bbgRaw.length-3} | dateFail: ${dbgDateFail} | valFail: ${dbgValFail} | ok: ${edgebeef_daily.length}`);
     result.edgebeef_daily = edgebeef_daily;
   }
 
