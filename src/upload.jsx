@@ -161,7 +161,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         curDate = new Date(curDate.getTime() + 86400000); // +1 dia
       } else continue;
       const year = curDate.getUTCFullYear(), month = curDate.getUTCMonth()+1, day = curDate.getUTCDate();
-      const value = parseNum(r[6]) != null ? parseNum(r[6]) : parseNum(r[4]);
+      const value = parseNum(r[4]); // coluna E
       if (value == null) continue;
       edgebeef_daily.push({ year, month, day, value });
     }
@@ -199,7 +199,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const boi_bezerro_mm12 = parseNum(r[bbCol]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
-    console.log(`[BeefUS] ok=${beef_us.length} | dateCol=${dateCol} pctCol=${pctCol} bbCol=${bbCol} | amostra:`, beef_us.slice(-2));
+    console.log(`[BeefUS] ok=${beef_us.length} | dateCol=${dateCol} pctCol=${pctCol} bbCol=${bbCol}`);
+    console.log('[BeefUS] amostra últimos 2:', JSON.stringify(beef_us.slice(-2)));
     result.beef_us = beef_us;
   }
 
@@ -285,8 +286,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       }
 
       const bySnapKeys = Object.keys(bySnapshot);
-      const sampleRow = raw.slice(2,6).map(r => r?.[1]).filter(Boolean);
-      console.log(`[Prod] snaps=${snapshots.join(',')} | bySnap keys=${bySnapKeys.length} | primeiros labels col1:`, sampleRow);
+      console.log(`[Prod] snaps=${snapshots.join(',')} | bySnap keys=${bySnapKeys.length} | qLabelCol=${qLabelCol}`);
+      console.log('[Prod] linhas 2-7 completas:', raw.slice(2,8).map((r,i) => `[${i+2}] ${JSON.stringify(r?.slice(0,8))}`).join('\n'));
       result.production = { snapshots, bySnapshot };
     }
   }
