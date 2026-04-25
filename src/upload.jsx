@@ -132,13 +132,21 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   if (parseUS && findSheet('BBG_Dados')) {
     // Edgebeef diário: col A=ano, col C=mês, col D=data completa (dia), col E=valor
     const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
+    // Date helper: aceita Date object ou serial numérico do Excel
+    const excelDay = v => {
+      if (v instanceof Date) return v.getDate();
+      if (typeof v === 'number' && v > 40000) {
+        try { const p = XLSX.SSF.parse_date_code(v); return p ? p.d : null; } catch(_) {}
+      }
+      return null;
+    };
     const edgebeef_daily = [];
     for (let i = 4; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
       if (!r || r[0] == null) continue;
       const year  = Number(r[0]);
       const month = Number(r[2]);
-      const day   = r[3] instanceof Date ? r[3].getDate() : null;
+      const day   = excelDay(r[3]);
       const value = parseNum(r[4]);
       if (!isFinite(year) || !isFinite(month) || !day || value == null) continue;
       edgebeef_daily.push({ year, month, day, value });
@@ -303,6 +311,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       if (parsed.abates)         parts.push(`${parsed.abates.length} Abates`);
       if (parsed.edgebeef_daily) parts.push(`${parsed.edgebeef_daily.length} Edgebeef diário`);
       if (parsed.beef_us)        parts.push(`${parsed.beef_us.length}L BeefUS`);
+      if (parsed.production)     parts.push(`${parsed.production.snapshots.length} snapshots Produção`);
       const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
       setStatus({ kind: 'ok', msg: `✓ ${parts.join(' · ')}${cloudBadge}` });
       setTimeout(() => setStatus(null), 5000);
