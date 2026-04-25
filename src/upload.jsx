@@ -145,15 +145,20 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       }
       return null;
     };
+    // Debug: últimas 4 linhas pra ver se há valores reais
+    console.log('[BBG] últimas linhas:', bbgRaw.slice(-4).map((r,i) => JSON.stringify(r?.slice(0,7))).join('\n'));
     const edgebeef_daily = [];
+    let dbgDateFail = 0, dbgValFail = 0;
     for (let i = 3; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
       if (!r) continue;
       const dt    = parseDate(r[3]);
+      if (!dt) { dbgDateFail++; continue; }
       const value = parseNum(r[4]);
-      if (!dt || value == null) continue;
+      if (value == null) { dbgValFail++; continue; }
       edgebeef_daily.push({ year: dt.year, month: dt.month, day: dt.day, value });
     }
+    console.log(`[BBG] total linhas: ${bbgRaw.length-3} | dateFail: ${dbgDateFail} | valFail: ${dbgValFail} | ok: ${edgebeef_daily.length}`);
     result.edgebeef_daily = edgebeef_daily;
   }
 
