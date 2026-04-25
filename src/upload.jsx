@@ -165,42 +165,22 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       if (value == null) continue;
       edgebeef_daily.push({ year, month, day, value });
     }
-    console.log(`[BBG] ok=${edgebeef_daily.length} | amostra:`, edgebeef_daily.slice(-3));
     result.edgebeef_daily = edgebeef_daily;
   }
 
   if (parseUS && findSheet('BeefUS')) {
+    // col B(1)=data, col H(7)=pct_femeas, col P(15)=boi_bezerro_mm12
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
-    // Encontra col da data (primeira col com Date em linhas 4-8) e cols por header keyword
-    let dateCol = 1;
-    let pctCol = 7, bbCol = 15;
-    for (let i = 1; i < 4; i++) {
-      for (let c = 0; c < (usRaw[i]?.length || 0); c++) {
-        const h = String(usRaw[i][c] || '').toLowerCase();
-        if (h.includes('femea') || h.includes('fêmea') || h.includes('cow') || h.includes('vaca')) pctCol = c;
-        if (h.includes('bezerro') || h.includes('calf') || h.includes('feeder') || h.includes('mm12')) bbCol = c;
-      }
-    }
-    for (let i = 4; i < Math.min(10, usRaw.length); i++) {
-      const r = usRaw[i];
-      if (!r) continue;
-      for (let c = 0; c < r.length; c++) {
-        if (r[c] instanceof Date) { dateCol = c; break; }
-      }
-      break;
-    }
     const beef_us = [];
     for (let i = 4; i < usRaw.length; i++) {
       const r = usRaw[i];
-      if (!r || !(r[dateCol] instanceof Date)) continue;
-      const year  = r[dateCol].getFullYear();
-      const month = r[dateCol].getMonth() + 1;
-      const pct_femeas       = (() => { const v = parseNum(r[pctCol]); if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
-      const boi_bezerro_mm12 = parseNum(r[bbCol]);
+      if (!r || !(r[1] instanceof Date)) continue;
+      const year  = r[1].getFullYear();
+      const month = r[1].getMonth() + 1;
+      const pct_femeas       = (() => { const v = parseNum(r[7]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
+      const boi_bezerro_mm12 = parseNum(r[15]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
-    console.log('[BeefUS] headers rows 0-4:', usRaw.slice(0,5).map((r,i)=>`[${i}]${JSON.stringify(r?.slice(0,20))}`).join('\n'));
-    console.log(`[BeefUS] ok=${beef_us.length} | dateCol=${dateCol} pctCol=${pctCol} bbCol=${bbCol} | amostra:`, JSON.stringify(beef_us.slice(-2)));
     result.beef_us = beef_us;
   }
 
@@ -292,9 +272,6 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         }
       }
 
-      const bySnapKeys = Object.keys(bySnapshot);
-      console.log(`[Prod] snaps=${snapshots.join(',')} | bySnap keys=${bySnapKeys.length} | qLabelCol=${qLabelCol}`);
-      console.log('[Prod] linhas 2-7 completas:', raw.slice(2,8).map((r,i) => `[${i+2}] ${JSON.stringify(r?.slice(0,8))}`).join('\n'));
       result.production = { snapshots, bySnapshot };
     }
   }
