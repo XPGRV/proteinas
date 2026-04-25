@@ -130,28 +130,29 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
 
   // ── BeefUS (abas: BBG_Dados, BeefUS) ────────────────────────────────────────
   if (parseUS && findSheet('BBG_Dados')) {
-    // Edgebeef diário: col A=ano, col C=mês, col D=data completa (dia), col E=valor
+    // Edgebeef diário: col D=data, col E=valor (Edge Beef Margin USD/cwt)
     const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
-    // Date helper: aceita Date object ou serial numérico do Excel
-    const excelDay = v => {
-      if (v instanceof Date) return v.getDate();
+    // Parse date de qualquer formato: Date object, ISO string, ou serial numérico
+    const parseDate = v => {
+      if (!v) return null;
+      if (v instanceof Date) return { year: v.getFullYear(), month: v.getMonth()+1, day: v.getDate() };
+      if (typeof v === 'string') {
+        const d = new Date(v);
+        if (!isNaN(d)) return { year: d.getUTCFullYear(), month: d.getUTCMonth()+1, day: d.getUTCDate() };
+      }
       if (typeof v === 'number' && v > 40000) {
-        try { const p = XLSX.SSF.parse_date_code(v); return p ? p.d : null; } catch(_) {}
+        try { const p = XLSX.SSF.parse_date_code(v); if (p) return { year: p.y, month: p.m, day: p.d }; } catch(_) {}
       }
       return null;
     };
-    // Debug: mostra as primeiras linhas pra entender o layout
-    console.log('[BBG] primeiras linhas:', bbgRaw.slice(0, 7).map((r,i) => `[${i}] ${JSON.stringify(r?.slice(0,6))}`).join('\n'));
     const edgebeef_daily = [];
-    for (let i = 4; i < bbgRaw.length; i++) {
+    for (let i = 3; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
-      if (!r || r[0] == null) continue;
-      const year  = Number(r[0]);
-      const month = Number(r[2]);
-      const day   = excelDay(r[3]);
+      if (!r) continue;
+      const dt    = parseDate(r[3]);
       const value = parseNum(r[4]);
-      if (!isFinite(year) || !isFinite(month) || !day || value == null) continue;
-      edgebeef_daily.push({ year, month, day, value });
+      if (!dt || value == null) continue;
+      edgebeef_daily.push({ year: dt.year, month: dt.month, day: dt.day, value });
     }
     result.edgebeef_daily = edgebeef_daily;
   }
