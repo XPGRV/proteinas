@@ -19,7 +19,7 @@ const TYPE_STACKS = {
 
 
 function App({ data: propData, initialData, initialMeta }) {
-  const TWEAK_DEFAULTS = { palette: 'neon', typography: 'modern', density: 'comfortable' };
+  const TWEAK_DEFAULTS = { palette: 'neon', typography: 'modern', density: 'comfortable', theme: 'refined' };
 
   // ── Todos os hooks ANTES de qualquer return condicional ──────────────────────
   const [data, setData] = useState(propData || initialData);
@@ -36,6 +36,21 @@ function App({ data: propData, initialData, initialMeta }) {
     window.addEventListener('dashboard-data-updated', onUpload);
     return () => window.removeEventListener('dashboard-data-updated', onUpload);
   }, []);
+
+  // Cross-tab navigation from the ticker (clicking ABATES on Preços tab → switch
+  // to Abates and let the ticker re-trigger the scroll once the card is mounted).
+  useEffect(() => {
+    const onGoto = (e) => {
+      const t = e.detail?.target || '';
+      const precosCards = ['card-cattle','card-carne-mi','card-carne-me','card-spread-mi','card-spread-me'];
+      const abatesCards = ['card-abates','card-femeas','card-ciclo'];
+      if (activeDataset !== 'beef_br') setActiveDataset('beef_br');
+      if (precosCards.includes(t)) setTab('precos');
+      else if (abatesCards.includes(t)) setTab('abates');
+    };
+    window.addEventListener('rx-goto-card', onGoto);
+    return () => window.removeEventListener('rx-goto-card', onGoto);
+  }, [activeDataset]);
 
   useEffect(() => {
     const onMsg = (e) => {
@@ -64,28 +79,26 @@ function App({ data: propData, initialData, initialMeta }) {
 
   useEffect(() => {
     document.documentElement.dataset.density = tweaks.density;
-    document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.dataset.theme = tweaks.theme || 'refined';
+    // Theme drives accent unless user picks a custom palette swatch.
+    const themeAccent = (window.THEMES && window.THEMES[tweaks.theme]?.accent) || accent;
+    const finalAccent = activeDataset === 'beef_us' ? 'oklch(0.72 0.18 240)' : themeAccent;
+    document.documentElement.style.setProperty('--accent', finalAccent);
     document.documentElement.style.setProperty('--font-sans', typeStack.sans);
     document.documentElement.style.setProperty('--font-mono', typeStack.mono);
-  }, [accent, typeStack, tweaks.density]);
+  }, [accent, typeStack, tweaks.density, tweaks.theme, activeDataset]);
 
   const onUpload = (d, m) => { setData(d); setMeta(m); window.__dashboardData = d; window.__dashboardMeta = m; };
 
   if (!data) {
     return (
-      <div className="app">
-        <header className="topbar">
-          <div className="brand">
-            <div className="brand-mark">
-              <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" fill="none">
-                <path d="M21.8508 21.1616H25.2486C26.5193 21.1616 27.4033 20.5815 27.4033 19.3936C27.4033 18.2058 26.5193 17.6257 25.2486 17.6257H21.8508V21.1616ZM21.8508 27.3218H26.3812C28.7845 27.3218 30.0276 26.0787 30.0276 23.6754V21.1616H29.9448C29.2541 23.2611 27.4586 23.8964 25.3315 23.8964H21.9613C21.8785 23.8964 21.8508 23.924 21.8508 24.0069V27.3218ZM15.4696 19.3936L18.9503 22.7638V16.0235L15.4696 19.3936ZM3.64641 27.3218H18.9503V26.5483C18.9503 25.1948 19.4199 24.4213 20.4972 24.0069V23.924H16.2155C15.9945 23.924 15.9116 23.8964 15.7459 23.7307L13.5083 21.4102L11.1878 23.7583C11.0773 23.8688 10.9945 23.924 10.7735 23.924H7.32044C7.12707 23.924 7.12707 23.8135 7.23757 23.703L11.6575 19.4213L7.1547 15.0566C7.0442 14.9461 7.07182 14.8356 7.26519 14.8356H10.7459C10.9392 14.8356 11.0221 14.8633 11.1326 15.0014L13.5635 17.4323L15.8564 15.0014C15.9669 14.8909 16.0497 14.8356 16.2155 14.8356H25.3039C27.4033 14.8356 29.2541 15.5262 29.9448 17.6257H30.0276V3.89641C30.0276 1.49309 28.7845 0.25 26.3812 0.25H3.64641C1.24309 0.25 0 1.49309 0 3.89641V23.703C0 26.0787 1.24309 27.3218 3.64641 27.3218Z" fill="currentColor"/>
-              </svg>
-            </div>
-            <div>
-              <div className="brand-title">Beef BR</div>
-              <div className="brand-sub">acompanhamento setorial</div>
-            </div>
+      <div className="app app-empty">
+        <header className="topbar topbar-slim">
+          <div className="topbar-title">
+            <h1>Pecuária</h1>
+            <div className="topbar-sub">acompanhamento setorial</div>
           </div>
+          <div className="topbar-spacer"/>
           <window.UploadWidget onLoad={onUpload} lastUpdate={null} currentSource={null}/>
         </header>
         <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
@@ -101,80 +114,111 @@ function App({ data: propData, initialData, initialMeta }) {
 
   return (
     <div className="app">
-      <TopBar tab={tab} setTab={setTab} meta={meta} onUpload={onUpload}
+      <Sidebar tab={tab} setTab={setTab}
         activeDataset={activeDataset} setActiveDataset={setActiveDataset}/>
-      {activeDataset === 'beef_us' ? (
-        <window.BeefUSTab data={data} accent={accent}/>
-      ) : tab === 'precos' ? (
-        <PrecosTab data={data} accent={accent}/>
-      ) : (
-        <AbatesTab data={data} accent={accent}/>
-      )}
+      <div className="app-content">
+        <TopBar meta={meta} onUpload={onUpload} activeDataset={activeDataset}/>
+        <TickerBar data={data} activeDataset={activeDataset}/>
+        {activeDataset === 'beef_us' ? (
+          <window.BeefUSTab data={data} accent={accent}/>
+        ) : tab === 'precos' ? (
+          <PrecosTab data={data} accent={accent}/>
+        ) : (
+          <AbatesTab data={data} accent={accent}/>
+        )}
+      </div>
       {editMode && <TweaksPanel tweaks={tweaks} updateTweak={updateTweak}/>}
     </div>
   );
 }
 
-function TopBar({ tab, setTab, meta, onUpload, activeDataset, setActiveDataset }) {
-  const [brandOpen, setBrandOpen] = useState(false);
-  const menuRef = useRef(null);
-  React.useEffect(() => {
-    const close = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setBrandOpen(false); };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
+// ---------------- Sidebar ----------------
+const SIcon = {
+  bar: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg>,
+  abates: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18l5-6 4 4 4-7 5 9"/><path d="M3 21h18"/></svg>,
+  flag: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4v17"/><path d="M4 4h13l-2 4 2 4H4"/></svg>,
+  globe: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>,
+  pig: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13a7 6 0 0114 0v3a3 3 0 01-3 3h-1l-1 2h-2l-1-2H8a3 3 0 01-3-3z"/><circle cx="9" cy="12" r="0.6" fill="currentColor"/><path d="M16 11l2-2"/></svg>,
+};
 
-  const brandLabel = activeDataset === 'beef_us' ? 'US' : 'BR';
-
+function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
+  const onPick = (ds, sub) => {
+    setActiveDataset(ds);
+    if (sub) setTab(sub);
+  };
+  const isBR = activeDataset === 'beef_br';
+  const isUS = activeDataset === 'beef_us';
   return (
-    <header className="topbar">
-      <div className="brand">
+    <aside className="sidebar">
+      <div className="sidebar-brand">
         <div className="brand-mark">
-          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="28" viewBox="0 0 30 28" fill="none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="20" viewBox="0 0 30 28" fill="none">
             <path d="M21.8508 21.1616H25.2486C26.5193 21.1616 27.4033 20.5815 27.4033 19.3936C27.4033 18.2058 26.5193 17.6257 25.2486 17.6257H21.8508V21.1616ZM21.8508 27.3218H26.3812C28.7845 27.3218 30.0276 26.0787 30.0276 23.6754V21.1616H29.9448C29.2541 23.2611 27.4586 23.8964 25.3315 23.8964H21.9613C21.8785 23.8964 21.8508 23.924 21.8508 24.0069V27.3218ZM15.4696 19.3936L18.9503 22.7638V16.0235L15.4696 19.3936ZM3.64641 27.3218H18.9503V26.5483C18.9503 25.1948 19.4199 24.4213 20.4972 24.0069V23.924H16.2155C15.9945 23.924 15.9116 23.8964 15.7459 23.7307L13.5083 21.4102L11.1878 23.7583C11.0773 23.8688 10.9945 23.924 10.7735 23.924H7.32044C7.12707 23.924 7.12707 23.8135 7.23757 23.703L11.6575 19.4213L7.1547 15.0566C7.0442 14.9461 7.07182 14.8356 7.26519 14.8356H10.7459C10.9392 14.8356 11.0221 14.8633 11.1326 15.0014L13.5635 17.4323L15.8564 15.0014C15.9669 14.8909 16.0497 14.8356 16.2155 14.8356H25.3039C27.4033 14.8356 29.2541 15.5262 29.9448 17.6257H30.0276V3.89641C30.0276 1.49309 28.7845 0.25 26.3812 0.25H3.64641C1.24309 0.25 0 1.49309 0 3.89641V23.703C0 26.0787 1.24309 27.3218 3.64641 27.3218Z" fill="currentColor"/>
           </svg>
         </div>
-        <div style={{position:'relative'}} ref={menuRef}>
-          <div className="brand-title brand-dropdown" onClick={() => setBrandOpen(o => !o)}>
-            Beef <span>{brandLabel}</span>
-            <svg className="brand-caret" viewBox="0 0 10 6" width="10" height="6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 1l4 4 4-4"/>
-            </svg>
-          </div>
-          <div className="brand-sub">acompanhamento setorial · abr/26</div>
-          {brandOpen && (
-            <div className="brand-menu" style={{display:'block'}}>
-              <div className={`brand-menu-item ${activeDataset==='beef_br'?'is-active':''}`}
-                onClick={() => { setActiveDataset('beef_br'); setBrandOpen(false); }}>
-                Beef BR
-              </div>
-              <div className={`brand-menu-item ${activeDataset==='beef_us'?'is-active':''}`}
-                onClick={() => { setActiveDataset('beef_us'); setBrandOpen(false); }}>
-                Beef US
-              </div>
-              <div className="brand-menu-item brand-menu-soon">Pork BR <span className="brand-menu-tag">em breve</span></div>
-            </div>
-          )}
+        <div className="sidebar-brand-text">
+          <div className="sidebar-brand-title">Pecuária</div>
+          <div className="sidebar-brand-sub">Dashboard · abr/26</div>
         </div>
       </div>
-      {activeDataset !== 'beef_us' && (
-        <nav className="tabs">
-          <button className={`tab ${tab==='precos'?'is-on':''}`} onClick={() => setTab('precos')}>
-            <span className="tab-dot"/>Preços & Spreads
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-label">Mercados</div>
+
+        <div className="sidebar-group">
+          <div className="sidebar-group-header">
+            <span className="sidebar-item-icon">{SIcon.flag}</span>
+            <span>Beef BR</span>
+          </div>
+          <button
+            className={`sidebar-item ${isBR && tab==='precos' ? 'is-on' : ''}`}
+            onClick={() => onPick('beef_br', 'precos')}>
+            <span className="sidebar-item-icon">{SIcon.bar}</span>
+            <span className="sidebar-item-label">Preços & Spreads</span>
           </button>
-          <button className={`tab ${tab==='abates'?'is-on':''}`} onClick={() => setTab('abates')}>
-            <span className="tab-dot"/>Abates
+          <button
+            className={`sidebar-item ${isBR && tab==='abates' ? 'is-on' : ''}`}
+            onClick={() => onPick('beef_br', 'abates')}>
+            <span className="sidebar-item-icon">{SIcon.abates}</span>
+            <span className="sidebar-item-label">Abates</span>
           </button>
-        </nav>
-      )}
-      {(() => {
-        // meta = { br: {source, updated}, us: {source, updated} }
-        // Mostra o log da planilha da aba actual; migra formato antigo (meta plano sem .br/.us)
-        const currentMeta = activeDataset === 'beef_us'
-          ? (meta?.us ?? null)
-          : (meta?.br ?? (meta?.updated ? meta : null)); // compat com meta plano legado
-        return <window.UploadWidget onLoad={onUpload} lastUpdate={currentMeta?.updated} currentSource={currentMeta?.source}/>;
-      })()}
+        </div>
+
+        <button
+          className={`sidebar-item ${isUS ? 'is-on' : ''}`}
+          onClick={() => onPick('beef_us')}
+          style={{marginTop:6}}>
+          <span className="sidebar-item-icon">{SIcon.globe}</span>
+          <span className="sidebar-item-label">Beef US</span>
+        </button>
+      </div>
+
+      <div className="sidebar-spacer"/>
+
+      <div className="sidebar-section">
+        <div className="sidebar-section-label">Em breve</div>
+        <button className="sidebar-item" disabled style={{opacity:0.5, cursor:'default'}}>
+          <span className="sidebar-item-icon">{SIcon.pig}</span>
+          <span className="sidebar-item-label">Pork BR</span>
+          <span className="sidebar-soon">soon</span>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function TopBar({ meta, onUpload, activeDataset }) {
+  const title = activeDataset === 'beef_us' ? 'Beef US' : 'Beef BR';
+  const currentMeta = activeDataset === 'beef_us'
+    ? (meta?.us ?? null)
+    : (meta?.br ?? (meta?.updated ? meta : null));
+  return (
+    <header className="topbar topbar-slim">
+      <div className="topbar-title">
+        <h1>{title}</h1>
+      </div>
+      <div className="topbar-spacer"/>
+      <window.UploadWidget onLoad={onUpload} lastUpdate={currentMeta?.updated} currentSource={currentMeta?.source}/>
     </header>
   );
 }
@@ -190,15 +234,15 @@ function PrecosTab({ data, accent }) {
   return (
     <main className="main">
       <div className="grid-precos">
-        <PriceCard title="Preço Carne · Mercado Interno" sub="Bloomberg · BAMTCACA Index"
+        <PriceCard cardId="card-carne-mi" title="Preço Carne · Mercado Interno" sub="Bloomberg · BAMTCACA Index"
           accent={accent} data={computedData} dataset="beef"
           field="beef_carcass_brl_kg" usdField="carcass_mi_usd"
           unit="R$/kg" usdUnit="US$/kg" hasUSD decimals={2}/>
-        <PriceCard title="Preço Carne · Mercado Externo" sub="Bloomberg · BACAINDX Index"
+        <PriceCard cardId="card-carne-me" title="Preço Carne · Mercado Externo" sub="Bloomberg · BACAINDX Index"
           accent={accent} data={data} dataset="beef"
           field="beef_me_brl_kg" usdField="beef_me_usd_kg"
           unit="R$/kg" usdUnit="US$/kg" hasUSD decimals={2}/>
-        <PriceCard title="Preço Boi" sub="Bloomberg · BAINPECU Index"
+        <PriceCard cardId="card-cattle" title="Preço Boi" sub="Bloomberg · BAINPECU Index"
           accent={accent} data={data} dataset="beef"
           field="cattle_brl_kg" usdField="cattle_usd_kg"
           unit="R$/kg" usdUnit="US$/kg" hasUSD decimals={2}/>
@@ -207,10 +251,10 @@ function PrecosTab({ data, accent }) {
       <div className="section-header"><h2>Spreads</h2></div>
 
       <div className="grid-spreads">
-        <PriceCard title="Spread MI" sub="Cálculo próprio · Preço Carne MI − Preço Boi"
+        <PriceCard cardId="card-spread-mi" title="Spread MI" sub="Cálculo próprio · Preço Carne MI − Preço Boi"
           accent={accent} data={data} dataset="beef"
           field="spread_mi" unit="R$/kg" decimals={2}/>
-        <PriceCard title="Spread ME" sub="Cálculo próprio · Preço Carne ME − Preço Boi"
+        <PriceCard cardId="card-spread-me" title="Spread ME" sub="Cálculo próprio · Preço Carne ME − Preço Boi"
           accent={accent} data={data} dataset="beef"
           field="spread_me" unit="R$/kg" decimals={2}/>
       </div>
@@ -230,6 +274,7 @@ function AbatesTab({ data, accent }) {
     <main className="main">
       <PriceCard
         key={`abates-${abatesSource}`}
+        cardId="card-abates"
         title="Abates Totais" sub={abatesSub}
         accent={accent} data={data}
         dataset={abatesDataset} field={abatesField}
@@ -242,7 +287,7 @@ function AbatesTab({ data, accent }) {
         }
       />
 
-      <section className="card card-full">
+      <section className="card card-full" data-card-id="card-ciclo">
         <div className="card-head">
           <div>
             <div className="card-eyebrow">SIF · Ciclo pecuário</div>
@@ -259,6 +304,7 @@ function AbatesTab({ data, accent }) {
       </section>
 
       <PriceCard
+        cardId="card-femeas"
         title="% Fêmeas no Abate" sub="SIF · sazonal mês-a-mês"
         accent={accent} data={data}
         dataset="beef" field="pct_femeas"
@@ -272,7 +318,7 @@ function AbatesTab({ data, accent }) {
 function PriceCard({
   title, sub, accent, data, dataset, field, usdField,
   unit, usdUnit, hasUSD, decimals, big,
-  fullWidth, height = 320, headerExtra,
+  fullWidth, height = 320, headerExtra, cardId,
 }) {
   const years = useMemo(() => window.availableYears(data, dataset, field), [data, dataset, field]);
   const latest = years[years.length - 1];
@@ -307,7 +353,7 @@ function PriceCard({
   const fmtPct = (v) => v == null ? '—' : (v >= 0 ? '+' : '') + (v*100).toFixed(1) + '%';
 
   return (
-    <section className={`card ${fullWidth ? 'card-full' : ''}`}>
+    <section className={`card ${fullWidth ? 'card-full' : ''}`} data-card-id={cardId}>
       <div className="card-head">
         <div>
           <div className="card-eyebrow">{sub}</div>
@@ -499,6 +545,10 @@ function TweaksPanel({ tweaks, updateTweak }) {
         <div className="tweaks-sub">Ajustes em tempo real</div>
       </div>
       <div className="tweak-block">
+        <div className="tweak-label">Tema</div>
+        {window.ThemePicker && <window.ThemePicker value={tweaks.theme || 'refined'} onChange={(v) => updateTweak('theme', v)}/>}
+      </div>
+      <div className="tweak-block">
         <div className="tweak-label">Paleta (accent)</div>
         <div className="swatch-row">
           {Object.entries(PALETTES).map(([k, p]) => (
@@ -530,6 +580,117 @@ function TweaksPanel({ tweaks, updateTweak }) {
         </div>
       </div>
     </aside>
+  );
+}
+
+// ---------------- TickerBar ----------------
+// Maps each ticker symbol → the data-card-id of the chart card it represents.
+// The card itself sets that data-card-id (see PriceCard / AbatesTab below).
+function TickerBar({ data, activeDataset }) {
+  const trackRef = useRef(null);
+
+  const items = useMemo(() => {
+    const ds = activeDataset === 'beef_us' ? 'beef_us' : 'beef';
+    if (!data[ds] || !data[ds].length) return [];
+    const rows = data[ds];
+    const fields = activeDataset === 'beef_us'
+      ? [
+          ['CATTLE',     'cattle_usd_kg',         'US$/kg', 'us-edgebeef'],
+          ['BEEF',       'beef_me_usd_kg',        'US$/kg', 'us-edgebeef'],
+          ['SPREAD',     'spread_me',             'US$/kg', 'us-edgebeef'],
+          ['ABATES',     'abates_total',          'cab',    'us-production'],
+          ['%FÊMEAS',    'pct_femeas',            '%',      'us-ciclo'],
+        ]
+      : [
+          ['BOI',        'cattle_brl_kg',         'R$/kg',  'card-cattle'],
+          ['CARNE·MI',   'beef_carcass_brl_kg',   'R$/kg',  'card-carne-mi'],
+          ['CARNE·ME',   'beef_me_brl_kg',        'R$/kg',  'card-carne-me'],
+          ['SPREAD·MI',  'spread_mi',             'R$/kg',  'card-spread-mi'],
+          ['SPREAD·ME',  'spread_me',             'R$/kg',  'card-spread-me'],
+          ['USD/BRL',    'usdbrl',                'R$',     null],
+          ['ABATES',     'abates_total',          'cab',    'card-abates'],
+          ['%FÊMEAS',    'pct_femeas',            '%',      'card-femeas'],
+        ];
+    return fields.map(([sym, f, u, target]) => {
+      let last = null, prev = null;
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if (rows[i][f] != null) {
+          if (last == null) last = rows[i];
+          else { prev = rows[i]; break; }
+        }
+      }
+      if (!last) return null;
+      const v = last[f], p = prev?.[f];
+      const delta = (p == null || p === 0) ? null : (v - p) / Math.abs(p);
+      return { sym, value: v, unit: u, delta, field: f, target };
+    }).filter(Boolean);
+  }, [data, activeDataset]);
+
+  // Scroll to the matching card on click. If user clicks ABATES tab and we're
+  // on Preços, switch tab first via a custom event the App listens to.
+  const onItemClick = (target) => {
+    if (!target) return;
+    const el = document.querySelector(`[data-card-id="${target}"]`);
+    if (el) {
+      // smooth, with a small offset for the topbar / ticker
+      const top = el.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+      // brief highlight pulse
+      el.classList.remove('rx-card-target');
+      void el.offsetWidth;
+      el.classList.add('rx-card-target');
+      setTimeout(() => el.classList.remove('rx-card-target'), 1600);
+    } else {
+      // not on this tab — broadcast intent
+      window.dispatchEvent(new CustomEvent('rx-goto-card', { detail: { target } }));
+      setTimeout(() => onItemClick(target), 80);
+    }
+  };
+
+  // Constant scroll speed: ~70 px/sec regardless of content length.
+  // Track width changes when the track contents (items × 2) change.
+  useEffect(() => {
+    if (!trackRef.current) return;
+    const measure = () => {
+      const w = trackRef.current.scrollWidth / 2; // half because we duplicated
+      const PX_PER_SEC = 70;
+      const dur = Math.max(20, Math.round(w / PX_PER_SEC));
+      trackRef.current.style.setProperty('--rx-dur', dur + 's');
+    };
+    // Wait a tick for layout
+    const t = setTimeout(measure, 30);
+    window.addEventListener('resize', measure);
+    return () => { clearTimeout(t); window.removeEventListener('resize', measure); };
+  }, [items, activeDataset]);
+
+  if (!items.length) return null;
+  // Duplicate for seamless scroll
+  const tape = [...items, ...items];
+  return (
+    <div className="rx-ticker">
+      <div className="rx-ticker-track" ref={trackRef}>
+        {tape.map((it, i) => {
+          const fmt = it.unit === 'cab' ? window.fmtCompact(it.value) :
+                      it.unit === '%' ? it.value.toFixed(1) :
+                      it.value.toFixed(2).replace('.', ',');
+          const dir = it.delta == null ? '' : it.delta >= 0 ? 'is-up' : 'is-down';
+          const arrow = it.delta == null ? '' : it.delta >= 0 ? '▲' : '▼';
+          const pct = it.delta == null ? '' : ((it.delta >= 0 ? '+' : '') + (it.delta * 100).toFixed(2) + '%');
+          return (
+            <span className="rx-ticker-item" key={i}
+                  onClick={() => onItemClick(it.target)}
+                  title={it.target ? 'Ir para o gráfico' : ''}>
+              <span className="rx-ticker-symbol">{it.sym}</span>
+              <span className="rx-ticker-value">{fmt}</span>
+              <span style={{color:'var(--fg-mute)', fontSize:10}}>{it.unit}</span>
+              {it.delta != null && (
+                <span className={`rx-ticker-delta ${dir}`}>{arrow} {pct}</span>
+              )}
+            </span>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

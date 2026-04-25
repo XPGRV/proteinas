@@ -53,7 +53,243 @@ body {
   padding: 0 var(--pad-main) 80px;
 }
 
+/* === Sidebar layout === */
+.app {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 0;
+  align-items: stretch;
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 700px at 90% 110%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 70%),
+    var(--bg);
+}
+.app.app-empty { display: block; padding: 0 var(--pad-main) 80px; max-width: 1440px; margin: 0 auto; }
+@media (max-width: 1100px) {
+  .app { grid-template-columns: 1fr; }
+}
+
+.app-content {
+  min-width: 0;
+  padding: 0 var(--pad-main) 80px;
+}
+
+/* Sidebar: continuous dark panel that bleeds full-height */
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: stretch;
+  height: 100vh;
+  padding: 24px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: oklch(from var(--bg) calc(l - 0.025) c h);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+@media (max-width: 1100px) {
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: 14px var(--pad-main);
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar .sidebar-brand { padding-bottom: 0; border-bottom: 0; flex: 1 1 auto; min-width: 200px; }
+  .sidebar .sidebar-section { flex: 0 0 auto; }
+  .sidebar .sidebar-section-label { display: none; }
+}
+
+/* Brand block at top of sidebar */
+.sidebar-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 4px 8px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-brand .brand-mark {
+  width: 38px; height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(140deg,
+    color-mix(in oklch, var(--accent) 75%, var(--bg)),
+    color-mix(in oklch, var(--accent) 35%, var(--bg)));
+  color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto;
+  box-shadow: 0 4px 14px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+.sidebar-brand-text { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-brand-title {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg);
+  line-height: 1;
+}
+.sidebar-brand-sub {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  line-height: 1;
+}
+
+/* Sections */
+.sidebar-section { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-section-label {
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--fg-mute);
+  padding: 8px 12px 6px;
+}
+
+/* Items */
+.sidebar-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.18s, color 0.18s;
+  position: relative;
+}
+.sidebar-item:hover {
+  background: color-mix(in oklch, var(--fg) 5%, transparent);
+  color: var(--fg);
+}
+.sidebar-item.is-on {
+  background: linear-gradient(90deg,
+    color-mix(in oklch, var(--accent) 22%, transparent),
+    color-mix(in oklch, var(--accent) 8%, transparent));
+  color: var(--fg);
+  font-weight: 500;
+}
+.sidebar-item.is-on::before {
+  content: '';
+  position: absolute;
+  left: -16px; top: 8px; bottom: 8px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--accent);
+}
+.sidebar-item-icon {
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 auto;
+  color: currentColor;
+  opacity: 0.85;
+}
+.sidebar-item.is-on .sidebar-item-icon { opacity: 1; color: var(--accent); }
+.sidebar-item-label { flex: 1; }
+.sidebar-item-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: color-mix(in oklch, var(--accent) 20%, transparent);
+  color: var(--accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.sidebar-soon {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-mute);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--fg) 6%, transparent);
+}
+
+.sidebar-spacer { flex: 1; }
+
+/* Sub-section nesting (Beef BR has Preços + Abates) */
+.sidebar-group {
+  display: flex; flex-direction: column; gap: 2px;
+  border-radius: 10px;
+  padding: 4px;
+  background: color-mix(in oklch, var(--fg) 3%, transparent);
+}
+.sidebar-group-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 8px 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--fg);
+  font-weight: 500;
+}
+.sidebar-group-header .sidebar-item-icon { color: var(--accent); opacity: 1; }
+.sidebar-group .sidebar-item {
+  font-size: 12px;
+  padding: 8px 10px 8px 36px;
+}
+.sidebar-group .sidebar-item.is-on::before { left: -20px; }
+
+/* Topbar slimming */
+.topbar.topbar-slim {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--gap);
+}
+.topbar-slim .topbar-title h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  color: var(--fg);
+}
+.topbar-slim .topbar-sub {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-mute);
+}
+
 /* === Topbar === */
+.topbar.topbar-slim {
+  grid-column: 1 / -1; /* override grid placement when used inside .app-content */
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--gap);
+}
+.topbar-slim .topbar-title h1 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  color: var(--fg);
+}
+.topbar-slim .topbar-sub {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-mute);
+}
+.app.app-empty { display: block; }
+.app-content { min-width: 0; }
+
 .topbar {
   display: flex;
   align-items: center;

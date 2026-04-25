@@ -483,7 +483,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
   React.useEffect(() => { setPinnedYear(null); }, [selectedYears.join(',')]);
 
   return (
-    <section className="card card-full">
+    <section className="card card-full" data-card-id="us-edgebeef">
       <div className="card-head">
         <div>
           <div className="card-eyebrow">Bloomberg · EDGEBEEF Index · Margem dos Frigoríficos</div>
@@ -724,7 +724,7 @@ function BeefUSTab({ data, accent }) {
   return (
     <main className="main">
       <EdgebeeefCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
-      <section className="card card-full">
+      <section className="card card-full" data-card-id="us-ciclo">
         <div className="card-head">
           <div>
             <div className="card-eyebrow">USDA · Ciclo pecuário</div>

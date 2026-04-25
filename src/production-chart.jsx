@@ -724,7 +724,7 @@ function ProductionCard({ data, accent, events = [] }) {
   const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo]||mo)+'-'+yr; };
 
   return (
-    <section className="card card-full">
+    <section className="card card-full" data-card-id="us-production">
       <div className="card-head">
         <div>
           <div className="card-eyebrow">USDA · Produção bovina trimestral · 000 lb</div>
