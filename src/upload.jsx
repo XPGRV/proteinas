@@ -145,9 +145,13 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       }
       return null;
     };
-    // Debug: amostra de linhas distribuídas pelo arquivo
-    const sampleIdxs = [3,4,5,50,100,500,1000,5000,bbgRaw.length-5,bbgRaw.length-1];
-    console.log('[BBG] amostra:', sampleIdxs.map(i => `[${i}] ${JSON.stringify(bbgRaw[i]?.slice(0,7))}`).join('\n'));
+    // Debug: linhas 3-15 para ver onde a data para + tipos reais
+    console.log('[BBG] linhas 3-15:');
+    for (let di = 3; di <= 15; di++) {
+      const dr = bbgRaw[di];
+      if (!dr) { console.log(`  [${di}] undefined`); continue; }
+      console.log(`  [${di}] r3type=${typeof dr[3]}/${dr[3] instanceof Date ? 'Date' : 'nao-Date'} r3=${JSON.stringify(dr[3])} r4=${JSON.stringify(dr[4])} r5=${JSON.stringify(dr[5])} r6=${JSON.stringify(dr[6])}`);
+    }
     // Células mescladas: ano (r[0]) e mês (r[2]) só aparecem na 1ª linha do grupo;
     // r[3] pode ser data completa (Date/ISO) OU apenas o número do dia.
     const edgebeef_daily = [];
