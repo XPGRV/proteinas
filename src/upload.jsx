@@ -34,11 +34,13 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
   const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true, cellStyles: true });
   const sheets = wb.SheetNames;
+  // Case-insensitive sheet lookup
+  const findSheet = name => sheets.find(s => s.toLowerCase() === name.toLowerCase()) || null;
   const result = {};
 
   // ── BeefBR (abas: BeefBR, SECEX, Abates) ────────────────────────────────────
-  if (parseBR && sheets.includes('BeefBR')) {
-    const beefRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefBR'], { header: 1, raw: false });
+  if (parseBR && findSheet('BeefBR')) {
+    const beefRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefBR')], { header: 1, raw: false });
     const beef = [];
     for (let i = 4; i < beefRaw.length; i++) {
       const r = beefRaw[i];
@@ -68,8 +70,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     result.beef = trimEmpty(beef);
   }
 
-  if (parseBR && sheets.includes('SECEX')) {
-    const secexRaw = XLSX.utils.sheet_to_json(wb.Sheets['SECEX'], { header: 1, raw: false });
+  if (parseBR && findSheet('SECEX')) {
+    const secexRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('SECEX')], { header: 1, raw: false });
     const secex = [];
     for (let i = 2; i < secexRaw.length; i++) {
       const r = secexRaw[i];
@@ -99,8 +101,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     result.secex = trimEmpty(secex);
   }
 
-  if (parseBR && sheets.includes('Abates')) {
-    const abatesRaw = XLSX.utils.sheet_to_json(wb.Sheets['Abates'], { header: 1, raw: false });
+  if (parseBR && findSheet('Abates')) {
+    const abatesRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('Abates')], { header: 1, raw: false });
     const abates = [];
     for (let i = 2; i < abatesRaw.length; i++) {
       const r = abatesRaw[i];
@@ -127,9 +129,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
 
   // ── BeefUS (abas: BBG_Dados, BeefUS) ────────────────────────────────────────
-  if (parseUS && sheets.includes('BBG_Dados')) {
+  if (parseUS && findSheet('BBG_Dados')) {
     // Edgebeef diário: col A=ano, col C=mês, col D=data completa (dia), col E=valor
-    const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets['BBG_Dados'], { header: 1, raw: true });
+    const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
     const edgebeef_daily = [];
     for (let i = 4; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
@@ -144,9 +146,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     result.edgebeef_daily = edgebeef_daily;
   }
 
-  if (parseUS && sheets.includes('BeefUS')) {
+  if (parseUS && findSheet('BeefUS')) {
     // Mensal: col B=data (Date), col H=pct_femeas (decimal), col P=boi_bezerro_mm12
-    const usRaw = XLSX.utils.sheet_to_json(wb.Sheets['BeefUS'], { header: 1, raw: true });
+    const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
     const beef_us = [];
     for (let i = 4; i < usRaw.length; i++) {
       const r = usRaw[i];
@@ -161,8 +163,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
 
   // ── Production (aba: Production) ─────────────────────────────────────────────
-  if (parseUS && sheets.includes('Production')) {
-    const ws   = wb.Sheets['Production'];
+  if (parseUS && findSheet('Production')) {
+    const ws   = wb.Sheets[findSheet('Production')];
     const raw  = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: null });
 
     // Portuguese months (lowercase) → number
@@ -231,7 +233,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     }
   }
 
-  if (Object.keys(result).length === 0) throw new Error('Nenhuma aba reconhecida (BeefBR, SECEX, Abates, BBG_Dados, BeefUS, Production)');
+  if (Object.keys(result).length === 0) throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${sheets.join(', ')}`);
   return result;
 }
 
@@ -325,7 +327,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       <input
         ref={inputRef}
         type="file"
-        accept=".xlsx,.xls"
+        accept=".xlsx,.xls,.xlsm"
         style={{display:'none'}}
         onChange={e => handleFile(e.target.files[0])}
       />
