@@ -145,19 +145,27 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       }
       return null;
     };
-    // r[3]=data (Date obj), r[4]=EDGEBEEF USD (pode ser N/A), r[6]=valor calculado em BRL
-    // Usa r[6] como primário, r[4] como fallback
+    // r[3]=data (Date obj só nas primeiras linhas; resto null por fórmula sem cache)
+    // Rastreia data incrementando 1 dia por linha de dados
+    // r[6]=valor Edge Beef (primário), r[4]=fallback
     const edgebeef_daily = [];
+    let curDate = null;
     for (let i = 3; i < bbgRaw.length; i++) {
       const r = bbgRaw[i];
       if (!r) continue;
-      const d3 = r[3];
-      if (!(d3 instanceof Date)) continue;
-      const year = d3.getFullYear(), month = d3.getMonth()+1, day = d3.getDate();
-      const value = parseNum(r[6]) ?? parseNum(r[4]);
+      const hasData = r[4] != null || r[5] != null || r[6] != null;
+      if (!hasData) continue;
+      if (r[3] instanceof Date) {
+        curDate = new Date(r[3].getTime());
+      } else if (curDate) {
+        curDate = new Date(curDate.getTime() + 86400000); // +1 dia
+      } else continue;
+      const year = curDate.getUTCFullYear(), month = curDate.getUTCMonth()+1, day = curDate.getUTCDate();
+      const value = parseNum(r[6]) != null ? parseNum(r[6]) : parseNum(r[4]);
       if (value == null) continue;
       edgebeef_daily.push({ year, month, day, value });
     }
+    console.log(`[BBG] ok=${edgebeef_daily.length} | amostra:`, edgebeef_daily.slice(-3));
     result.edgebeef_daily = edgebeef_daily;
   }
 
@@ -191,6 +199,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const boi_bezerro_mm12 = parseNum(r[bbCol]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
+    console.log(`[BeefUS] ok=${beef_us.length} | dateCol=${dateCol} pctCol=${pctCol} bbCol=${bbCol} | amostra:`, beef_us.slice(-2));
     result.beef_us = beef_us;
   }
 
@@ -268,6 +277,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         }
       }
 
+      const bySnapKeys = Object.keys(bySnapshot);
+      const sampleRow = raw.slice(2,6).map(r => r?.[1]).filter(Boolean);
+      console.log(`[Prod] snaps=${snapshots.join(',')} | bySnap keys=${bySnapKeys.length} | primeiros labels col1:`, sampleRow);
       result.production = { snapshots, bySnapshot };
     }
   }
