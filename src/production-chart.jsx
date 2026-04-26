@@ -706,7 +706,6 @@ function ProductionCard({ data, accent, events = [] }) {
       const a = indexedA[yr], b = indexedB[yr];
       const hasA = a && a.values.some(v => v != null);
       const hasB = b && b.values.some(v => v != null);
-      if (!hasA || !hasB) return false;
       return (a && a.forecast.some(f => f)) || (b && b.forecast.some(f => f));
     }).sort((a, b) => a - b);
   }, [indexedA, indexedB]);

@@ -586,9 +586,9 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
   const vRightMin = Math.floor((Math.min(...boiVals) - boiPad) * 20) / 20;
   const vRightMax = Math.ceil((Math.max(...boiVals)  + boiPad) * 20) / 20;
 
-  const xs      = t => padL + ((t - tMin) / (tMax - tMin)) * chartW;
-  const ysLeft  = v => padT + (1 - (v - vLeftMin)  / (vLeftMax  - vLeftMin))  * chartH;
-  const ysRight = v => padT + (1 - (v - vRightMin) / (vRightMax - vRightMin)) * chartH;
+  const xs      = t => padL + ((t - tMin) / ((tMax - tMin) || 1)) * chartW;
+  const ysLeft  = v => padT + (1 - (v - vLeftMin)  / ((vLeftMax  - vLeftMin) || 1))  * chartH;
+  const ysRight = v => padT + (1 - (v - vRightMin) / ((vRightMax - vRightMin) || 1)) * chartH;
 
   const femPath = femPoints.map((p, i) => `${i===0?'M':'L'}${xs(p.t).toFixed(1)},${ysLeft(p.v).toFixed(1)}`).join(' ');
   const boiPath = boiPoints.map((p, i) => `${i===0?'M':'L'}${xs(p.t).toFixed(1)},${ysRight(p.v).toFixed(1)}`).join(' ');
