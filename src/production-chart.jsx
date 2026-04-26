@@ -725,14 +725,16 @@ function ProductionCard({ data, accent, events = [] }) {
   const [selectedHistYears, setSelectedHistYears] = useState(() => histYears.slice(-5));
   useEffect(() => { setSelectedHistYears(histYears.slice(-5)); }, [pairIdx, histYears.join(',')]);
 
+  // Inclui TODOS os anos históricos para suportar animação reversa de undraw
+  // (anos saindo precisam ter seus dados disponíveis durante a animação)
   const histSeries = useMemo(() => {
     const out = {};
-    for (const yr of selectedHistYears) {
+    for (const yr of histYears) {
       const d = indexedB[yr] || indexedA[yr];
       if (d) out[yr] = d.values;
     }
     return out;
-  }, [indexedA, indexedB, selectedHistYears]);
+  }, [indexedA, indexedB, histYears.join(',')]);
 
   // Early return after all hooks
   if (!snapshots.length || !production?.bySnapshot) return null;
