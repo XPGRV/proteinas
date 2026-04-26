@@ -9,18 +9,25 @@ function parseNum(v) {
 }
 function parseMonthTag(s) {
   if (!s) return null;
-  const m = String(s).match(/^(\w{3})-(\d{2})$/);
+  const m = String(s).trim().match(/^([a-zA-Z]{3})[-/]?(\d{2,4})$/);
   if (!m) return null;
-  const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-  const mo = months[m[1]];
-  const yy = parseInt(m[2]);
-  return { year: yy < 50 ? 2000 + yy : 1900 + yy, month: mo };
+  const ALL_MO = { 
+    jan:1, fev:2, feb:2, mar:3, abr:4, apr:4, mai:5, may:5, jun:6, 
+    jul:7, ago:8, aug:8, set:9, sep:9, out:10, oct:10, nov:11, dez:12, dec:12 
+  };
+  const mo = ALL_MO[m[1].toLowerCase()];
+  if (!mo) return null;
+  let yr = parseInt(m[2]);
+  if (yr < 100) yr += (yr < 50 ? 2000 : 1900);
+  return { year: yr, month: mo };
 }
 
 function parseDate(v) {
   if (!v) return null;
   if (v instanceof Date) return { year: v.getFullYear(), month: v.getMonth()+1, day: v.getDate() };
   if (typeof v === 'string') {
+    const tag = parseMonthTag(v);
+    if (tag) return { year: tag.year, month: tag.month, day: 1 };
     const d = new Date(v);
     if (!isNaN(d)) return { year: d.getUTCFullYear(), month: d.getUTCMonth()+1, day: d.getUTCDate() };
   }
@@ -238,11 +245,13 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         if ((m = s.match(/^([1-4])[QT](\d{4})$/i)))    return { q: +m[1], y: +m[2] };
         if ((m = s.match(/^[QT]([1-4])\s*(\d{4})$/i))) return { q: +m[1], y: +m[2] };
         // "Jan-00", "Apr-25" → Q1-Q4 (mês inicial do trimestre)
-        if ((m = s.match(/^([a-z]{3})-(\d{2})$/i))) {
+        if ((m = s.match(/^([a-z]{3})[-/]?(\d{2,4})$/i))) {
           const Q = {jan:1,feb:1,mar:1,apr:2,may:2,jun:2,jul:3,aug:3,sep:3,oct:4,nov:4,dec:4,
                      fev:1,abr:2,mai:2,ago:3,set:3,out:4,dez:4};
           const q = Q[m[1].toLowerCase()];
-          if (q) return { q, y: 2000 + +m[2] };
+          let yr = parseInt(m[2]);
+          if (yr < 100) yr += 2000;
+          if (q) return { q, y: yr };
         }
         return null;
       };
