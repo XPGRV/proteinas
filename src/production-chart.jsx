@@ -274,6 +274,8 @@ function ProductionChart({
   const fmtLabel = v => v == null ? '' : Math.round(v).toLocaleString('pt-BR');
 
   const sortedHist = [...selectedHistYears].sort((a,b) => a-b).filter(yr => histSeries[yr]);
+  // Anos saindo: rastreia para animação reversa de undraw
+  const { displayYears: displayHistYears, isLeaving } = window.useTrackedYears(sortedHist);
   const gradId = 'prod-grad';
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
   // Events that fall in the hovered quarter among visible years
@@ -288,12 +290,15 @@ function ProductionChart({
         onClick={onSvgClick} style={{cursor:'default'}}>
 
         <defs>
-          {sortedHist.map(yr => (
+          {displayHistYears.map(yr => (
             <linearGradient key={yr} id={`${gradId}-${yr}`} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%"   stopColor={yearColor(yr)} stopOpacity="0.20"/>
               <stop offset="100%" stopColor={yearColor(yr)} stopOpacity="0"/>
             </linearGradient>
           ))}
+          <clipPath id={`clip-${gradId}`}>
+            <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
+          </clipPath>
         </defs>
 
         {/* Y grid + ticks */}
@@ -333,26 +338,36 @@ function ProductionChart({
         )}
 
         {/* ── Pure-historical context years ── */}
-        {sortedHist.map(yr => {
+        <g clipPath={`url(#clip-${gradId})`}>
+        {displayHistYears.map(yr => {
           const vals    = histSeries[yr];
+          if (!vals) return null;
           const clr     = yearColor(yr);
           const isLast  = yr === Math.max(...sortedHist);
           const isSel   = selYear === yr;
           const dimmed  = selYear != null && !isSel;
+          const leaving = isLeaving(yr);
           return (
             <g key={yr}>
               {chartStyle === 'area' && (
-                <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`} opacity={dimmed ? 0.15 : (isLast ? 0.9 : 0.6)} pointerEvents="none"/>
+                <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`}
+                  opacity={dimmed ? 0.15 : (isLast ? 0.9 : 0.6)} pointerEvents="none"
+                  className={leaving ? 'rx-leaving' : ''}/>
               )}
-              <path d={buildPath(vals)} fill="none" stroke={clr}
+              <path
+                ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
+                d={buildPath(vals)} fill="none" stroke={clr}
                 strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
                 opacity={dimmed ? 0.15 : (isLast ? 1 : 0.8)}
-                strokeLinejoin="round" strokeLinecap="round"/>
-              {/* Invisible wide click target */}
-              <path d={buildPath(vals)} fill="none" stroke="transparent" strokeWidth={12}
-                style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
+                strokeLinejoin="round" strokeLinecap="round"
+                className={leaving ? 'rx-leaving' : ''}/>
+              {/* Invisible wide click target — só quando o ano está ativo */}
+              {!leaving && (
+                <path d={buildPath(vals)} fill="none" stroke="transparent" strokeWidth={12}
+                  style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
+              )}
               {/* Dots + labels when year is selected */}
-              {isSel && vals.map((v, qi) => v != null ? (
+              {isSel && !leaving && vals.map((v, qi) => v != null ? (
                 <g key={qi}>
                   <circle cx={x(qi)} cy={y(v)} r={3.5} fill={clr} opacity={0.9}/>
                   <text x={x(qi)} y={y(v) - 10} textAnchor="middle"
@@ -364,6 +379,7 @@ function ProductionChart({
             </g>
           );
         })}
+        </g>
 
         {/* ── Comparison years (A = older muted, B = newer full) ── */}
         {compYears.map(yr => {
