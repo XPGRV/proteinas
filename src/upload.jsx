@@ -24,7 +24,7 @@ function parseDate(v) {
     const d = new Date(v);
     if (!isNaN(d)) return { year: d.getUTCFullYear(), month: d.getUTCMonth()+1, day: d.getUTCDate() };
   }
-  if (typeof v === 'number' && v > 40000) {
+  if (typeof v === 'number' && v > 20000) {
     if (window.XLSX && window.XLSX.SSF) {
       try { const p = XLSX.SSF.parse_date_code(v); if (p) return { year: p.y, month: p.m, day: p.d }; } catch(_) {}
     }
@@ -206,10 +206,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     for (let c = 2; c < hdrRow.length; c++) {
       const h = String(hdrRow[c] || '').trim();
       const token = h.split(/\s+/).pop() || '';
-      const m = token.match(/^([a-z]{3})-(\d{2})$/i);
+      const m = token.match(/^([a-z]{3})-(\d{2,4})$/i);
       if (m) {
         const mo = ALL_MO[m[1].toLowerCase()];
-        const yr = 2000 + parseInt(m[2]);
+        let yr = parseInt(m[2]);
+        if (yr < 100) yr += 2000;
         if (mo && yr) snapshotCols.push({ col: c, label: token.toLowerCase(), year: yr, month: mo });
       }
     }
