@@ -735,7 +735,16 @@ function ProductionCard({ data, accent, events = [] }) {
   }, [indexedA, indexedB, histYears.join(',')]);
 
   // Early return after all hooks
-  if (!snapshots.length || !production?.bySnapshot) return null;
+  if (!snapshots.length || !production?.bySnapshot) {
+    return (
+      <div style={{ color: 'oklch(0.72 0.18 25)', padding: '20px', fontFamily: 'monospace', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
+        <strong>DEBUG - Previsões Vazias:</strong><br/>
+        Snapshots lidos: {snapshots ? snapshots.length : 0} {snapshots ? JSON.stringify(snapshots) : ''}<br/>
+        bySnapshot existe: {production?.bySnapshot ? 'Sim' : 'Não'}<br/><br/>
+        Se as snapshots estiverem vazias, os cabeçalhos de trimestre da aba Production (como "Jan-25") não foram lidos corretamente.
+      </div>
+    );
+  }
 
   const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo]||mo)+'-'+yr; };
 

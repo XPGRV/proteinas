@@ -571,7 +571,17 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
 
   const [hover, setHover] = React.useState(null);
 
-  if (!femPoints.length) return null;
+  if (!femPoints.length) {
+    return (
+      <div style={{ color: 'oklch(0.72 0.18 25)', padding: '20px', fontFamily: 'monospace', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
+        <strong>DEBUG - Ciclo do Boi Vazio:</strong><br/>
+        Total linhas em data.beef_us: {data.beef_us ? data.beef_us.length : 'undefined'}<br/>
+        Amostra da 1ª linha de beef_us: {data.beef_us && data.beef_us.length ? JSON.stringify(data.beef_us[0]) : 'Nenhuma'}<br/><br/>
+        Se o total de linhas for 0, a planilha BeefUS não foi lida corretamente na hora do upload.<br/>
+        Se houver linhas mas pct_femeas for null, a coluna pode ter mudado.
+      </div>
+    );
+  }
 
   const tMin = femPoints[0].t;
   const tMax = femPoints[femPoints.length - 1].t;

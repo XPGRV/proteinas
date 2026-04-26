@@ -182,7 +182,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     // col B(1)=data, col H(7)=pct_femeas, col P(15)=boi_bezerro_mm12
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
     const beef_us = [];
-    for (let i = 4; i < usRaw.length; i++) {
+    for (let i = 1; i < usRaw.length; i++) {
       const r = usRaw[i];
       if (!r) continue;
       const pd = parseDate(r[1]);
