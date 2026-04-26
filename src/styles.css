@@ -125,26 +125,26 @@ body {
   flex: 0 0 auto;
   box-shadow: 0 4px 14px color-mix(in oklch, var(--accent) 30%, transparent);
 }
-/* Box colorida ao redor do logo XP Asset Management */
+/* Box colorida ao redor do logo XP Asset Management — proporção 1582:500 */
 .sidebar-brand-logobox {
   width: 100%;
-  border-radius: 12px;
-  padding: 14px 16px;
+  aspect-ratio: 1582 / 500;
+  border-radius: 10px;
+  padding: 10px 14px;
   background: linear-gradient(140deg,
     color-mix(in oklch, var(--accent) 78%, var(--bg)),
     color-mix(in oklch, var(--accent) 38%, var(--bg)));
   box-shadow:
     0 1px 0 oklch(1 0 0 / 0.1) inset,
     0 6px 20px color-mix(in oklch, var(--accent) 28%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
 }
 .sidebar-brand-logo {
   width: 100%;
-  max-width: 160px;
-  height: auto;
+  height: 100%;
   display: block;
+  /* SVG tem whitespace embutido — crop pra mostrar só o logo */
+  object-fit: cover;
   /* PNG embutido — força branco para contrastar com a box accent */
   filter: brightness(0) invert(1);
 }
