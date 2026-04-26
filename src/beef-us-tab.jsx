@@ -203,7 +203,9 @@ const EdgebeeefChart = ({
           const leaving = isLeaving(yr);
           return (
             <g key={yr}>
-              <path d={buildPath(pts)} fill="none" stroke={stroke}
+              <path
+                ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
+                d={buildPath(pts)} fill="none" stroke={stroke}
                 strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
                 opacity={seriesOpacity(yr)}
                 className={leaving ? 'rx-leaving' : ''}/>

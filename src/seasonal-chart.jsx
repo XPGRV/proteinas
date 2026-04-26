@@ -239,6 +239,7 @@ const SeasonalChart = ({
                       className={leaving ? 'rx-leaving' : ''}/>
                   )}
                   <path
+                    ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
                     d={buildPath(values)}
                     stroke={stroke}
                     strokeWidth={seriesWidth(yr)}
