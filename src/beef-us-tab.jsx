@@ -240,9 +240,9 @@ const EdgebeeefChart = ({
           const labelY = padT + 2;
           return (
             <g key={i}>
-              {isPinned && <line x1={cx} y1={labelY+12} x2={cx} y2={cy-6} stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>}
               <circle cx={cx} cy={cy} r={isPinned ? 5 : 3}
                 fill={isPinned ? 'var(--bg)' : EVENT_COLOR} stroke={EVENT_COLOR} strokeWidth={1.5}/>
+              {isPinned && <line x1={cx} y1={labelY+12} x2={cx} y2={cy-6} stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>}
               {isPinned && (
                 <text x={lx} y={labelY} textAnchor={anchor} dominantBaseline="hanging"
                   style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600}}>

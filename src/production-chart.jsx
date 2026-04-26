@@ -481,18 +481,18 @@ function ProductionChart({
               const lx       = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
 
               const els = [];
-              if (isPinned) {
-                els.push(
-                  <line key={`ev-ln-${yr}-${i}`} x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
-                    stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
-                );
-              }
               els.push(
                 <circle key={`ev-dt-${yr}-${i}`} cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
                   fill={isPinned ? 'none' : EVENT_COLOR}
                   stroke={EVENT_COLOR} strokeWidth={1.5}/>
               );
+              if (isPinned) {
+                els.push(
+                  <line key={`ev-ln-${yr}-${i}`} x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
+                    stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
+                );
+              }
               if (isPinned) {
                 els.push(
                   <text key={`ev-lb-${yr}-${i}`} x={lx} y={labelY}
