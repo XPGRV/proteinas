@@ -109,7 +109,7 @@ body {
 
 /* Brand block at top of sidebar */
 .sidebar-brand {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; flex-direction: column; gap: 14px;
   padding: 4px 8px 22px;
   border-bottom: 1px solid var(--border);
 }
@@ -125,7 +125,16 @@ body {
   flex: 0 0 auto;
   box-shadow: 0 4px 14px color-mix(in oklch, var(--accent) 30%, transparent);
 }
-.sidebar-brand-text { display: flex; flex-direction: column; gap: 2px; }
+/* Wide XP Asset Management logo */
+.sidebar-brand-logo {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* SVG é preto — inverte para branco no tema escuro */
+  filter: invert(1) brightness(1.05);
+  opacity: 0.95;
+}
+.sidebar-brand-text { display: flex; flex-direction: column; gap: 3px; }
 .sidebar-brand-title {
   font-family: var(--font-display);
   font-size: 15px; font-weight: 600;
