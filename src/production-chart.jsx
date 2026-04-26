@@ -135,6 +135,10 @@ function ProductionControls({
           </div>
         </div>
       </div>
+      {/* DEBUG TEMPORARIO */}
+      <div style={{fontSize: 10, color: 'red', marginTop: 8}}>
+        DEBUG: histYears={histYears.length} ({histYears.join(',')}) | compYears={histYears.slice(-3).join(',')} 
+      </div>
     </div>
   );
 }

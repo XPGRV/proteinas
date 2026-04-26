@@ -572,13 +572,13 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
   const [hover, setHover] = React.useState(null);
 
   if (!femPoints.length) {
+    const row2024 = data.beef_us?.find(r => r.year === 2024) || data.beef_us?.[data.beef_us?.length - 1];
     return (
       <div style={{ color: 'oklch(0.72 0.18 25)', padding: '20px', fontFamily: 'monospace', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
         <strong>DEBUG - Ciclo do Boi Vazio:</strong><br/>
         Total linhas em data.beef_us: {data.beef_us ? data.beef_us.length : 'undefined'}<br/>
-        Amostra da 1ª linha de beef_us: {data.beef_us && data.beef_us.length ? JSON.stringify(data.beef_us[0]) : 'Nenhuma'}<br/><br/>
-        Se o total de linhas for 0, a planilha BeefUS não foi lida corretamente na hora do upload.<br/>
-        Se houver linhas mas pct_femeas for null, a coluna pode ter mudado.
+        Amostra de uma linha recente (ex: 2024): {row2024 ? JSON.stringify(row2024) : 'Nenhuma'}<br/><br/>
+        Se pct_femeas e boi_bezerro estiverem null na linha recente, significa que o leitor JS não conseguiu extrair o número dessas colunas.
       </div>
     );
   }

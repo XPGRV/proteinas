@@ -202,7 +202,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const month = pd.month;
       const pct_femeas       = (() => { const v = parseNum(r[femCol]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
       const boi_bezerro_mm12 = parseNum(r[boiCol]);
-      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
+      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12, raw: r.slice(0, 20) });
     }
     result.beef_us = beef_us;
   }
