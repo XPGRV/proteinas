@@ -68,6 +68,7 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
   }
   const rawColor = `oklch(0.60 0.07 ${accentHue(accent) + 200})`;
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
+  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
   const nearEvent = hover && showEvents
     ? events.find(ev => { const evT = ev.year + (ev.month - 1) / 12; return Math.abs(hover.t - evT) < 0.09; })
     : null;
@@ -127,7 +128,7 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
         <line x1={padL} x2={padL} y1={padT} y2={H - padB} className="axis-line"/>
 
         {/* Event markers — after axis lines so dots sit on top */}
-        {showEvents && events.map((ev, i) => {
+        {showEventsRender && events.map((ev, i) => {
           const evT = ev.year + (ev.month - 1) / 12;
           if (evT < tMin || evT > tMax) return null;
           const cx = xs(evT);
@@ -137,7 +138,7 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
           const anchor = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
           const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
           return (
-            <g key={i}>
+            <g key={i} className={eventsLeaving ? 'rx-events-leaving' : ''}>
               <circle cx={cx} cy={H-padB} r={isNear ? 5 : 3}
                 fill={isNear ? 'var(--bg)' : EVENT_COLOR}
                 stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isNear ? 1 : 0.7}/>

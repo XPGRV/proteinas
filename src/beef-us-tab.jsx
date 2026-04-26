@@ -113,10 +113,11 @@ const EdgebeeefChart = ({
   const statsMeanPath = statsDoys.map((d,i) => `${i===0?'M':'L'}${x(d).toFixed(1)},${y(stats[d].mean).toFixed(1)}`).join(' ');
 
   // Events: position at mid-month doy
+  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
   const eventsInView = React.useMemo(() => {
-    if (!showEvents) return [];
+    if (!showEventsRender) return [];
     return (events || []).filter(e => selectedYears.includes(e.year) && (!pinnedYear || e.year === pinnedYear));
-  }, [showEvents, selectedYears, pinnedYear, events]);
+  }, [showEventsRender, selectedYears, pinnedYear, events]);
 
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
 
@@ -239,7 +240,7 @@ const EdgebeeefChart = ({
           const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
           const labelY = padT + 2;
           return (
-            <g key={i}>
+            <g key={i} className={eventsLeaving ? 'rx-events-leaving' : ''}>
               <circle cx={cx} cy={cy} r={isPinned ? 5 : 3}
                 fill={isPinned ? 'var(--bg)' : EVENT_COLOR} stroke={EVENT_COLOR} strokeWidth={1.5}/>
               {isPinned && <line className="rx-event-beam" x1={cx} y1={labelY+12} x2={cx} y2={cy-6} stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>}
@@ -616,6 +617,8 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
 
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
 
+  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
+
   // Evento mais próximo do hover (tolerância ±1 mês)
   const nearEvent = hover && showEvents
     ? events.find(ev => {
@@ -663,7 +666,7 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
         <line x1={W-padR} x2={W-padR} y1={padT}  y2={H-padB} className="axis-line" strokeOpacity="0.4"/>
 
         {/* Event markers — after axis lines so dots sit on top */}
-        {showEvents && events.map((ev, i) => {
+        {showEventsRender && events.map((ev, i) => {
           const evT = ev.year + (ev.month - 1) / 12;
           if (evT < tMin || evT > tMax) return null;
           const cx      = xs(evT);
@@ -673,7 +676,7 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
           const anchor  = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
           const lx      = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
           return (
-            <g key={i}>
+            <g key={i} className={eventsLeaving ? 'rx-events-leaving' : ''}>
               <circle cx={cx} cy={H-padB} r={isNear ? 5 : 3}
                 fill={isNear ? 'var(--bg)' : EVENT_COLOR}
                 stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isNear ? 1 : 0.7}/>

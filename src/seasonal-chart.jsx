@@ -142,6 +142,7 @@ const SeasonalChart = ({
   const latestYear = Math.max(...selectedYears);
   // Anos visualmente exibidos (inclui anos saindo para animação de undraw)
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
+  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
 
   return (
     <div className="chart-wrap">
@@ -267,7 +268,7 @@ const SeasonalChart = ({
         )}
 
         {/* Event dots — always above series lines */}
-        {showEvents && sortedAsc.filter(yr => !pinnedYear || yr === pinnedYear).map(yr => {
+        {showEventsRender && sortedAsc.filter(yr => !pinnedYear || yr === pinnedYear).map(yr => {
           const yearEvents = events.filter(e => e.year === yr);
           return yearEvents.map((ev, i) => {
             const v = seasonal[yr]?.[ev.month - 1];
@@ -289,7 +290,7 @@ const SeasonalChart = ({
             const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
             const labelY = padT + 2;
             return (
-              <g key={`ev-${yr}-${i}`}>
+              <g key={`ev-${yr}-${i}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
                 <circle cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
                   fill={isPinned ? 'var(--bg)' : EVENT_COLOR}

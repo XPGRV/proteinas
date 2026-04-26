@@ -135,4 +135,30 @@ function useTrackedYears(selectedYears) {
   return { displayYears, isLeaving };
 }
 
-Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue, useTrackedYears });
+// Mantém o conteúdo renderizado durante uma animação de saída quando `visible`
+// vai de true → false. Retorna { shouldRender, isLeaving }.
+function useFadeOut(visible, durationMs = 400) {
+  const [shouldRender, setShouldRender] = React.useState(visible);
+  const [isLeaving, setIsLeaving] = React.useState(false);
+  const prevRef = React.useRef(visible);
+  React.useEffect(() => {
+    const prev = prevRef.current;
+    prevRef.current = visible;
+    if (visible) {
+      setShouldRender(true);
+      setIsLeaving(false);
+      return;
+    }
+    if (prev && !visible) {
+      setIsLeaving(true);
+      const t = setTimeout(() => {
+        setShouldRender(false);
+        setIsLeaving(false);
+      }, durationMs);
+      return () => clearTimeout(t);
+    }
+  }, [visible]);
+  return { shouldRender, isLeaving };
+}
+
+Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue, useTrackedYears, useFadeOut });

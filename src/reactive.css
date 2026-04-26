@@ -226,6 +226,16 @@
   animation-delay: 0.35s;
 }
 
+/* Fade-out dos eventos quando o botão EVENTOS é desligado */
+@keyframes rx-events-fadeout {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.chart-svg .rx-events-leaving {
+  animation: rx-events-fadeout 0.4s ease-out forwards !important;
+  pointer-events: none;
+}
+
 /* Area fill: smooth fade when toggling chart style */
 .chart-svg .rx-area {
   transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);

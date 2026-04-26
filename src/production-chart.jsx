@@ -154,6 +154,7 @@ function ProductionChart({
   const padL = 72, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
+  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
   // (i) Center each quarter in its slot instead of pinning Q1/Q4 to the axes
   const SEG = chartW / 4;
   const x = qi => padL + (qi + 0.5) * SEG;
@@ -456,7 +457,7 @@ function ProductionChart({
         })}
 
         {/* Event markers — BEFORE hover crosshair so hover dots naturally cover them */}
-        {showEvents && allShownYears
+        {showEventsRender && allShownYears
           .filter(yr => !selYear || yr === selYear)
           .flatMap(yr => {
             const yearEvents = events.filter(ev => ev.year === yr);
@@ -480,29 +481,25 @@ function ProductionChart({
               const anchor   = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
               const lx       = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
 
-              const els = [];
-              els.push(
-                <circle key={`ev-dt-${yr}-${i}`} cx={cx} cy={cy}
-                  r={isPinned ? 5 : 3}
-                  fill={isPinned ? 'none' : EVENT_COLOR}
-                  stroke={EVENT_COLOR} strokeWidth={1.5}/>
-              );
-              if (isPinned) {
-                els.push(
-                  <line key={`ev-ln-${yr}-${i}`} className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
-                    stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
-                );
-              }
-              if (isPinned) {
-                els.push(
-                  <text key={`ev-lb-${yr}-${i}`} x={lx} y={labelY}
-                    textAnchor={anchor} dominantBaseline="hanging"
-                    style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600, letterSpacing:'0.01em'}}>
-                    {ev.label}
-                  </text>
-                );
-              }
-              return els;
+              return [(
+                <g key={`ev-${yr}-${i}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
+                  <circle cx={cx} cy={cy}
+                    r={isPinned ? 5 : 3}
+                    fill={isPinned ? 'none' : EVENT_COLOR}
+                    stroke={EVENT_COLOR} strokeWidth={1.5}/>
+                  {isPinned && (
+                    <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
+                      stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
+                  )}
+                  {isPinned && (
+                    <text x={lx} y={labelY}
+                      textAnchor={anchor} dominantBaseline="hanging"
+                      style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600, letterSpacing:'0.01em'}}>
+                      {ev.label}
+                    </text>
+                  )}
+                </g>
+              )];
             });
           })}
 
