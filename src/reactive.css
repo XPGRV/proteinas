@@ -106,9 +106,8 @@
 .year-chip:active::after, .swatch:active::after, .type-btn:active::after,
 .upload-btn:active::after { opacity: 1; transition: opacity 0s; }
 
-/* === Hover lift on cards === */
-.card { transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease, border-color 0.28s ease; }
-.card:hover { transform: translateY(-2px); }
+/* === Hover transitions on cards (sem lift) === */
+.card { transition: box-shadow 0.28s ease, border-color 0.28s ease; }
 
 /* === Ticker tape (top of page) === */
 .rx-ticker {
