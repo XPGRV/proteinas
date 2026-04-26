@@ -38,6 +38,7 @@ const EdgebeeefChart = ({
 
   const latestYear = Math.max(...selectedYears);
   const sortedAsc  = [...selectedYears].sort((a, b) => a - b);
+  const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
 
   const [hover, setHover] = React.useState(null);
   React.useEffect(() => { setHover(null); }, [selectedYears.join(',')]);
@@ -186,25 +187,31 @@ const EdgebeeefChart = ({
         )}
 
         {/* Area fills */}
-        {chartStyle === 'area' && sortedAsc.map(yr => {
+        {chartStyle === 'area' && displayYears.map(yr => {
           const pts = byYear[yr] || [];
           if (!pts.length) return null;
-          return <path key={yr} d={buildArea(pts)} fill={`url(#${gradId}-${yr})`} opacity={seriesOpacity(yr)}/>;
+          const leaving = isLeaving(yr);
+          return <path key={yr} d={buildArea(pts)} fill={`url(#${gradId}-${yr})`} opacity={seriesOpacity(yr)}
+            className={leaving ? 'rx-leaving' : ''}/>;
         })}
 
         {/* Year lines */}
-        {sortedAsc.map(yr => {
+        {displayYears.map(yr => {
           const pts = byYear[yr] || [];
           if (!pts.length) return null;
           const stroke = yearColor(yr);
+          const leaving = isLeaving(yr);
           return (
             <g key={yr}>
               <path d={buildPath(pts)} fill="none" stroke={stroke}
                 strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
-                opacity={seriesOpacity(yr)}/>
-              <path d={buildPath(pts)} fill="none" stroke="transparent" strokeWidth={12}
-                style={{cursor:'pointer'}}
-                onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+                opacity={seriesOpacity(yr)}
+                className={leaving ? 'rx-leaving' : ''}/>
+              {!leaving && (
+                <path d={buildPath(pts)} fill="none" stroke="transparent" strokeWidth={12}
+                  style={{cursor:'pointer'}}
+                  onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+              )}
             </g>
           );
         })}

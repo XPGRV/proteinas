@@ -15,6 +15,14 @@
   from { stroke-dashoffset: var(--len, 4000); }
   to   { stroke-dashoffset: 0; }
 }
+@keyframes rx-undraw {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: var(--len, 4000); }
+}
+@keyframes rx-undraw-fill {
+  from { opacity: var(--rx-fill-op, 1); }
+  to   { opacity: 0; }
+}
 @keyframes rx-flash-up {
   0%   { background: color-mix(in oklch, var(--up) 35%, transparent); }
   100% { background: transparent; }
@@ -222,6 +230,18 @@
 }
 /* Don't transition the dashed-line draw-on */
 .chart-svg path[stroke-dasharray] { transition: opacity 0.5s ease; }
+
+/* === Undraw animation: linha "volta" da direita pra esquerda quando ano sai === */
+.chart-svg path.rx-leaving[stroke]:not([stroke="transparent"]) {
+  stroke-dasharray: var(--len, 3000);
+  animation: rx-undraw 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  transition: none !important;
+}
+/* Áreas (fills) saindo: fade rápido */
+.chart-svg path.rx-leaving[fill]:not([fill="none"]):not([fill="transparent"]) {
+  animation: rx-undraw-fill 0.5s ease-out forwards !important;
+  transition: none !important;
+}
 
 /* === Theme switcher chips (in TweaksPanel) === */
 .rx-theme-grid {

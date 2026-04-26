@@ -106,4 +106,33 @@ const EVENTS_US = [
   { year: 2024, month: 3,  label: 'HPAI confirmada em bovinos de leite',           severity: 'med'  },
 ];
 
-Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue });
+// Hook que rastreia anos saindo: mantém-os renderizados por 700ms para
+// permitir a animação reversa de "desenhar" a linha (className rx-leaving)
+function useTrackedYears(selectedYears) {
+  const [leavingYears, setLeavingYears] = React.useState([]);
+  const prevRef = React.useRef(selectedYears);
+  React.useEffect(() => {
+    const prev = prevRef.current;
+    const removed = prev.filter(y => !selectedYears.includes(y));
+    setLeavingYears(curr => {
+      let next = curr.filter(y => !selectedYears.includes(y));
+      if (removed.length) next = [...new Set([...next, ...removed])];
+      return next;
+    });
+    prevRef.current = selectedYears;
+    if (removed.length) {
+      const t = setTimeout(() => {
+        setLeavingYears(curr => curr.filter(y => !removed.includes(y)));
+      }, 700);
+      return () => clearTimeout(t);
+    }
+  }, [selectedYears.join(',')]);
+  const displayYears = React.useMemo(
+    () => [...new Set([...selectedYears, ...leavingYears])].sort((a,b) => a-b),
+    [selectedYears.join(','), leavingYears.join(',')]
+  );
+  const isLeaving = (yr) => leavingYears.includes(yr) && !selectedYears.includes(yr);
+  return { displayYears, isLeaving };
+}
+
+Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue, useTrackedYears });

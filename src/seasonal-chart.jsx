@@ -140,6 +140,8 @@ const SeasonalChart = ({
 
   const sortedAsc = [...selectedYears].sort((a,b) => a-b);
   const latestYear = Math.max(...selectedYears);
+  // Anos visualmente exibidos (inclui anos saindo para animação de undraw)
+  const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
 
   return (
     <div className="chart-wrap">
@@ -225,14 +227,16 @@ const SeasonalChart = ({
           </g>
         ) : (
           <g>
-            {sortedAsc.map((yr) => {
+            {displayYears.map((yr) => {
               const isCurrent = yr === latestYear;
               const values = seasonal[yr] || [];
               const stroke = yearColor(yr);
+              const leaving = isLeaving(yr);
               return (
                 <g key={yr}>
                   {chartStyle === 'area' && (
-                    <path d={buildAreaPath(values)} fill={`url(#${gradId}-${yr})`} opacity={seriesOpacity(yr)}/>
+                    <path d={buildAreaPath(values)} fill={`url(#${gradId}-${yr})`} opacity={seriesOpacity(yr)}
+                      className={leaving ? 'rx-leaving' : ''}/>
                   )}
                   <path
                     d={buildPath(values)}
@@ -242,16 +246,19 @@ const SeasonalChart = ({
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     opacity={seriesOpacity(yr)}
+                    className={leaving ? 'rx-leaving' : ''}
                   />
                   {/* invisible wide hitbox for easier clicking */}
-                  <path
-                    d={buildPath(values)}
-                    stroke="transparent"
-                    strokeWidth={12}
-                    fill="none"
-                    style={{cursor: 'pointer'}}
-                    onClick={() => setPinnedYear(p => p === yr ? null : yr)}
-                  />
+                  {!leaving && (
+                    <path
+                      d={buildPath(values)}
+                      stroke="transparent"
+                      strokeWidth={12}
+                      fill="none"
+                      style={{cursor: 'pointer'}}
+                      onClick={() => setPinnedYear(p => p === yr ? null : yr)}
+                    />
+                  )}
                 </g>
               );
             })}
