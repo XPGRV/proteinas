@@ -295,7 +295,7 @@ const SeasonalChart = ({
                   fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
                   stroke={EVENT_COLOR} strokeWidth={1.5}/>
                 {isPinned && (
-                  <line x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
+                  <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
                     stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
                 )}
                 {isPinned && (

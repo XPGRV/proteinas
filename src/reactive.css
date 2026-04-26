@@ -216,6 +216,16 @@
   /* delay set inline */
 }
 
+/* Feixe do evento: sobe da bolinha pra cima depois que ela aparece */
+@keyframes rx-beam-rise {
+  from { clip-path: inset(100% 0 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+.chart-svg line.rx-event-beam {
+  animation: rx-beam-rise 0.45s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+  animation-delay: 0.35s;
+}
+
 /* Area fill: smooth fade when toggling chart style */
 .chart-svg .rx-area {
   transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);

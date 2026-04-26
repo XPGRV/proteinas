@@ -489,7 +489,7 @@ function ProductionChart({
               );
               if (isPinned) {
                 els.push(
-                  <line key={`ev-ln-${yr}-${i}`} x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
+                  <line key={`ev-ln-${yr}-${i}`} className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
                     stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
                 );
               }
