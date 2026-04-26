@@ -143,6 +143,7 @@ const SeasonalChart = ({
   // Anos visualmente exibidos (inclui anos saindo para animação de undraw)
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
   const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
 
   return (
     <div className="chart-wrap">
@@ -235,9 +236,10 @@ const SeasonalChart = ({
               const leaving = isLeaving(yr);
               return (
                 <g key={yr}>
-                  {chartStyle === 'area' && (
-                    <path d={buildAreaPath(values)} fill={`url(#${gradId}-${yr})`} opacity={seriesOpacity(yr)}
-                      className={leaving ? 'rx-leaving' : ''}/>
+                  {showAreaRender && (
+                    <path d={buildAreaPath(values)} fill={`url(#${gradId}-${yr})`}
+                      style={{'--rx-area-op': seriesOpacity(yr)}}
+                      className={`rx-area ${leaving ? 'rx-leaving' : ''} ${areaLeaving ? 'rx-area-leaving' : ''}`}/>
                   )}
                   <path
                     ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}

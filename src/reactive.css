@@ -236,11 +236,22 @@
   pointer-events: none;
 }
 
-/* Area fill: smooth fade when toggling chart style */
-.chart-svg .rx-area {
-  transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+/* Area fill: fade in até a opacidade-alvo (var --rx-area-op), sem overshoot */
+@keyframes rx-area-fade-in {
+  from { opacity: 0; }
+  to   { opacity: var(--rx-area-op, 1); }
 }
-.chart-svg .rx-area.is-hidden { opacity: 0 !important; }
+.chart-svg .rx-area {
+  animation: rx-area-fade-in 0.5s ease-out forwards;
+}
+/* Fade-out quando a área é desligada (chartStyle deixa de ser 'area') */
+@keyframes rx-area-fade-out {
+  from { opacity: var(--rx-area-op, 1); }
+  to   { opacity: 0; }
+}
+.chart-svg .rx-area.rx-area-leaving {
+  animation: rx-area-fade-out 0.4s ease-out forwards !important;
+}
 
 /* Smooth transitions when toggling years / styles / events */
 .chart-svg path,

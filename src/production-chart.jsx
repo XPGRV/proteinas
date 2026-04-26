@@ -155,6 +155,7 @@ function ProductionChart({
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
   const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
   // (i) Center each quarter in its slot instead of pinning Q1/Q4 to the axes
   const SEG = chartW / 4;
   const x = qi => padL + (qi + 0.5) * SEG;
@@ -350,10 +351,11 @@ function ProductionChart({
           const leaving = isLeaving(yr);
           return (
             <g key={yr}>
-              {chartStyle === 'area' && (
+              {showAreaRender && (
                 <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`}
-                  opacity={dimmed ? 0.15 : (isLast ? 0.9 : 0.6)} pointerEvents="none"
-                  className={leaving ? 'rx-leaving' : ''}/>
+                  pointerEvents="none"
+                  style={{'--rx-area-op': dimmed ? 0.15 : (isLast ? 0.9 : 0.6)}}
+                  className={`rx-area ${leaving ? 'rx-leaving' : ''} ${areaLeaving ? 'rx-area-leaving' : ''}`}/>
               )}
               <path
                 ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}

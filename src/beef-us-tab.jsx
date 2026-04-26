@@ -39,6 +39,7 @@ const EdgebeeefChart = ({
   const latestYear = Math.max(...selectedYears);
   const sortedAsc  = [...selectedYears].sort((a, b) => a - b);
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
 
   const [hover, setHover] = React.useState(null);
   React.useEffect(() => { setHover(null); }, [selectedYears.join(',')]);
@@ -192,12 +193,13 @@ const EdgebeeefChart = ({
 
         <g clipPath={`url(#clip-${gradId})`}>
         {/* Area fills */}
-        {chartStyle === 'area' && displayYears.map(yr => {
+        {showAreaRender && displayYears.map(yr => {
           const pts = byYear[yr] || [];
           if (!pts.length) return null;
           const leaving = isLeaving(yr);
-          return <path key={yr} d={buildArea(pts)} fill={`url(#${gradId}-${yr})`} opacity={seriesOpacity(yr)}
-            className={leaving ? 'rx-leaving' : ''}/>;
+          return <path key={yr} d={buildArea(pts)} fill={`url(#${gradId}-${yr})`}
+            style={{'--rx-area-op': seriesOpacity(yr)}}
+            className={`rx-area ${leaving ? 'rx-leaving' : ''} ${areaLeaving ? 'rx-area-leaving' : ''}`}/>;
         })}
 
         {/* Year lines */}
