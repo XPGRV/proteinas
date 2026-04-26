@@ -179,8 +179,19 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
 
   if (parseUS && findSheet('BeefUS')) {
-    // col B(1)=data, col H(7)=pct_femeas, col P(15)=boi_bezerro_mm12
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
+    
+    let femCol = 7, boiCol = 15;
+    for (let i = 0; i < Math.min(10, usRaw.length); i++) {
+      const r = usRaw[i];
+      if (!r) continue;
+      for (let j = 0; j < r.length; j++) {
+        const val = String(r[j] || '').toLowerCase().trim();
+        if (val.includes('% fêmea') || val.includes('% femea') || val.includes('fêmeas') || val.includes('heifer and cow') || val.includes('pct_femeas') || val.includes('% female') || val === 'femeas' || val.includes('cow slaughter')) femCol = j;
+        if (val.includes('boi/bezerro') || val.includes('boi bezerro') || val.includes('steer/calf') || val.includes('steer / calf') || val.includes('boi_bezerro')) boiCol = j;
+      }
+    }
+
     const beef_us = [];
     for (let i = 1; i < usRaw.length; i++) {
       const r = usRaw[i];
@@ -189,8 +200,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       if (!pd) continue;
       const year  = pd.year;
       const month = pd.month;
-      const pct_femeas       = (() => { const v = parseNum(r[7]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
-      const boi_bezerro_mm12 = parseNum(r[15]);
+      const pct_femeas       = (() => { const v = parseNum(r[femCol]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
+      const boi_bezerro_mm12 = parseNum(r[boiCol]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
     }
     result.beef_us = beef_us;
