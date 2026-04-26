@@ -156,6 +156,9 @@ const EdgebeeefChart = ({
               <stop offset="100%" stopColor={yearColor(yr)} stopOpacity="0"/>
             </linearGradient>
           ))}
+          <clipPath id={`clip-${gradId}`}>
+            <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
+          </clipPath>
         </defs>
 
         {/* Y grid */}
@@ -186,6 +189,7 @@ const EdgebeeefChart = ({
           </g>
         )}
 
+        <g clipPath={`url(#clip-${gradId})`}>
         {/* Area fills */}
         {chartStyle === 'area' && displayYears.map(yr => {
           const pts = byYear[yr] || [];
@@ -217,6 +221,7 @@ const EdgebeeefChart = ({
             </g>
           );
         })}
+        </g>
 
         {/* Event dots */}
         {eventsInView.map((ev, i) => {

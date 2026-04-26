@@ -226,7 +226,7 @@ const SeasonalChart = ({
             ))}
           </g>
         ) : (
-          <g>
+          <g clipPath={`url(#clip-${gradId})`}>
             {displayYears.map((yr) => {
               const isCurrent = yr === latestYear;
               const values = seasonal[yr] || [];
