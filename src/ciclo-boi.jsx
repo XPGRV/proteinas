@@ -138,12 +138,12 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
           const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
           return (
             <g key={i}>
-              <line x1={cx} x2={cx} y1={padT} y2={H-padB}
-                stroke={EVENT_COLOR} strokeOpacity={isNear ? 0.5 : 0.15}
-                strokeWidth={1} strokeDasharray="3 3"/>
               <circle cx={cx} cy={H-padB} r={isNear ? 5 : 3}
                 fill={isNear ? 'var(--bg)' : EVENT_COLOR}
                 stroke={EVENT_COLOR} strokeWidth={1.5} strokeOpacity={isNear ? 1 : 0.7}/>
+              <line className="rx-event-beam" x1={cx} x2={cx} y1={padT} y2={H-padB}
+                stroke={EVENT_COLOR} strokeOpacity={isNear ? 0.5 : 0.15}
+                strokeWidth={1} strokeDasharray="3 3"/>
               {isNear && (
                 <text x={lx} y={H-padB+28} textAnchor={anchor}
                   style={{fontSize:9.5, fill:EVENT_COLOR, fontWeight:600, fontFamily:'var(--font-mono)'}}>
