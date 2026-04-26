@@ -151,7 +151,9 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <img src="src/xp-asset-logo.svg" alt="XP Asset Management" className="sidebar-brand-logo"/>
+        <div className="sidebar-brand-logobox">
+          <img src="src/xp-asset-logo.svg" alt="XP Asset Management" className="sidebar-brand-logo"/>
+        </div>
         <div className="sidebar-brand-text">
           <div className="sidebar-brand-title">Setorial</div>
           <div className="sidebar-brand-sub">Dashboard · abr/26</div>
