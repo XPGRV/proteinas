@@ -17,6 +17,21 @@ function parseMonthTag(s) {
   return { year: yy < 50 ? 2000 + yy : 1900 + yy, month: mo };
 }
 
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return { year: v.getFullYear(), month: v.getMonth()+1, day: v.getDate() };
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    if (!isNaN(d)) return { year: d.getUTCFullYear(), month: d.getUTCMonth()+1, day: d.getUTCDate() };
+  }
+  if (typeof v === 'number' && v > 40000) {
+    if (window.XLSX && window.XLSX.SSF) {
+      try { const p = XLSX.SSF.parse_date_code(v); if (p) return { year: p.y, month: p.m, day: p.d }; } catch(_) {}
+    }
+  }
+  return null;
+}
+
 function trimEmpty(arr) {
   return arr.filter(row =>
     Object.entries(row).some(([k, v]) => k !== 'year' && k !== 'month' && v != null)
@@ -132,19 +147,6 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   if (parseUS && findSheet('BBG_Dados')) {
     // Edgebeef diário: col D=data, col E=valor (Edge Beef Margin USD/cwt)
     const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
-    // Parse date de qualquer formato: Date object, ISO string, ou serial numérico
-    const parseDate = v => {
-      if (!v) return null;
-      if (v instanceof Date) return { year: v.getFullYear(), month: v.getMonth()+1, day: v.getDate() };
-      if (typeof v === 'string') {
-        const d = new Date(v);
-        if (!isNaN(d)) return { year: d.getUTCFullYear(), month: d.getUTCMonth()+1, day: d.getUTCDate() };
-      }
-      if (typeof v === 'number' && v > 40000) {
-        try { const p = XLSX.SSF.parse_date_code(v); if (p) return { year: p.y, month: p.m, day: p.d }; } catch(_) {}
-      }
-      return null;
-    };
     // r[3]=data (Date obj só nas primeiras linhas; resto null por fórmula sem cache)
     // Rastreia data incrementando 1 dia por linha de dados
     // r[6]=valor Edge Beef (primário), r[4]=fallback
@@ -155,8 +157,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       if (!r) continue;
       const hasData = r[4] != null || r[5] != null || r[6] != null;
       if (!hasData) continue;
-      if (r[3] instanceof Date) {
-        curDate = new Date(r[3].getTime());
+      const pd = parseDate(r[3]);
+      if (pd) {
+        curDate = new Date(Date.UTC(pd.year, pd.month - 1, pd.day));
       } else if (curDate) {
         curDate = new Date(curDate.getTime() + 86400000); // +1 dia
       } else continue;
@@ -174,9 +177,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const beef_us = [];
     for (let i = 4; i < usRaw.length; i++) {
       const r = usRaw[i];
-      if (!r || !(r[1] instanceof Date)) continue;
-      const year  = r[1].getFullYear();
-      const month = r[1].getMonth() + 1;
+      if (!r) continue;
+      const pd = parseDate(r[1]);
+      if (!pd) continue;
+      const year  = pd.year;
+      const month = pd.month;
       const pct_femeas       = (() => { const v = parseNum(r[7]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
       const boi_bezerro_mm12 = parseNum(r[15]);
       beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12 });
@@ -189,8 +194,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const ws   = wb.Sheets[findSheet('Production')];
     const raw  = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: null });
 
-    // Portuguese months (lowercase) → number
-    const PT_MO = { jan:1, fev:2, mar:3, abr:4, mai:5, jun:6, jul:7, ago:8, set:9, out:10, nov:11, dez:12 };
+    // Months in EN and PT (lowercase) → number
+    const ALL_MO = { 
+      jan:1, fev:2, feb:2, mar:3, abr:4, apr:4, mai:5, may:5, jun:6, 
+      jul:7, ago:8, aug:8, set:9, sep:9, out:10, oct:10, nov:11, dez:12, dec:12 
+    };
 
     // Row 0: "Total Production          dez-25" — extract trailing "mmm-yy" token
     const hdrRow = raw[0] || [];
@@ -200,7 +208,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const token = h.split(/\s+/).pop() || '';
       const m = token.match(/^([a-z]{3})-(\d{2})$/i);
       if (m) {
-        const mo = PT_MO[m[1].toLowerCase()];
+        const mo = ALL_MO[m[1].toLowerCase()];
         const yr = 2000 + parseInt(m[2]);
         if (mo && yr) snapshotCols.push({ col: c, label: token.toLowerCase(), year: yr, month: mo });
       }
