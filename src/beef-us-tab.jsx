@@ -246,10 +246,13 @@ const EdgebeeefChart = ({
           const anchor = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
           const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
           const labelY = padT + 2;
+          // delay synced with line draw (1.2s over 365 days)
+          const dotDelay = `${((best.doy - 1) / 364 * 1.1).toFixed(2)}s`;
           return (
             <g key={i} className={eventsLeaving ? 'rx-events-leaving' : ''}>
               <circle cx={cx} cy={cy} r={isPinned ? 5 : 3}
-                fill={isPinned ? 'var(--bg)' : EVENT_COLOR} stroke={EVENT_COLOR} strokeWidth={1.5}/>
+                fill={isPinned ? 'var(--bg)' : EVENT_COLOR} stroke={EVENT_COLOR} strokeWidth={1.5}
+                className="rx-event-dot" style={{animationDelay: dotDelay}}/>
               {isPinned && <line className="rx-event-beam" x1={cx} y1={labelY+12} x2={cx} y2={cy-6} stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>}
               {isPinned && (
                 <text x={lx} y={labelY} textAnchor={anchor} dominantBaseline="hanging"

@@ -284,17 +284,22 @@ const SeasonalChart = ({
         {showEventsRender && sortedAsc.filter(yr => !pinnedYear || yr === pinnedYear).map(yr => {
           const yearEvents = events.filter(e => e.year === yr);
           return yearEvents.map((ev, i) => {
-            const v = seasonal[yr]?.[ev.month - 1];
+            const mi = ev.month - 1;
+            const v = seasonal[yr]?.[mi];
             if (v == null) return null;
             let cx, cy;
             if (chartStyle === 'bars') {
               const idx = sortedAsc.indexOf(yr);
-              cx = xBar(ev.month - 1) - (selectedYears.length * barW) / 2 + idx * barW + (barW - 1) / 2;
+              cx = xBar(mi) - (selectedYears.length * barW) / 2 + idx * barW + (barW - 1) / 2;
               cy = y(v);
             } else {
-              cx = x(ev.month - 1);
+              cx = x(mi);
               cy = y(v);
             }
+            // delay synced with line draw (1.2s) or bar rise (stagger 0.045s + 0.7s rise)
+            const dotDelay = chartStyle === 'bars'
+              ? `${(mi * 0.045 + 0.6).toFixed(2)}s`
+              : `${(mi / 11 * 1.1).toFixed(2)}s`;
             const isPinned = yr === pinnedYear;
             const labelText = ev.label;
             const nearRight = cx > W - padR - 80;
@@ -307,7 +312,9 @@ const SeasonalChart = ({
                 <circle cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
                   fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
-                  stroke={EVENT_COLOR} strokeWidth={1.5}/>
+                  stroke={EVENT_COLOR} strokeWidth={1.5}
+                  className="rx-event-dot"
+                  style={{animationDelay: dotDelay}}/>
                 {isPinned && (
                   <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
                     stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
