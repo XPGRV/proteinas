@@ -132,6 +132,9 @@ function ProductionControls({
           <div className="seg">
             <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
             <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
+          </div>
+        </div>
+      </div>
       {/* DEBUG TEMPORARIO */}
       <div style={{fontSize: 10, color: 'red', marginTop: 8}}>
         DEBUG: histYears={histYears.length} ({histYears.join(',')}) | compYears={compYears.length} ({compYears.join(',')})
