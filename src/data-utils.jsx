@@ -161,4 +161,19 @@ function useFadeOut(visible, durationMs = 400) {
   return { shouldRender, isLeaving };
 }
 
-Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue, useTrackedYears, useFadeOut });
+// EventDot: aparece após `delaySec` segundos — controlado por React state, não CSS
+// animation, então é imune a re-renders (só anima no mount)
+const EventDot = ({ cx, cy, r, fill, stroke, strokeWidth, delaySec, ...rest }) => {
+  const [vis, setVis] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setVis(true), Math.round(delaySec * 1000));
+    return () => clearTimeout(t);
+  }, []); // deps vazio: só roda no mount
+  return (
+    <circle cx={cx} cy={cy} r={r} fill={fill} stroke={stroke} strokeWidth={strokeWidth}
+      style={{ opacity: vis ? 1 : 0, transition: vis ? 'opacity 0.3s ease-out' : 'none' }}
+      {...rest}/>
+  );
+};
+
+Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue, useTrackedYears, useFadeOut, EventDot });

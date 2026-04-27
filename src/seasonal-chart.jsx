@@ -309,12 +309,11 @@ const SeasonalChart = ({
             const labelY = padT + 2;
             return (
               <g key={`ev-${yr}-${i}-${chartStyle}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
-                <circle cx={cx} cy={cy}
+                <window.EventDot cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
                   fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
                   stroke={EVENT_COLOR} strokeWidth={1.5}
-                  className="rx-event-dot"
-                  style={{animation: `rx-fade-in 0.35s ease-out ${dotDelay} backwards`}}/>
+                  delaySec={parseFloat(dotDelay)}/>
                 {isPinned && (
                   <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
                     stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>

@@ -549,11 +549,11 @@ function ProductionChart({
               const dotDelay = `${(qi / 3 * 1.1).toFixed(2)}s`;
               return [(
                 <g key={`ev-${yr}-${i}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
-                  <circle cx={cx} cy={cy}
+                  <window.EventDot cx={cx} cy={cy}
                     r={isPinned ? 5 : 3}
                     fill={isPinned ? 'none' : EVENT_COLOR}
                     stroke={EVENT_COLOR} strokeWidth={1.5}
-                    className="rx-event-dot" style={{animation: `rx-fade-in 0.35s ease-out ${dotDelay} backwards`}}/>
+                    delaySec={parseFloat(dotDelay)}/>
                   {isPinned && (
                     <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
                       stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
