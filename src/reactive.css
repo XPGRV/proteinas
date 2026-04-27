@@ -148,12 +148,17 @@
   /* duration is set inline via --rx-dur from JS to keep speed constant */
   animation: rx-ticker-scroll var(--rx-dur, 60s) linear infinite;
   will-change: transform;
+  transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes rx-ticker-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
-.rx-ticker:hover .rx-ticker-track { animation-play-state: paused; }
+.rx-ticker:hover .rx-ticker-track {
+  animation-play-state: paused;
+  opacity: 0.8;
+  filter: blur(0.4px);
+}
 .rx-ticker-item {
   display: inline-flex;
   align-items: center;  gap: 8px;
@@ -161,10 +166,10 @@
   border-right: 1px solid var(--border);
   height: 100%;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.4s ease, opacity 0.4s ease;
 }
 .rx-ticker-item:hover {
-  background: color-mix(in oklch, var(--accent) 10%, transparent);
+  background: color-mix(in oklch, var(--accent) 8%, transparent);
 }
 .rx-ticker-symbol { color: var(--fg-dim); letter-spacing: 0.06em; }
 .rx-ticker-value  { color: var(--fg); font-variant-numeric: tabular-nums; }
