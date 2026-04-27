@@ -188,12 +188,22 @@
 }
 .chart-svg .grid-line, .chart-svg .axis-line { animation: rx-fade-in 0.6s ease-out backwards; }
 
-/* Entry for ALL other svg things: bars, areas, faixa (P25/P75/min/max), event dots, legend */
+/* Entry for ALL other svg things: bars, event dots, legend */
 .chart-svg rect:not(.rx-bar):not(.rx-no-anim),
 .chart-svg circle:not(.rx-event-dot):not(.rx-no-anim),
-.chart-svg path[fill]:not([fill="none"]):not([fill="transparent"]):not(.rx-area) {
+.chart-svg path[fill]:not([fill="none"]):not([fill="transparent"]):not(.rx-area):not(.rx-stat-band) {
   animation: rx-fade-in 0.9s ease-out backwards;
   animation-delay: 0.25s;
+}
+
+/* Stat bands: fade to the correct low opacity (uses CSS var to avoid the clarão) */
+@keyframes rx-stat-fade {
+  from { opacity: 0; }
+  to   { opacity: var(--rx-stat-op, 0.06); }
+}
+.chart-svg .rx-stat-band {
+  animation: rx-stat-fade 0.5s ease-out both;
+  animation-delay: 0.15s;
 }
 .chart-svg text { animation: rx-fade-in 0.6s ease-out backwards; animation-delay: 0.35s; }
 
