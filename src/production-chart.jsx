@@ -938,7 +938,8 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  const [hover, setHover] = useState(null);
+  const [hover,  setHover]  = useState(null);
+  const [mouseY, setMouseY] = useState(0);
 
   const numYears = allYears.length;
   if (!numYears) return null;
@@ -1005,8 +1006,10 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px   = (e.clientX - rect.left) * (W / rect.width);
+    const py   = (e.clientY - rect.top)  * (H / rect.height);
     const xi   = Math.floor((px - padL) / slotW);
     setHover(xi >= 0 && xi < numYears ? xi : null);
+    setMouseY(py);
   };
 
   return (
@@ -1105,79 +1108,58 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
         })}
       </svg>
 
-      {/* Hover tooltip */}
+      {/* Hover card — mesmo padrão dos outros gráficos */}
       {hoverYear != null && (() => {
         const bData  = annualB[hoverYear];
         const aData  = annualA[hoverYear];
         const isComp = compYears.includes(hoverYear);
-        const xi     = allYears.indexOf(hoverYear);
         const clr    = yearColor(hoverYear);
-        const left   = xi < numYears * 0.6 ? '62%' : '6%';
+        const xPos   = padL + (hover + 0.5) * slotW;
+        const isRight = xPos > W * 0.65;
 
         const bTotal = bData ? (showForecast ? bData.total : bData.realized) : null;
         const aTotal = aData ? (showForecast ? aData.total : aData.realized) : null;
-        const delta  = bTotal != null && aTotal != null ? bTotal - aTotal : null;
+        const delta  = isComp && bTotal != null && aTotal != null ? bTotal - aTotal : null;
+
+        const rows = [];
+        if (bTotal != null) {
+          rows.push({ label: String(hoverYear), color: clr, val: bTotal });
+          if (showForecast && bData.realized > 0 && bData.forecast > 0) {
+            rows.push({ label: 'Realizado', color: clr, val: bData.realized, muted: true });
+            rows.push({ label: 'Forecast',  color: clr, val: bData.forecast, muted: true });
+          }
+        }
+        if (isComp && aTotal != null) {
+          rows.push({ label: 'Revisão ant.', color: clr, val: aTotal, muted: true });
+        }
+        if (!rows.length) return null;
 
         return (
-          <div style={{
-            position: 'absolute', top: 24, left,
-            background: 'var(--card-bg)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '10px 14px', fontSize: 12,
-            pointerEvents: 'none', lineHeight: 1.7, minWidth: 170,
+          <div className="hover-card" style={{
+            left: `${(xPos / W * 100).toFixed(1)}%`,
+            top: Math.max(10, Math.min(H - 150, mouseY - 40)),
+            transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
-            <div style={{ fontWeight: 700, marginBottom: 4, color: clr }}>{hoverYear}</div>
-            {bData && (
-              <>
-                <div>Total: <b style={{ fontFamily: 'var(--font-mono)' }}>{fmtVal(bTotal)}</b></div>
-                {bData.realized > 0 && showForecast && bData.forecast > 0 && (
-                  <>
-                    <div style={{ color: 'var(--fg-dim)', fontSize: 11 }}>Realizado: {fmtVal(bData.realized)}</div>
-                    <div style={{ color: 'var(--fg-dim)', fontSize: 11 }}>Forecast: {fmtVal(bData.forecast)}</div>
-                  </>
-                )}
-              </>
-            )}
-            {isComp && aData && aTotal != null && (
-              <>
-                <div style={{ marginTop: 6, color: 'var(--fg-dim)', fontSize: 11 }}>
-                  Revisão anterior: {fmtVal(aTotal)}
+            <div className="hover-month">{hoverYear}</div>
+            <div className="hover-rows">
+              {rows.map((r, i) => (
+                <div key={i} className="hover-row" style={r.muted ? { opacity: 0.55 } : {}}>
+                  <span className="hover-year" style={{ color: r.color }}>{r.label}</span>
+                  <span className="hover-val">{fmtVal(r.val)}<span className="hover-unit"> 000 lb</span></span>
                 </div>
-                {delta != null && (
-                  <div style={{
-                    color: delta >= 0 ? '#4caf50' : '#f55',
-                    fontSize: 11, fontWeight: 600,
-                  }}>
-                    Δ {fmtVal(Math.abs(delta))}{delta >= 0 ? ' ↑' : ' ↓'}
-                  </div>
-                )}
-              </>
-            )}
+              ))}
+              {delta != null && (
+                <div className="hover-row" style={{ marginTop: 4 }}>
+                  <span className="hover-year" style={{ color: delta >= 0 ? '#4caf50' : '#f55' }}>Δ revisão</span>
+                  <span className="hover-val" style={{ color: delta >= 0 ? '#4caf50' : '#f55' }}>
+                    {delta >= 0 ? '+' : ''}{fmtVal(delta)}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         );
       })()}
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, padding: '4px 8px 8px', flexWrap: 'wrap', fontSize: 11, color: 'var(--fg-dim)', alignItems: 'center' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ display: 'inline-block', width: 14, height: 10, background: 'oklch(0.6 0.1 200)', opacity: 0.75, borderRadius: 2 }}/>
-          Realizado
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{
-            display: 'inline-block', width: 14, height: 10, borderRadius: 2,
-            background: 'repeating-linear-gradient(45deg, oklch(0.6 0.1 200) 0px, oklch(0.6 0.1 200) 2px, transparent 2px, transparent 5px)',
-            opacity: 0.75,
-          }}/>
-          Forecast
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{
-            display: 'inline-block', width: 14, height: 10, borderRadius: 2,
-            border: '1.5px dashed oklch(0.6 0.1 200)', opacity: 0.7,
-          }}/>
-          Revisão anterior
-        </span>
-      </div>
     </div>
   );
 }
