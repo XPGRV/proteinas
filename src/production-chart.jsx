@@ -943,13 +943,17 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   const [hover,  setHover]  = useState(null);
   const [mouseY, setMouseY] = useState(0);
 
+  // Track leaving years for smooth exit animation
+  const { displayYears, isLeaving } = window.useTrackedYears(allYears);
+
   const numYears = allYears.length;
   if (!numYears) return null;
 
+  // Layout based on visible (non-leaving) years so slots don't resize during exit
   const slotW = chartW / numYears;
   const bBarW = Math.min(slotW * 0.50, 38);
   const aBarW = Math.min(slotW * 0.28, 22);
-  const barGap = 5; // gap between B and A bars for comparison years
+  const barGap = 5;
 
   const xCenter = i => padL + (i + 0.5) * slotW;
 
@@ -1040,20 +1044,25 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
           </g>
         ))}
 
-        {/* Bars */}
+        {/* Bars — includes leaving years for exit animation */}
         <g clipPath={`url(#clip-${gradId})`}>
-          {allYears.map((yr, i) => {
+          {displayYears.map((yr) => {
+            const leaving = isLeaving(yr);
+            // Position within the visible (non-leaving) slots; leaving bars keep last position
+            const visIdx  = allYears.indexOf(yr);
+            const slotIdx = visIdx >= 0 ? visIdx : allYears.length - 1;
+
             const isComp = compYears.includes(yr);
             const clr    = yearColor(yr);
             const bData  = annualB[yr];
             const aData  = annualA[yr];
-            const isHov  = hover === i;
+            const isHov  = !leaving && hover === visIdx;
 
             const bTotal    = bData ? (showForecast ? bData.total    : bData.realized) : 0;
             const bRealized = bData ? bData.realized : 0;
             const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
 
-            const cx = xCenter(i);
+            const cx = xCenter(slotIdx);
             const bX = isComp ? cx - barGap / 2 - bBarW : cx - bBarW / 2;
             const aX = cx + barGap / 2;
 
@@ -1062,36 +1071,36 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const bTotY  = y(bTotal);
             const bTotH  = Math.max(0, yBase - bTotY);
             const bFcH   = Math.max(0, bTotH - bRealH);
+            const aTotY  = y(aTotal);
+            const aTotH  = Math.max(0, yBase - aTotY);
 
-            const aTotY = y(aTotal);
-            const aTotH = Math.max(0, yBase - aTotY);
+            // Entry: right-to-left (newest = index numYears-1 → delay 0; oldest → delay max)
+            const entryDelay = `${(numYears - 1 - slotIdx) * 0.04}s`;
+            const barClass   = `rx-bar${leaving ? ' rx-bar-leaving' : ''}`;
+            const barStyle   = leaving ? {} : { animationDelay: entryDelay };
 
-            const delay = `${i * 0.04}s`;
             return (
               <g key={yr}>
-                {/* B bar — solid realized portion */}
                 {bRealH > 0 && (
                   <rect x={bX} y={bRealY} width={bBarW} height={bRealH}
                     fill={clr} opacity={isHov ? 0.95 : 0.72} rx={2}
-                    className="rx-bar" style={{ animationDelay: delay }}/>
+                    className={barClass} style={barStyle}/>
                 )}
-                {/* B bar — hatched forecast portion stacked on top */}
                 {bFcH > 0 && (
                   <>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
                       fill={clr} opacity={isHov ? 0.22 : 0.14} rx={2}
-                      className="rx-bar" style={{ animationDelay: delay }}/>
+                      className={barClass} style={barStyle}/>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
                       fill={`url(#${patId(yr)})`} rx={2}
-                      className="rx-bar" style={{ animationDelay: delay }}/>
+                      className={barClass} style={barStyle}/>
                   </>
                 )}
-                {/* A bar — outline only (older revision) */}
                 {isComp && aTotH > 0 && (
                   <rect x={aX} y={aTotY} width={aBarW} height={aTotH}
                     fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={isHov ? 0.85 : 0.55}
                     strokeDasharray="3 2" rx={2}
-                    className="rx-bar" style={{ animationDelay: delay }}/>
+                    className={barClass} style={barStyle}/>
                 )}
               </g>
             );
@@ -1101,7 +1110,7 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
         {/* X axis baseline */}
         <line x1={padL} x2={W - padR} y1={yBase} y2={yBase} stroke="var(--border)" strokeWidth={1}/>
 
-        {/* (i) Year labels — outside clipPath so they're visible below the axis */}
+        {/* Year labels — only for visible (non-leaving) years */}
         {allYears.map((yr, i) => {
           const cx = xCenter(i);
           return (
