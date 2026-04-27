@@ -275,10 +275,15 @@ function ProductionChart({
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
   const toggleSelYear = yr => setSelYear(prev => prev === yr ? null : yr);
+  const [mouseY, setMouseY] = React.useState(0);
+
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) * (W / rect.width);
-    setHover(Math.max(0, Math.min(3, Math.floor((px - padL) / SEG))));
+    const py = (e.clientY - rect.top) * (H / rect.height);
+    const pos = Math.round(((px - padL) / chartW) * 3);
+    setHover(Math.max(0, Math.min(3, pos)));
+    setMouseY(py);
   };
   const onSvgClick = () => setSelYear(null);
 
@@ -569,12 +574,14 @@ function ProductionChart({
           if (v != null) rows.push({ label:String(yr), color:yearColor(yr), val:v });
         }
         if (!rows.length) return null;
+        const xPos = x(hover);
+        const isRightSide = xPos > chartW * 0.75;
         return (
-          <div className="hover-card" style={/* flip left for Q3/Q4 */
-            hover <= 1
-              ? {left:  `calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}
-              : {right: `calc(${((W - x(hover))/W*100).toFixed(1)}% + 14px)`}
-          }>
+          <div className="hover-card" style={{
+            left: `${(xPos / W * 100).toFixed(1)}%`,
+            top: Math.max(10, Math.min(H - 140, mouseY - 40)),
+            transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+          }}>
             <div className="hover-month">{QUARTERS[hover]}</div>
             <div className="hover-rows">
               {rows.map((r, i) => (

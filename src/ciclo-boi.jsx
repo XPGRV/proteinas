@@ -45,9 +45,12 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
     if (yr % 2 === 0) xTicks.push(yr);
   }
 
+  const [mouseY, setMouseY] = React.useState(0);
+
   const onMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) * (W / rect.width);
+    const py = (e.clientY - rect.top) * (H / rect.height);
     const t = tMin + ((px - padL) / chartW) * (tMax - tMin);
     let best = null, bestDist = Infinity;
     for (const p of points) {
@@ -55,6 +58,7 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
       if (d < bestDist) { bestDist = d; best = p; }
     }
     setHover(best);
+    setMouseY(py);
   };
 
   const latestMM = mm12[mm12.length - 1];
@@ -158,10 +162,12 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
 
       {hover && (() => {
         const xPos = xs(hover.t);
-        const isRightSide = xPos > chartW * 0.7;
-        const style = isRightSide 
-          ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 14px)` }
-          : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 14px)` };
+        const isRightSide = xPos > chartW * 0.75;
+        const style = {
+          left: `${(xPos / W * 100).toFixed(1)}%`,
+          top: Math.max(10, Math.min(H - 120, mouseY - 40)),
+          transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+        };
         return (
           <div className="hover-card" style={style}>
             <div className="hover-month">{window.MONTHS_PT[hover.month - 1]}/{hover.year}</div>

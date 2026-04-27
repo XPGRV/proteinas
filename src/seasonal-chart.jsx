@@ -127,11 +127,15 @@ const SeasonalChart = ({
     return yr === latestYear ? 2 : 1.25;
   };
 
+  const [mouseY, setMouseY] = React.useState(0);
+
   const onMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) * (W / rect.width);
+    const py = (e.clientY - rect.top) * (H / rect.height);
     const pos = Math.round(((px - padL) / chartW) * 11);
     setHover(Math.max(0, Math.min(11, pos)));
+    setMouseY(py);
   };
 
   const EVENT_COLOR = 'oklch(0.85 0.18 80)'; // amber — distinct from any year series color
@@ -407,7 +411,10 @@ const SeasonalChart = ({
           events={showEvents ? events.filter(e => selectedYears.includes(e.year) && e.month - 1 === hover) : []}
           fmtOpts={fmtOpts}
           unit={unit}
-          xFrac={x(hover) / W}
+          xPos={x(hover)}
+          W={W}
+          H={H}
+          mouseY={mouseY}
           highlightYear={dotHoverYear}
           yearColor={yearColor}
         />
@@ -460,12 +467,14 @@ const SeasonalChart = ({
   );
 };
 
-const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xPos, W, highlightYear, yearColor }) => {
+const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xPos, W, H, mouseY, highlightYear, yearColor }) => {
   const sorted = [...years].sort((a,b) => b-a);
-  const isRightSide = xPos > W * 0.7;
-  const style = isRightSide
-    ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 18px)` }
-    : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 18px)` };
+  const isRightSide = xPos > W * 0.75;
+  const style = {
+    left: `${(xPos / W * 100).toFixed(1)}%`,
+    top: Math.max(10, Math.min(H - 120, mouseY - 40)),
+    transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+  };
   return (
     <div className="hover-card" style={style}>
       <div className="hover-month">{window.MONTHS_PT[month]}</div>

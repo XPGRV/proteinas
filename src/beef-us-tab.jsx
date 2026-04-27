@@ -138,11 +138,15 @@ const EdgebeeefChart = ({
     return `${doy - MONTH_DOY[mo]} ${window.MONTHS_PT[mo]}`;
   };
 
+  const [mouseY, setMouseY] = React.useState(0);
+
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) * (W / rect.width);
+    const py = (e.clientY - rect.top) * (H / rect.height);
     const doy = Math.round(1 + ((px - padL) / chartW) * 364);
     setHover(Math.max(1, Math.min(365, doy)));
+    setMouseY(py);
   };
 
   const gradId = 'edge-grad';
@@ -293,14 +297,14 @@ const EdgebeeefChart = ({
         const nearEvents = showEvents
           ? (events||[]).filter(ev => ev.month - 1 === hoverMo && selectedYears.includes(ev.year))
           : [];
+        const xPos = x(hover);
+        const isRightSide = xPos > chartW * 0.75;
         return (
-          <div className="hover-card" style={(() => {
-            const xPos = x(hover);
-            const isRightSide = xPos > chartW * 0.7;
-            return isRightSide 
-              ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 14px)` }
-              : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 14px)` };
-          })()}>
+          <div className="hover-card" style={{
+            left: `${(xPos / W * 100).toFixed(1)}%`,
+            top: Math.max(10, Math.min(H - 140, mouseY - 40)),
+            transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+          }}>
             <div className="hover-month">{doyToLabel(hover)}</div>
             <div className="hover-rows">
               {rows.map(({yr, pt}) => (
@@ -616,9 +620,12 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
     if (yr % 2 === 0) xTicks.push(yr);
   }
 
+  const [mouseY, setMouseY] = React.useState(0);
+
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = (e.clientX - rect.left) * (W / rect.width);
+    const py = (e.clientY - rect.top) * (H / rect.height);
     const t = tMin + ((px - padL) / chartW) * (tMax - tMin);
     let best = null, bestDist = Infinity;
     for (const p of femPoints) {
@@ -626,6 +633,7 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
       if (d < bestDist) { bestDist = d; best = p; }
     }
     setHover(best);
+    setMouseY(py);
   };
 
   const hoverBoi = hover ? boiPoints.find(p => p.year === hover.year && p.month === hover.month) : null;
@@ -709,10 +717,12 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
 
       {hover && (() => {
         const xPos = xs(hover.t);
-        const isRightSide = xPos > chartW * 0.7;
-        const style = isRightSide 
-          ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 14px)` }
-          : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 14px)` };
+        const isRightSide = xPos > chartW * 0.75;
+        const style = {
+          left: `${(xPos / W * 100).toFixed(1)}%`,
+          top: Math.max(10, Math.min(H - 120, mouseY - 40)),
+          transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+        };
 
         return (
           <div className="hover-card" style={style}>
