@@ -548,7 +548,7 @@ function ProductionChart({
               // delay synced with line draw (1.2s over 4 quarters)
               const dotDelay = `${(qi / 3 * 1.1).toFixed(2)}s`;
               return [(
-                <g key={`ev-${yr}-${i}-${selectedHistYears.join(',')}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
+                <g key={`ev-${yr}-${i}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
                   <circle cx={cx} cy={cy}
                     r={isPinned ? 5 : 3}
                     fill={isPinned ? 'none' : EVENT_COLOR}

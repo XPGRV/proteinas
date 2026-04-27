@@ -308,7 +308,7 @@ const SeasonalChart = ({
             const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
             const labelY = padT + 2;
             return (
-              <g key={`ev-${yr}-${i}-${chartStyle}-${selectedYears.join(',')}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
+              <g key={`ev-${yr}-${i}-${chartStyle}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
                 <circle cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
                   fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
