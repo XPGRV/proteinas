@@ -151,8 +151,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
 
   // ── BeefUS (abas: BBG_Dados, BeefUS) ────────────────────────────────────────
+  // Câmbio por mês (BBG_Dados col F): preenchido no bloco abaixo, usado no BeefUS
+  const bbgCambioByMonth = {};
   if (parseUS && findSheet('BBG_Dados')) {
     // Edgebeef diário: col D=data, col E=valor (Edge Beef Margin USD/cwt)
+    // Câmbio: col F (índice 5)
     const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
     // r[3]=data (Date obj só nas primeiras linhas; resto null por fórmula sem cache)
     // Rastreia data incrementando 1 dia por linha de dados
@@ -171,6 +174,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         curDate = new Date(curDate.getTime() + 86400000); // +1 dia
       } else continue;
       const year = curDate.getUTCFullYear(), month = curDate.getUTCMonth()+1, day = curDate.getUTCDate();
+      // Câmbio (col F = índice 5): último valor do mês prevalece
+      const usdbrl = parseNum(r[5]);
+      if (usdbrl != null) bbgCambioByMonth[`${year}-${month}`] = usdbrl;
       const value = parseNum(r[4]); // coluna E
       if (value == null) continue;
       edgebeef_daily.push({ year, month, day, value });
@@ -220,7 +226,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const month = pd.month;
       const pct_femeas       = (() => { const v = parseNum(r[femCol]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
       const boi_bezerro_mm12 = parseNum(r[boiCol]);
-      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12, raw: r.slice(0, 20) });
+      const abates_total     = parseNum(r[3]);   // col D
+      const preco_boi        = parseNum(r[12]);  // col M
+      const preco_bezerro    = parseNum(r[13]);  // col N
+      const usdbrl           = bbgCambioByMonth[`${year}-${month}`] ?? null;
+      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12, abates_total, preco_boi, preco_bezerro, usdbrl, raw: r.slice(0, 20) });
     }
     result.beef_us = beef_us;
   }

@@ -599,11 +599,10 @@ function TickerBar({ data, activeDataset }) {
     const rows = data[ds];
     const fields = activeDataset === 'beef_us'
       ? [
-          ['CATTLE',     'cattle_usd_kg',         'US$/kg', 'us-edgebeef'],
-          ['BEEF',       'beef_me_usd_kg',        'US$/kg', 'us-edgebeef'],
-          ['SPREAD',     'spread_me',             'US$/kg', 'us-edgebeef'],
+          ['CÂMBIO',     'usdbrl',                'R$',     null],
           ['ABATES',     'abates_total',          'cab',    'us-production'],
-          ['%FÊMEAS',    'pct_femeas',            '%',      'us-ciclo'],
+          ['BOI·GORDO',  'preco_boi',             '¢/lb',   'us-ciclo'],
+          ['BEZERRO',    'preco_bezerro',         '¢/lb',   'us-ciclo'],
         ]
       : [
           ['BOI',        'cattle_brl_kg',         'R$/kg',  'card-cattle'],
