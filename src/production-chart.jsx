@@ -775,7 +775,7 @@ function parseLDPSummaries(text) {
 }
 
 // ── ProductionCard ────────────────────────────────────────────────────────────
-function ProductionCard({ data, accent, events = [] }) {
+function ProductionCard({ data, accent, events = [], pairIdx: pairIdxProp, onPairChange }) {
   const { useState, useMemo, useEffect } = React;
 
   const [summaries, setSummaries] = useState({});
@@ -807,7 +807,9 @@ function ProductionCard({ data, accent, events = [] }) {
     return p;
   }, [snapshots.join(',')]);
 
-  const [pairIdx, setPairIdx]         = useState(0);
+  const [localPairIdx, setLocalPairIdx] = useState(0);
+  const pairIdx    = pairIdxProp !== undefined ? pairIdxProp : localPairIdx;
+  const setPairIdx = onPairChange  !== undefined ? onPairChange  : setLocalPairIdx;
   const [showStats, setShowStats]     = useState(false);
   const [showEvents, setShowEvents]   = useState(true);
   const [chartStyle, setChartStyle]   = useState('line');
@@ -1163,7 +1165,7 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
 }
 
 // ── AnnualProductionCard ──────────────────────────────────────────────────────
-function AnnualProductionCard({ data, accent }) {
+function AnnualProductionCard({ data, accent, pairIdx: pairIdxProp }) {
   const { useState, useMemo, useEffect, useRef } = React;
 
   const production  = data?.production;
@@ -1176,7 +1178,11 @@ function AnnualProductionCard({ data, accent }) {
     return p;
   }, [snapshots.join(',')]);
 
-  const [pairIdx,      setPairIdx]      = useState(0);
+  // pairIdx driven by quarterly chart (prop); local state kept only as fallback
+  const [localPairIdx, setLocalPairIdx] = useState(0);
+  const pairIdx       = pairIdxProp !== undefined ? pairIdxProp : localPairIdx;
+  const pairLocked    = pairIdxProp !== undefined;
+
   const [showForecast, setShowForecast] = useState(true);
   const [yearRange,    setYearRange]    = useState('10a');
   const [pairDropOpen, setPairDropOpen] = useState(false);
@@ -1245,15 +1251,16 @@ function AnnualProductionCard({ data, accent }) {
             <div className="year-drop-wrap" ref={pairRef} style={{ marginLeft: 12 }}>
               <button
                 className={`year-seg-btn ${pairDropOpen ? 'is-active' : ''}`}
-                style={{ minWidth: 148, justifyContent: 'space-between' }}
-                onClick={() => setPairDropOpen(o => !o)}>
+                style={{ minWidth: 148, justifyContent: 'space-between', opacity: pairLocked ? 0.35 : 1, cursor: pairLocked ? 'not-allowed' : 'pointer' }}
+                onClick={() => { if (!pairLocked) setPairDropOpen(o => !o); }}
+                title={pairLocked ? 'Controlado pelo gráfico trimestral' : undefined}>
                 {fmtPair(pair)} ▾
               </button>
-              {pairDropOpen && (
+              {pairDropOpen && !pairLocked && (
                 <div className="year-drop" style={{ minWidth: 160 }}>
                   {pairs.map((p, i) => (
                     <div key={i} className={`year-drop-item ${i === pairIdx ? 'is-on' : ''}`}
-                      onClick={() => { setPairIdx(i); setPairDropOpen(false); }}>
+                      onClick={() => { setLocalPairIdx(i); setPairDropOpen(false); }}>
                       <span className="year-drop-check">{i === pairIdx ? '✓' : ''}</span>
                       {fmtPair(p)}
                     </div>

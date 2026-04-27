@@ -777,6 +777,7 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
 function BeefUSTab({ data, accent }) {
   const chartAccent = 'oklch(0.78 0.15 160)';
   const [showEventsCiclo, setShowEventsCiclo] = React.useState(true);
+  const [prodPairIdx, setProdPairIdx] = React.useState(0);
   return (
     <main className="main">
       <EdgebeeefCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
@@ -795,8 +796,9 @@ function BeefUSTab({ data, accent }) {
         </div>
         <CicloBoiUS data={data} accent={chartAccent} events={window.EVENTS_US || []} showEvents={showEventsCiclo}/>
       </section>
-      <window.ProductionCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
-      <window.AnnualProductionCard data={data} accent={chartAccent}/>
+      <window.ProductionCard data={data} accent={chartAccent} events={window.EVENTS_US || []}
+        pairIdx={prodPairIdx} onPairChange={setProdPairIdx}/>
+      <window.AnnualProductionCard data={data} accent={chartAccent} pairIdx={prodPairIdx}/>
     </main>
   );
 }
