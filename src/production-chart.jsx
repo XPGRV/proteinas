@@ -528,7 +528,7 @@ function ProductionChart({
             return yearEvents.flatMap((ev, i) => {
               const qi  = Math.ceil(ev.month / 3) - 1;
               const v   = selectedHistYears.includes(yr)
-                ? (histSeries[yr]?.[qi] ?? null)
+                ? (histSeries[yr]?.values[qi] ?? null)
                 : (() => {
                     const vb  = indexedB[yr]?.values[qi];
                     const fcB = indexedB[yr]?.forecast[qi];
@@ -672,7 +672,13 @@ function ProductionChart({
           const dimmed = selYear != null && !isSel;
           return (
             <span key={yr} className="legend-year"
-              style={{padding:'2px 6px', opacity: dimmed ? 0.25 : (yr===Math.max(...sortedHist)?1:0.75), cursor:'pointer', userSelect:'none'}}
+              style={{
+                padding:'2px 6px',
+                opacity: dimmed ? 0.25 : (yr===Math.max(...sortedHist)?1:0.75),
+                cursor:'pointer', userSelect:'none',
+                outline: isSel ? `1px solid ${yearColor(yr)}` : 'none',
+                borderRadius: 4,
+              }}
               onClick={() => toggleSelYear(yr)}>
               <span className="legend-line" style={{background: yearColor(yr)}}/>
               {yr}
@@ -688,7 +694,8 @@ function ProductionChart({
           return (
             <React.Fragment key={yr}>
               <span className="legend-year"
-                style={{padding:'2px 6px', opacity: dimmed ? 0.1 : 1, cursor:'pointer', userSelect:'none'}}
+                style={{padding:'2px 6px', opacity: dimmed ? 0.1 : 1, cursor:'pointer', userSelect:'none',
+                  outline: isSel ? `1px solid ${clr}` : 'none', borderRadius: 4}}
                 onClick={() => toggleSelYear(yr)}>
                 <span style={{
                   display:'inline-block',width:22,height:0,
@@ -698,7 +705,8 @@ function ProductionChart({
                 {yr} {fmtSnap(pair?.b)}
               </span>
               <span className="legend-year"
-                style={{padding:'2px 6px', opacity: dimmed ? 0.05 : 0.45, cursor:'pointer', userSelect:'none'}}
+                style={{padding:'2px 6px', opacity: dimmed ? 0.05 : 0.45, cursor:'pointer', userSelect:'none',
+                  outline: isSel ? `1px solid ${clr}` : 'none', borderRadius: 4}}
                 onClick={() => toggleSelYear(yr)}>
                 <span style={{
                   display:'inline-block',width:22,height:0,
