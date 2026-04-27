@@ -985,18 +985,19 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   if (!allVals.length) return null;
 
   const hiVal = Math.max(...allVals);
-  const yMax  = hiVal * 1.14;
+  const yMin  = 20000;
+  const yMax  = hiVal * 1.05;
   const yBase = padT + chartH;
-  const y     = v => padT + (1 - v / yMax) * chartH;
+  const y     = v => padT + (1 - (v - yMin) / (yMax - yMin)) * chartH;
 
   // Nice ticks
-  const rawStep = yMax / 5;
+  const rawStep = (yMax - yMin) / 5;
   const mag  = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
   const nn   = rawStep / mag;
   const nice = nn < 1.5 ? 1 : nn < 3 ? 2 : nn < 7 ? 5 : 10;
   const step = nice * mag;
   const yTicks = [];
-  for (let v = 0; v <= yMax + step * 0.01; v += step) yTicks.push(parseFloat(v.toPrecision(10)));
+  for (let v = Math.ceil(yMin / step) * step; v <= yMax + step * 0.01; v += step) yTicks.push(parseFloat(v.toPrecision(10)));
 
   const tickFmt = v => {
     if (step >= 1000000) return (v / 1000000).toFixed(0) + 'M';
