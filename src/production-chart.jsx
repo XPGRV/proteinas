@@ -553,7 +553,7 @@ function ProductionChart({
                     r={isPinned ? 5 : 3}
                     fill={isPinned ? 'none' : EVENT_COLOR}
                     stroke={EVENT_COLOR} strokeWidth={1.5}
-                    className="rx-event-dot" style={{animationDelay: dotDelay}}/>
+                    className="rx-event-dot" style={{animation: `rx-fade-in 0.35s ease-out ${dotDelay} backwards`}}/>
                   {isPinned && (
                     <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
                       stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
