@@ -186,7 +186,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
           onClick={() => onPick('beef_us')}
           style={{marginTop:6}}>
           <span className="sidebar-item-icon">{SIcon.cow}</span>
-          <span className="sidebar-item-label">Beef US</span>
+          <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>Beef US</span>
         </button>
       </div>
 
