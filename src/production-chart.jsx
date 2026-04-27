@@ -300,16 +300,7 @@ function ProductionChart({
 
   return (
     <div className="chart-wrap">
-      {/* DIAGNÓSTICO DEFINITIVO - NÃO APAGAR */}
-      <div style={{fontSize: 10, color: 'blue', padding: '10px', background: '#eef', marginBottom: 10, whiteSpace: 'pre-wrap'}}>
-        <strong>DEBUG CHART:</strong><br/>
-        Anos em A ({pair?.a}): {Object.keys(indexedA).join(', ')}<br/>
-        Anos em B ({pair?.b}): {Object.keys(indexedB).join(', ')}<br/>
-        selectedHistYears: {selectedHistYears.join(', ')}<br/>
-        compYears: {compYears.join(', ')}<br/><br/>
-        <strong>PARSER TRACE (2023 abr-26):</strong><br/>
-        {window.DEBUG_PARSER ? window.DEBUG_PARSER.join('\n') : 'N/A'}
-      </div>
+
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMove} onMouseLeave={() => setHover(null)}
         onClick={onSvgClick} style={{cursor:'default'}}>
@@ -372,28 +363,40 @@ function ProductionChart({
           const isSel   = selYear === yr;
           const dimmed  = selYear != null && !isSel;
           const leaving = isLeaving(yr);
+          const { solidPath, dashedPath } = buildMixed(vals.values, vals.forecast);
           return (
             <g key={yr}>
               {showAreaRender && (
-                <path d={buildAreaPath(vals)} fill={`url(#${gradId}-${yr})`}
+                <path d={buildAreaPath(vals.values)} fill={`url(#${gradId}-${yr})`}
                   pointerEvents="none"
                   style={{'--rx-area-op': dimmed ? 0.15 : (isLast ? 0.9 : 0.6)}}
                   className={`rx-area ${leaving ? 'rx-leaving' : ''} ${areaLeaving ? 'rx-area-leaving' : ''}`}/>
               )}
-              <path
-                ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
-                d={buildPath(vals)} fill="none" stroke={clr}
-                strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
-                opacity={dimmed ? 0.15 : (isLast ? 1 : 0.8)}
-                strokeLinejoin="round" strokeLinecap="round"
-                className={leaving ? 'rx-leaving' : ''}/>
+              {solidPath && (
+                <path
+                  ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
+                  d={solidPath} fill="none" stroke={clr}
+                  strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
+                  opacity={dimmed ? 0.15 : (isLast ? 1 : 0.8)}
+                  strokeLinejoin="round" strokeLinecap="round"
+                  className={leaving ? 'rx-leaving' : ''}/>
+              )}
+              {dashedPath && (
+                <path
+                  d={dashedPath} fill="none" stroke={clr}
+                  strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
+                  opacity={dimmed ? 0.15 : (isLast ? 1 : 0.8)}
+                  strokeDasharray="4 6"
+                  strokeLinejoin="round" strokeLinecap="round"
+                  className={leaving ? 'rx-leaving' : ''}/>
+              )}
               {/* Invisible wide click target — só quando o ano está ativo */}
               {!leaving && (
-                <path d={buildPath(vals)} fill="none" stroke="transparent" strokeWidth={12}
+                <path d={buildPath(vals.values)} fill="none" stroke="transparent" strokeWidth={12}
                   style={{cursor:'pointer'}} onClick={e => { e.stopPropagation(); toggleSelYear(yr); }}/>
               )}
               {/* Dots + labels when year is selected */}
-              {isSel && !leaving && vals.map((v, qi) => v != null ? (
+              {isSel && !leaving && vals.values.map((v, qi) => v != null ? (
                 <g key={qi}>
                   <circle cx={x(qi)} cy={y(v)} r={3.5} fill={clr} opacity={0.9}/>
                   <text x={x(qi)} y={y(v) - 10} textAnchor="middle"
@@ -430,7 +433,7 @@ function ProductionChart({
               {b && (
                 <g opacity={dimmed ? 0.12 : 1}>
                   {bSolid  && <path d={bSolid}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round"/>}
+                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="4 6" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.8"/>}
                 </g>
               )}
               {/* (iii) Click targets — cover solid + dashed for BOTH A and B */}
@@ -754,7 +757,7 @@ function ProductionCard({ data, accent, events = [] }) {
     const out = {};
     for (const yr of histYears) {
       const d = indexedB[yr] || indexedA[yr];
-      if (d) out[yr] = d.values;
+      if (d) out[yr] = { values: d.values, forecast: d.forecast };
     }
     return out;
   }, [indexedA, indexedB, histYears.join(',')]);
@@ -762,11 +765,8 @@ function ProductionCard({ data, accent, events = [] }) {
   // Early return after all hooks
   if (!snapshots.length || !production?.bySnapshot) {
     return (
-      <div style={{ color: 'oklch(0.72 0.18 25)', padding: '20px', fontFamily: 'monospace', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
-        <strong>DEBUG - Previsões Vazias:</strong><br/>
-        Snapshots lidos: {snapshots ? snapshots.length : 0} {snapshots ? JSON.stringify(snapshots) : ''}<br/>
-        bySnapshot existe: {production?.bySnapshot ? 'Sim' : 'Não'}<br/><br/>
-        Se as snapshots estiverem vazias, os cabeçalhos de trimestre da aba Production (como "Jan-25") não foram lidos corretamente.
+      <div style={{padding:40, color:'var(--fg-dim)', textAlign: 'center'}}>
+        Aguardando dados de produção...
       </div>
     );
   }
