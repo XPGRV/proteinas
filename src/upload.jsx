@@ -234,13 +234,12 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     }
 
     if (snapshotCols.length >= 1) {
-      // Detect forecast via font color (orange = theme 5 / #ED7D31 = forecast; green = historical)
+      // Detect forecast via font color (orange = forecast; green = historical)
       const isForecastCell = (ri, ci) => {
         try {
           const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })];
           if (!cell?.s) return null;
           const fc = cell.s.font?.color || {};
-          if (fc.theme === 5 || fc.theme === 4) return true;
           const rgb = (fc.rgb || '').toUpperCase().replace(/^FF/, '');
           if (['ED7D31','E36C09','FFC000','F79646','E26B0A'].some(c => rgb.startsWith(c))) return true;
           if (['00B050','70AD47','92D050'].some(c => rgb.startsWith(c))) return false;
