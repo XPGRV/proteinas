@@ -155,9 +155,7 @@
   to   { transform: translateX(-50%); }
 }
 .rx-ticker:hover .rx-ticker-track {
-  animation-play-state: paused;
-  opacity: 0.8;
-  filter: blur(0.4px);
+  opacity: 0.9;
 }
 .rx-ticker-item {
   display: inline-flex;
