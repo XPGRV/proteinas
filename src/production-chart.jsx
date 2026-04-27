@@ -792,13 +792,24 @@ function ProductionCard({ data, accent, events = [] }) {
     const allYrs = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
     return [...allYrs].filter(yr => {
       const a = indexedA[yr], b = indexedB[yr];
-      return (a && a.values.some(v => v != null)) || (b && b.values.some(v => v != null));
+      if (!a || !b) return false;
+      
+      // 1. Is it a forecast year?
+      const isFC = a.forecast.some(f => f) || b.forecast.some(f => f);
+      if (isFC) return true;
+      
+      // 2. Was it revised (are values different between snapshots)?
+      const isRevised = a.values.some((v, i) => v !== b.values[i]);
+      if (isRevised) return true;
+
+      return false;
     }).sort((a, b) => a - b);
   }, [indexedA, indexedB]);
 
   const histYears = useMemo(() => {
     const compSet = new Set(compYears);
     const allKnownYrs = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
+    // Historical years are those that are NOT in the comparison (they are identical and have no forecast)
     return [...allKnownYrs].filter(yr => !compSet.has(yr)).sort((a, b) => a - b);
   }, [indexedA, indexedB, compYears]);
 
