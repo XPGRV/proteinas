@@ -249,7 +249,7 @@ const EdgebeeefChart = ({
           // delay synced with line draw (1.2s over 365 days)
           const dotDelay = `${((best.doy - 1) / 364 * 1.1).toFixed(2)}s`;
           return (
-            <g key={i} className={eventsLeaving ? 'rx-events-leaving' : ''}>
+            <g key={`ev-${ev.year}-${ev.month}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
               <window.EventDot cx={cx} cy={cy} r={isPinned ? 5 : 3}
                 fill={isPinned ? 'var(--bg)' : EVENT_COLOR} stroke={EVENT_COLOR} strokeWidth={1.5}
                 delaySec={parseFloat(dotDelay)}/>
