@@ -151,15 +151,15 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   }
 
   // ── BeefUS (abas: BBG_Dados, BeefUS) ────────────────────────────────────────
-  // Câmbio por mês (BBG_Dados col F): preenchido no bloco abaixo, usado no BeefUS
-  const bbgCambioByMonth = {};
+  // Agregados mensais do BBG_Dados (col E=edgebeef, col F=câmbio): usados no BeefUS
+  const bbgEdgebeefByMonth = {};
+  const bbgCambioByMonth   = {};
   if (parseUS && findSheet('BBG_Dados')) {
     // Edgebeef diário: col D=data, col E=valor (Edge Beef Margin USD/cwt)
     // Câmbio: col F (índice 5)
     const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
     // r[3]=data (Date obj só nas primeiras linhas; resto null por fórmula sem cache)
     // Rastreia data incrementando 1 dia por linha de dados
-    // r[6]=valor Edge Beef (primário), r[4]=fallback
     const edgebeef_daily = [];
     let curDate = null;
     for (let i = 3; i < bbgRaw.length; i++) {
@@ -177,8 +177,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       // Câmbio (col F = índice 5): último valor do mês prevalece
       const usdbrl = parseNum(r[5]);
       if (usdbrl != null) bbgCambioByMonth[`${year}-${month}`] = usdbrl;
-      const value = parseNum(r[4]); // coluna E
+      const value = parseNum(r[4]); // coluna E — EdgeBeef margin
       if (value == null) continue;
+      bbgEdgebeefByMonth[`${year}-${month}`] = value; // último valor do mês
       edgebeef_daily.push({ year, month, day, value });
     }
     result.edgebeef_daily = edgebeef_daily;
@@ -229,8 +230,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const abates_total     = parseNum(r[3]);   // col D
       const preco_boi        = parseNum(r[12]);  // col M
       const preco_bezerro    = parseNum(r[13]);  // col N
-      const usdbrl           = bbgCambioByMonth[`${year}-${month}`] ?? null;
-      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12, abates_total, preco_boi, preco_bezerro, usdbrl, raw: r.slice(0, 20) });
+      const usdbrl           = bbgCambioByMonth[`${year}-${month}`]   ?? null;
+      const edgebeef_value   = bbgEdgebeefByMonth[`${year}-${month}`] ?? null;
+      beef_us.push({ year, month, pct_femeas, boi_bezerro_mm12, abates_total, preco_boi, preco_bezerro, usdbrl, edgebeef_value, raw: r.slice(0, 20) });
     }
     result.beef_us = beef_us;
   }
