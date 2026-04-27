@@ -40,6 +40,7 @@ const EdgebeeefChart = ({
   const sortedAsc  = [...selectedYears].sort((a, b) => a - b);
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
   const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
+  const { shouldRender: showStatsRender, isLeaving: statsLeaving } = window.useFadeOut(showStats, 500);
 
   const [hover, setHover] = React.useState(null);
   React.useEffect(() => { setHover(null); }, [selectedYears.join(',')]);
@@ -187,11 +188,11 @@ const EdgebeeefChart = ({
         ))}
 
         {/* Stats band */}
-        {showStats && statsDoys.length > 0 && (
+        {showStatsRender && statsDoys.length > 0 && (
           <g>
-            <path d={statsMaxPath + ' ' + statsMinPath + ' Z'} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.05}}/>
-            <path d={statsP75Path + ' ' + statsP25Path + ' Z'} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.08}}/>
-            <path d={statsMeanPath} stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none" className="rx-stat-mean"/>
+            <path d={statsMaxPath + ' ' + statsMinPath + ' Z'} fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.05}}/>
+            <path d={statsP75Path + ' ' + statsP25Path + ' Z'} fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.08}}/>
+            <path d={statsMeanPath} stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none" className={`rx-stat-mean${statsLeaving ? ' rx-stat-leaving' : ''}`}/>
           </g>
         )}
 

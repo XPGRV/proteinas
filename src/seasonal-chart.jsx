@@ -149,6 +149,7 @@ const SeasonalChart = ({
   const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
   const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
   const { shouldRender: showBarsRender, isLeaving: barsLeaving } = window.useFadeOut(chartStyle === 'bars', 280);
+  const { shouldRender: showStatsRender, isLeaving: statsLeaving } = window.useFadeOut(showStats && !hideAvg, 500);
 
   return (
     <div className="chart-wrap">
@@ -186,7 +187,7 @@ const SeasonalChart = ({
         </g>
 
         {/* Historical band */}
-        {showStats && !hideAvg && stats && chartStyle !== 'bars' && (
+        {showStatsRender && stats && chartStyle !== 'bars' && (
           <g>
             <path
               d={(() => {
@@ -194,7 +195,7 @@ const SeasonalChart = ({
                 const bot = [...stats].map((s, i) => s ? `L${x(i)},${y(s.min)}` : '').reverse().join(' ');
                 return top + ' ' + bot + ' Z';
               })()}
-              fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.05}}
+              fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.05}}
             />
             <path
               d={(() => {
@@ -202,12 +203,12 @@ const SeasonalChart = ({
                 const bot = [...stats].map((s, i) => s ? `L${x(i)},${y(s.p25)}` : '').reverse().join(' ');
                 return top + ' ' + bot + ' Z';
               })()}
-              fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.08}}
+              fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.08}}
             />
             <path
               d={stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
               stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none"
-              className="rx-stat-mean"
+              className={`rx-stat-mean${statsLeaving ? ' rx-stat-leaving' : ''}`}
             />
           </g>
         )}
