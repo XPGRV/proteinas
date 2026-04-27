@@ -265,14 +265,32 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
 
     if (snapshotCols.length >= 1) {
       // Detect forecast via font color (orange = forecast; green = historical)
+      // SheetJS stores colors either as direct RGB or as theme index — handle both.
       const isForecastCell = (ri, ci) => {
         try {
           const cell = ws[XLSX.utils.encode_cell({ r: ri, c: ci })];
           if (!cell?.s) return null;
           const fc = cell.s.font?.color || {};
+
+          // 1. Direct RGB (stored as AARRGGBB or RRGGBB)
           const rgb = (fc.rgb || '').toUpperCase().replace(/^FF/, '');
-          if (['ED7D31','E36C09','FFC000','F79646','E26B0A'].some(c => rgb.startsWith(c))) return true;
-          if (['00B050','70AD47','92D050'].some(c => rgb.startsWith(c))) return false;
+          if (rgb) {
+            if (['ED7D31','E36C09','FFC000','F79646','E26B0A'].some(c => rgb.startsWith(c))) return true;
+            if (['00B050','70AD47','92D050'].some(c => rgb.startsWith(c))) return false;
+          }
+
+          // 2. Theme color index (default Office theme, 0-indexed)
+          //    theme 5 = Accent2 = Orange #ED7D31 → forecast
+          //    theme 9 = Accent6 = Green  #70AD47 → realized
+          if (fc.theme !== undefined) {
+            if (fc.theme === 5) return true;   // orange
+            if (fc.theme === 9) return false;  // green
+          }
+
+          // 3. Log unrecognised style for debug (first 60 cells only)
+          if (!window.COLOR_LOG) window.COLOR_LOG = [];
+          if (window.COLOR_LOG.length < 60) window.COLOR_LOG.push({ r: ri, c: ci, v: cell.v, fc: JSON.stringify(fc) });
+
         } catch (_) {}
         return null;
       };
@@ -322,9 +340,12 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
 
           const qEndMonth = quarter * 3;
           const colorFC   = isForecastCell(ri, snap.col);
+          // Date fallback: quarter is forecast until the snapshot is at least 3 months
+          // after the quarter ends (USDA publishes prior-quarter data with ~1 quarter lag).
+          // e.g. Q1 (ends Mar) is still forecast in Apr, May, Jun → only realized from Jul.
           const isForecast = colorFC !== null
             ? colorFC
-            : (year > snap.year || (year === snap.year && qEndMonth >= snap.month));
+            : (year > snap.year || (year === snap.year && qEndMonth + 3 >= snap.month));
           
           if (!window.PARSER_LOG) window.PARSER_LOG = [];
           window.PARSER_LOG.push({ snap: snap.label, year, quarter, isForecast });
