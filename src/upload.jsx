@@ -270,10 +270,27 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const bySnapshot = {};
 
       // Detecta em qual coluna (0-4) ficam os labels de trimestre
+      // Damos prioridade absoluta para a coluna que tiver "4Q19" explícito.
       let qLabelCol = 1;
+      let foundExplicit = false;
       for (let ri = 2; ri < Math.min(10, raw.length); ri++) {
         for (let c = 0; c <= 4; c++) {
-          if (parseQLabel(String(raw[ri]?.[c] || '').trim())) { qLabelCol = c; break; }
+          const s = String(raw[ri]?.[c] || '').trim();
+          if (/^([1-4])[QT](\d{2,4})$/i.test(s) || /^[QT]([1-4])\s*(\d{2,4})$/i.test(s)) {
+            qLabelCol = c;
+            foundExplicit = true;
+            break;
+          }
+        }
+        if (foundExplicit) break;
+      }
+      
+      // Se não achou explícito, tenta o genérico (que pode incluir datas mmm-yy)
+      if (!foundExplicit) {
+        for (let ri = 2; ri < Math.min(10, raw.length); ri++) {
+          for (let c = 0; c <= 4; c++) {
+            if (parseQLabel(String(raw[ri]?.[c] || '').trim())) { qLabelCol = c; break; }
+          }
         }
       }
       for (let ri = 2; ri < raw.length; ri++) {
