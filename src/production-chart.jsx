@@ -1140,7 +1140,7 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             top: Math.max(10, Math.min(H - 150, mouseY - 40)),
             transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
-            <div className="hover-month">{hoverYear}</div>
+            <div className="hover-month">Produção</div>
             <div className="hover-rows">
               {rows.map((r, i) => (
                 <div key={i} className="hover-row" style={r.muted ? { opacity: 0.55 } : {}}>
