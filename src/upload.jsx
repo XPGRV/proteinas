@@ -311,14 +311,14 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
           let forecast = isForecastCell(ri, snap.col);
           
           const qEndMonth = quarter * 3;
+          // If the quarter ends after the snapshot month (or in the same month), 
+          // it's likely still an estimate/forecast in that report.
           const isFuture = year > snap.year || (year === snap.year && qEndMonth >= snap.month);
           
-          // STRICT RULE: You cannot forecast the past. 
-          // If the cell's date is strictly in the past, it MUST be historical.
           if (!isFuture) {
             forecast = false;
           } else if (forecast === null) {
-            forecast = true; // Default to forecast if it's in the future and color is unknown
+            forecast = true; // Default to forecast if it's future/current and no color info
           }
 
           if (!bySnapshot[snap.label]) bySnapshot[snap.label] = [];

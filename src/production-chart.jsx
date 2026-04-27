@@ -386,7 +386,7 @@ function ProductionChart({
                   d={dashedPath} fill="none" stroke={clr}
                   strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
                   opacity={dimmed ? 0.15 : (isLast ? 1 : 0.8)}
-                  strokeDasharray="4 6"
+                  strokeDasharray="6 6"
                   strokeLinejoin="round" strokeLinecap="round"
                   className={leaving ? 'rx-leaving' : ''}/>
               )}
@@ -426,14 +426,14 @@ function ProductionChart({
               {a && (
                 <g opacity={dimmed ? 0.08 : 0.38}>
                   {aSolid  && <path d={aSolid}  fill="none" stroke={clr} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round"/>}
+                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="6 6" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.8"/>}
                 </g>
               )}
               {/* Line B — newer snapshot, full opacity */}
               {b && (
                 <g opacity={dimmed ? 0.12 : 1}>
                   {bSolid  && <path d={bSolid}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="4 6" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.8"/>}
+                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="6 6" strokeLinejoin="round" strokeLinecap="round"/>}
                 </g>
               )}
               {/* (iii) Click targets — cover solid + dashed for BOTH A and B */}
