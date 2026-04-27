@@ -632,11 +632,11 @@ function TickerBar({ data, activeDataset }) {
     if (!trackRef.current) return;
     
     const targetVel = hoveredRef.current ? 0 : 0.8;
-    // Friction: 0.15 is faster braking than 0.08
-    velRef.current += (targetVel - velRef.current) * 0.15;
+    // Friction: 0.04 is much smoother/slower braking than 0.15
+    velRef.current += (targetVel - velRef.current) * 0.04;
     
     // If it's very slow, just stop it
-    if (hoveredRef.current && velRef.current < 0.01) velRef.current = 0;
+    if (hoveredRef.current && velRef.current < 0.001) velRef.current = 0;
     
     posRef.current -= velRef.current;
     

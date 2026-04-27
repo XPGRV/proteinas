@@ -145,14 +145,8 @@
 .rx-ticker-track {
   display: inline-flex;
   white-space: nowrap;
-  /* duration is set inline via --rx-dur from JS to keep speed constant */
-  animation: rx-ticker-scroll var(--rx-dur, 60s) linear infinite;
   will-change: transform;
   transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-@keyframes rx-ticker-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
 }
 .rx-ticker:hover .rx-ticker-track {
   opacity: 0.9;
