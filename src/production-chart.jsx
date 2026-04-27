@@ -557,7 +557,15 @@ function ProductionChart({
             {sortedHist.map(yr => {
               const v = histSeries[yr]?.values[hover];
               if (v == null) return null;
-              return <circle key={yr} cx={x(hover)} cy={y(v)} r={3.5} fill="var(--bg)" stroke={yearColor(yr)} strokeWidth={1.5}/>;
+              const isFC = histSeries[yr]?.forecast[hover];
+              return (
+                <circle key={yr} cx={x(hover)} cy={y(v)} 
+                  r={3.5} 
+                  fill={isFC ? 'transparent' : 'var(--bg)'} 
+                  stroke={yearColor(yr)} 
+                  strokeWidth={1.5}
+                />
+              );
             })}
             {compYears.map(yr => {
               const clr = yearColor(yr);
@@ -567,8 +575,18 @@ function ProductionChart({
               const fcB = indexedB[yr]?.forecast[hover];
               return (
                 <g key={yr}>
-                  {va != null && (showForecast || !fcA) && <circle cx={x(hover)} cy={y(va)} r={4}   fill="var(--bg)" stroke={clr} strokeWidth={1.5} opacity={0.5}/>}
-                  {vb != null && (showForecast || !fcB) && <circle cx={x(hover)} cy={y(vb)} r={4.5} fill="var(--bg)" stroke={clr} strokeWidth={2}/>}
+                  {va != null && (showForecast || !fcA) && (
+                    <circle cx={x(hover)} cy={y(va)} r={4} 
+                      fill={fcA ? 'transparent' : 'var(--bg)'} 
+                      stroke={clr} strokeWidth={1.5} opacity={0.6}
+                    />
+                  )}
+                  {vb != null && (showForecast || !fcB) && (
+                    <circle cx={x(hover)} cy={y(vb)} r={4.5} 
+                      fill={fcB ? 'transparent' : 'var(--bg)'} 
+                      stroke={clr} strokeWidth={2}
+                    />
+                  )}
                 </g>
               );
             })}
