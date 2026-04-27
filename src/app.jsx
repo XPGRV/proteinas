@@ -206,14 +206,17 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
 }
 
 function TopBar({ meta, onUpload, activeDataset }) {
-  const title = activeDataset === 'beef_us' ? 'Beef US' : 'Beef BR';
+  const isUS = activeDataset === 'beef_us';
+  const suffix = isUS ? 'US' : 'BR';
   const currentMeta = activeDataset === 'beef_us'
     ? (meta?.us ?? null)
     : (meta?.br ?? (meta?.updated ? meta : null));
   return (
     <header className="topbar topbar-slim">
       <div className="topbar-title">
-        <h1>{title}</h1>
+        <h1 style={{ color: '#fff', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+          BEEF <span style={{ color: 'var(--accent)' }}>{suffix}</span>
+        </h1>
       </div>
       <div className="topbar-spacer"/>
       <window.UploadWidget onLoad={onUpload} lastUpdate={currentMeta?.updated} currentSource={currentMeta?.source}/>
