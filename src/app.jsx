@@ -631,23 +631,27 @@ function TickerBar({ data, activeDataset }) {
     }).filter(Boolean);
   }, [data, activeDataset]);
 
+  const COPIES = 4; // cópias suficientes para sempre ter buffer à direita
+  const oneWidthRef = useRef(0); // largura de uma cópia, medida após mount
+
   const animate = useCallback(() => {
     if (!trackRef.current) return;
-    
+
     const targetVel = hoveredRef.current ? 0 : 0.8;
-    // Friction: 0.04 is much smoother/slower braking than 0.15
     velRef.current += (targetVel - velRef.current) * 0.04;
-    
-    // If it's very slow, just stop it
     if (hoveredRef.current && velRef.current < 0.001) velRef.current = 0;
-    
+
     posRef.current -= velRef.current;
-    
-    const halfWidth = trackRef.current.scrollWidth / 2;
-    if (halfWidth > 0 && Math.abs(posRef.current) >= halfWidth) {
-      posRef.current += halfWidth;
+
+    // Mede a largura de uma cópia na primeira vez (ou se ainda for 0)
+    if (oneWidthRef.current === 0 && trackRef.current.scrollWidth > 0) {
+      oneWidthRef.current = trackRef.current.scrollWidth / COPIES;
     }
-    
+    // Snap de volta assim que deslocar uma cópia — garante loop infinito sem gap
+    if (oneWidthRef.current > 0 && posRef.current <= -oneWidthRef.current) {
+      posRef.current += oneWidthRef.current;
+    }
+
     trackRef.current.style.transform = `translateX(${posRef.current.toFixed(2)}px)`;
     requestRef.current = requestAnimationFrame(animate);
   }, []);
@@ -677,7 +681,7 @@ function TickerBar({ data, activeDataset }) {
   };
 
   if (!items.length) return null;
-  const tape = [...items, ...items];
+  const tape = Array.from({ length: COPIES }, () => items).flat();
   return (
     <div className="rx-ticker" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <div className="rx-ticker-track" ref={trackRef} style={{animation: 'none'}}>
