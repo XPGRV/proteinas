@@ -164,7 +164,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
 
         <div className="sidebar-group">
           <div className="sidebar-group-header">
-            <span className="sidebar-item-icon">{SIcon.cow}</span>
+            <span className="sidebar-item-icon" style={isBR ? undefined : {color:'var(--fg-dim)', opacity:0.6}}>{SIcon.cow}</span>
             <span>Beef BR</span>
           </div>
           <button
