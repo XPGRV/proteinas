@@ -1047,33 +1047,33 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const aData  = annualA[yr];
             const isHov  = hover === i;
 
-            const bTotal    = bData ? (showForecast ? bData.total    : bData.realized) : 0;
-            const bRealized = bData ? bData.realized : 0;
-            const bForecast = bData && showForecast ? bData.forecast : 0;
-            const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
+            // If the year has ANY forecast quarter → entire bar is forecast (same logic as quarterly chart
+            // which treats any year with ≥1 forecast quarter as a "comparison year")
+            const anyForecast = bData && bData.forecast > 0;
+            const bTotal  = bData ? (showForecast ? bData.total : bData.realized) : 0;
+            const aTotal  = aData ? (showForecast ? aData.total : aData.realized) : 0;
 
             const cx = xCenter(i);
-            // (iii) Historical bars centered; comparison bars side-by-side around center
             const bX = isComp ? cx - barGap / 2 - bBarW : cx - bBarW / 2;
             const aX = cx + barGap / 2;
 
-            const bRealY = y(bRealized);
-            const bRealH = Math.max(0, yBase - bRealY);
-            const bTotY  = y(bTotal);
-            const bTotH  = Math.max(0, yBase - bTotY);
-            const bFcH   = Math.max(0, bTotH - bRealH);
+            const bTotY = y(bTotal);
+            const bTotH = Math.max(0, yBase - bTotY);
+            // Realized portion: only when no forecast quarters (pure historical year)
+            const bRealH = (!anyForecast || !showForecast) ? bTotH : 0;
+            const bFcH   = showForecast && anyForecast ? bTotH : 0;
 
-            const aTotY  = y(aTotal);
-            const aTotH  = Math.max(0, yBase - aTotY);
+            const aTotY = y(aTotal);
+            const aTotH = Math.max(0, yBase - aTotY);
 
             return (
               <g key={yr}>
-                {/* B bar — solid realized portion */}
+                {/* B bar — solid portion (historical years, or when forecast hidden) */}
                 {bRealH > 0 && (
-                  <rect x={bX} y={bRealY} width={bBarW} height={bRealH}
+                  <rect x={bX} y={bTotY} width={bBarW} height={bRealH}
                     fill={clr} opacity={isHov ? 0.95 : 0.72} rx={2}/>
                 )}
-                {/* B bar — hatched forecast portion (on top) */}
+                {/* B bar — fully hatched (any year with forecast quarters) */}
                 {bFcH > 0 && (
                   <>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
