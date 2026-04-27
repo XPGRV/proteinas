@@ -321,7 +321,10 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
           if (v == null) continue;
 
           const qEndMonth = quarter * 3;
-          const isForecast = year > snap.year || (year === snap.year && qEndMonth >= snap.month);
+          const colorFC   = isForecastCell(ri, snap.col);
+          const isForecast = colorFC !== null
+            ? colorFC
+            : (year > snap.year || (year === snap.year && qEndMonth >= snap.month));
           
           if (!window.PARSER_LOG) window.PARSER_LOG = [];
           window.PARSER_LOG.push({ snap: snap.label, year, quarter, isForecast });
