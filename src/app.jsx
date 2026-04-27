@@ -586,6 +586,10 @@ function TweaksPanel({ tweaks, updateTweak }) {
 // The card itself sets that data-card-id (see PriceCard / AbatesTab below).
 function TickerBar({ data, activeDataset }) {
   const trackRef = useRef(null);
+  const hoveredRef = useRef(false);
+  const posRef = useRef(0);
+  const velRef = useRef(0.8);
+  const requestRef = useRef();
 
   const items = useMemo(() => {
     const ds = activeDataset === 'beef_us' ? 'beef_us' : 'beef';
@@ -624,49 +628,56 @@ function TickerBar({ data, activeDataset }) {
     }).filter(Boolean);
   }, [data, activeDataset]);
 
-  // Scroll to the matching card on click. If user clicks ABATES tab and we're
-  // on Preços, switch tab first via a custom event the App listens to.
+  const animate = useCallback(() => {
+    if (!trackRef.current) return;
+    
+    const targetVel = hoveredRef.current ? 0 : 0.8;
+    // Friction: 0.15 is faster braking than 0.08
+    velRef.current += (targetVel - velRef.current) * 0.15;
+    
+    // If it's very slow, just stop it
+    if (hoveredRef.current && velRef.current < 0.01) velRef.current = 0;
+    
+    posRef.current -= velRef.current;
+    
+    const halfWidth = trackRef.current.scrollWidth / 2;
+    if (halfWidth > 0 && Math.abs(posRef.current) >= halfWidth) {
+      posRef.current += halfWidth;
+    }
+    
+    trackRef.current.style.transform = `translateX(${posRef.current.toFixed(2)}px)`;
+    requestRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  useEffect(() => {
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [animate]);
+
+  const onMouseEnter = () => { hoveredRef.current = true; };
+  const onMouseLeave = () => { hoveredRef.current = false; };
+
   const onItemClick = (target) => {
     if (!target) return;
     const el = document.querySelector(`[data-card-id="${target}"]`);
     if (el) {
-      // smooth, with a small offset for the topbar / ticker
       const top = el.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top, behavior: 'smooth' });
-      // brief highlight pulse
       el.classList.remove('rx-card-target');
       void el.offsetWidth;
       el.classList.add('rx-card-target');
       setTimeout(() => el.classList.remove('rx-card-target'), 1600);
     } else {
-      // not on this tab — broadcast intent
       window.dispatchEvent(new CustomEvent('rx-goto-card', { detail: { target } }));
       setTimeout(() => onItemClick(target), 80);
     }
   };
 
-  // Constant scroll speed: ~70 px/sec regardless of content length.
-  // Track width changes when the track contents (items × 2) change.
-  useEffect(() => {
-    if (!trackRef.current) return;
-    const measure = () => {
-      const w = trackRef.current.scrollWidth / 2; // half because we duplicated
-      const PX_PER_SEC = 70;
-      const dur = Math.max(20, Math.round(w / PX_PER_SEC));
-      trackRef.current.style.setProperty('--rx-dur', dur + 's');
-    };
-    // Wait a tick for layout
-    const t = setTimeout(measure, 30);
-    window.addEventListener('resize', measure);
-    return () => { clearTimeout(t); window.removeEventListener('resize', measure); };
-  }, [items, activeDataset]);
-
   if (!items.length) return null;
-  // Duplicate for seamless scroll
   const tape = [...items, ...items];
   return (
-    <div className="rx-ticker">
-      <div className="rx-ticker-track" ref={trackRef}>
+    <div className="rx-ticker" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+      <div className="rx-ticker-track" ref={trackRef} style={{animation: 'none'}}>
         {tape.map((it, i) => {
           const fmt = it.unit === 'cab' ? window.fmtCompact(it.value) :
                       it.unit === '%' ? it.value.toFixed(1) :
