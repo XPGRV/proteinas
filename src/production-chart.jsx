@@ -1066,27 +1066,32 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const aTotY = y(aTotal);
             const aTotH = Math.max(0, yBase - aTotY);
 
+            const delay = `${i * 0.04}s`;
             return (
               <g key={yr}>
                 {/* B bar — solid realized portion */}
                 {bRealH > 0 && (
                   <rect x={bX} y={bRealY} width={bBarW} height={bRealH}
-                    fill={clr} opacity={isHov ? 0.95 : 0.72} rx={2}/>
+                    fill={clr} opacity={isHov ? 0.95 : 0.72} rx={2}
+                    className="rx-bar" style={{ animationDelay: delay }}/>
                 )}
                 {/* B bar — hatched forecast portion stacked on top */}
                 {bFcH > 0 && (
                   <>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
-                      fill={clr} opacity={isHov ? 0.22 : 0.14} rx={2}/>
+                      fill={clr} opacity={isHov ? 0.22 : 0.14} rx={2}
+                      className="rx-bar" style={{ animationDelay: delay }}/>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
-                      fill={`url(#${patId(yr)})`} rx={2}/>
+                      fill={`url(#${patId(yr)})`} rx={2}
+                      className="rx-bar" style={{ animationDelay: delay }}/>
                   </>
                 )}
                 {/* A bar — outline only (older revision) */}
                 {isComp && aTotH > 0 && (
                   <rect x={aX} y={aTotY} width={aBarW} height={aTotH}
                     fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={isHov ? 0.85 : 0.55}
-                    strokeDasharray="3 2" rx={2}/>
+                    strokeDasharray="3 2" rx={2}
+                    className="rx-bar" style={{ animationDelay: delay }}/>
                 )}
               </g>
             );
