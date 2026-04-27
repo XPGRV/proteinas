@@ -182,7 +182,7 @@
 }
 
 /* === Chart line draw-on entry === */
-.chart-svg path[stroke]:not([stroke="transparent"]) {
+.chart-svg path[stroke]:not([stroke="transparent"]):not([stroke-dasharray]) {
   stroke-dasharray: var(--len, 3000);
   animation: rx-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }

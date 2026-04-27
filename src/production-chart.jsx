@@ -269,20 +269,33 @@ function ProductionChart({
     return pts.map((p, i) => `${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   };
 
-  // (iv) buildMixed respects showForecast: when false, produces no dashedPath
   const buildMixed = (values, forecast) => {
-    const solid = [], dashed = [];
+    const solidPts = [], dashedPts = [];
+    let lastRealIdx = -1;
+
     for (let i = 0; i < 4; i++) {
       if (values[i] == null) continue;
-      if (!forecast[i]) {
-        solid.push([x(i), y(values[i])]);
+      
+      const isFC = !!forecast[i];
+      const p = [x(i), y(values[i])];
+
+      if (!isFC) {
+        solidPts.push(p);
+        lastRealIdx = i;
       } else if (showForecast) {
-        if (dashed.length === 0 && solid.length > 0) dashed.push(solid[solid.length - 1]);
-        dashed.push([x(i), y(values[i])]);
+        if (dashedPts.length === 0 && lastRealIdx !== -1) {
+          dashedPts.push([x(lastRealIdx), y(values[lastRealIdx])]);
+        }
+        dashedPts.push(p);
       }
     }
-    const toPath = pts => pts.map((p, j) => `${j===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-    return { solidPath: toPath(solid), dashedPath: toPath(dashed) };
+
+    const toPath = pts => {
+      if (pts.length < 2) return null;
+      return pts.map((p, j) => `${j===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    };
+
+    return { solidPath: toPath(solidPts), dashedPath: toPath(dashedPts) };
   };
 
   const buildAreaPath = vals => {
@@ -407,7 +420,7 @@ function ProductionChart({
                   opacity={dimmed ? 0.2 : (isLast ? 1 : 0.8)}
                   strokeDasharray="10 8"
                   strokeLinejoin="round" strokeLinecap="round"
-                  className={leaving ? 'rx-leaving' : ''}/>
+                  className={`rx-dashed-line ${leaving ? 'rx-leaving' : ''}`}/>
               )}
               {/* Invisible wide click target — só quando o ano está ativo */}
               {!leaving && (
@@ -445,14 +458,14 @@ function ProductionChart({
               {a && (
                 <g opacity={dimmed ? 0.08 : 0.38}>
                   {aSolid  && <path d={aSolid}  fill="none" stroke={clr} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={2} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.9"/>}
+                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={2} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.9" className="rx-dashed-line"/>}
                 </g>
               )}
               {/* Line B — newer snapshot, full opacity */}
               {b && (
                 <g opacity={dimmed ? 0.12 : 1}>
                   {bSolid  && <path d={bSolid}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={3} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round"/>}
+                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={3} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" className="rx-dashed-line"/>}
                 </g>
               )}
               {/* (iii) Click targets — cover solid + dashed for BOTH A and B */}
@@ -663,18 +676,28 @@ function ProductionChart({
           const clr    = yearColor(yr);
           const isSel  = selYear === yr;
           const dimmed = selYear != null && !isSel;
+          const hasFcA = indexedA[yr]?.forecast.some(f => f);
+          const hasFcB = indexedB[yr]?.forecast.some(f => f);
           return (
             <React.Fragment key={yr}>
               <span className="legend-year"
                 style={{padding:'2px 6px', opacity: dimmed ? 0.1 : 1, cursor:'pointer', userSelect:'none'}}
                 onClick={() => toggleSelYear(yr)}>
-                <span style={{display:'inline-block',width:22,height:0,borderTop:`2.5px solid ${clr}`,verticalAlign:'middle',marginRight:4}}/>
+                <span style={{
+                  display:'inline-block',width:22,height:0,
+                  borderTop: hasFcB ? `2.5px dashed ${clr}` : `2.5px solid ${clr}`,
+                  verticalAlign:'middle',marginRight:4
+                }}/>
                 {yr} {fmtSnap(pair?.b)}
               </span>
               <span className="legend-year"
                 style={{padding:'2px 6px', opacity: dimmed ? 0.05 : 0.45, cursor:'pointer', userSelect:'none'}}
                 onClick={() => toggleSelYear(yr)}>
-                <span style={{display:'inline-block',width:22,height:0,borderTop:`1.5px dashed ${clr}`,verticalAlign:'middle',marginRight:4}}/>
+                <span style={{
+                  display:'inline-block',width:22,height:0,
+                  borderTop: hasFcA ? `1.5px dashed ${clr}` : `1.5px solid ${clr}`,
+                  verticalAlign:'middle',marginRight:4
+                }}/>
                 {yr} {fmtSnap(pair?.a)}
               </span>
             </React.Fragment>
@@ -769,20 +792,14 @@ function ProductionCard({ data, accent, events = [] }) {
     const allYrs = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
     return [...allYrs].filter(yr => {
       const a = indexedA[yr], b = indexedB[yr];
-      const hasA = a && a.values.some(v => v != null);
-      const hasB = b && b.values.some(v => v != null);
-      return (a && a.forecast.some(f => f)) || (b && b.forecast.some(f => f));
+      return (a && a.values.some(v => v != null)) || (b && b.values.some(v => v != null));
     }).sort((a, b) => a - b);
   }, [indexedA, indexedB]);
 
   const histYears = useMemo(() => {
     const compSet = new Set(compYears);
-    const allYrs  = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
-    return [...allYrs].filter(yr => {
-      if (compSet.has(yr)) return false;
-      const a = indexedA[yr], b = indexedB[yr];
-      return (!a || a.forecast.every(f => !f)) && (!b || b.forecast.every(f => !f));
-    }).sort((a, b) => a - b);
+    const allKnownYrs = new Set([...Object.keys(indexedA), ...Object.keys(indexedB)].map(Number));
+    return [...allKnownYrs].filter(yr => !compSet.has(yr)).sort((a, b) => a - b);
   }, [indexedA, indexedB, compYears]);
 
   const [selectedHistYears, setSelectedHistYears] = useState(() => histYears.slice(-5));
