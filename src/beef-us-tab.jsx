@@ -570,6 +570,7 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
   }, [data]);
 
   const [hover, setHover] = React.useState(null);
+  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
 
   if (!femPoints.length) {
     const row2024 = data.beef_us?.find(r => r.year === 2024) || data.beef_us?.[data.beef_us?.length - 1];
@@ -628,8 +629,6 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
   const hoverBoi = hover ? boiPoints.find(p => p.year === hover.year && p.month === hover.month) : null;
 
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
-
-  const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
 
   // Evento mais próximo do hover (tolerância ±1 mês)
   const nearEvent = hover && showEvents
