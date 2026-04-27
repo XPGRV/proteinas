@@ -266,7 +266,6 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         return null;
       };
 
-      const snapshots  = snapshotCols.map(s => s.label);
       const bySnapshot = {};
       
       window.DEBUG_PARSER = window.DEBUG_PARSER || [];
@@ -319,6 +318,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
           bySnapshot[snap.label].push({ year, quarter, value: v, isForecast: !!forecast });
         }
       }
+
+      // Only keep snapshots that actually have data
+      const snapshots = snapshotCols
+        .map(s => s.label)
+        .filter(label => bySnapshot[label] && bySnapshot[label].length > 0);
 
       result.production = { snapshots, bySnapshot };
     }
