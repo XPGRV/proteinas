@@ -188,13 +188,24 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       if (!r) continue;
       for (let j = 0; j < r.length; j++) {
         const val = String(r[j] || '').toLowerCase().trim();
-        if (!femFound && !val.includes('avg') && !val.includes('média') && (val.includes('% fêmea') || val.includes('% femea') || val.includes('fêmeas') || val.includes('heifer and cow') || val.includes('pct_femeas') || val.includes('% female') || val === 'femeas' || val.includes('cow slaughter'))) {
-          femCol = j;
-          femFound = true;
+        const isFemMatch = val.includes('% fêmea') || val.includes('% femea') || val.includes('fêmeas') || val.includes('heifer and cow') || val.includes('pct_femeas') || val.includes('% female') || val === 'femeas' || val.includes('cow slaughter');
+        const isBoiMatch = val.includes('boi/bezerro') || val.includes('boi bezerro') || val.includes('steer/calf') || val.includes('steer / calf') || val.includes('steer and calf') || val.includes('steer & calf') || val.includes('boi_bezerro');
+
+        if (isFemMatch && !val.includes('avg') && !val.includes('média')) {
+          // Explicitly prefer index 7 (Column H) if it matches
+          if (j === 7) {
+            femCol = 7;
+            femFound = true;
+          } else if (!femFound) {
+            femCol = j;
+            femFound = true;
+          }
         }
-        if (!boiFound && !val.includes('avg') && !val.includes('média') && (val.includes('boi/bezerro') || val.includes('boi bezerro') || val.includes('steer/calf') || val.includes('steer / calf') || val.includes('steer and calf') || val.includes('steer & calf') || val.includes('boi_bezerro'))) {
-          boiCol = j;
-          boiFound = true;
+        if (isBoiMatch && !val.includes('avg') && !val.includes('média')) {
+          if (!boiFound) {
+            boiCol = j;
+            boiFound = true;
+          }
         }
       }
     }
