@@ -288,12 +288,14 @@ function ProductionChart({
   return (
     <div className="chart-wrap">
       {/* DIAGNÓSTICO DEFINITIVO - NÃO APAGAR */}
-      <div style={{fontSize: 10, color: 'blue', padding: '10px', background: '#eef', marginBottom: 10}}>
+      <div style={{fontSize: 10, color: 'blue', padding: '10px', background: '#eef', marginBottom: 10, whiteSpace: 'pre-wrap'}}>
         <strong>DEBUG CHART:</strong><br/>
         Anos em A ({pair?.a}): {Object.keys(indexedA).join(', ')}<br/>
         Anos em B ({pair?.b}): {Object.keys(indexedB).join(', ')}<br/>
         selectedHistYears: {selectedHistYears.join(', ')}<br/>
-        compYears: {compYears.join(', ')}
+        compYears: {compYears.join(', ')}<br/><br/>
+        <strong>PARSER TRACE (2023 abr-26):</strong><br/>
+        {window.DEBUG_PARSER ? window.DEBUG_PARSER.join('\n') : 'N/A'}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMove} onMouseLeave={() => setHover(null)}

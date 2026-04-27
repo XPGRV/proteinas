@@ -271,17 +271,31 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
 
       // Hardcode explicit column index for the quarter label (col B in Excel)
       const qLabelCol = 1;
+      
+      window.DEBUG_PARSER = window.DEBUG_PARSER || [];
+      window.DEBUG_PARSER.length = 0; // Clear previous logs
 
       for (let ri = 2; ri < raw.length; ri++) {
         const row    = raw[ri];
+        if (!row) continue;
         const qLabel = String(row[qLabelCol] || '').trim();
         const qm     = parseQLabel(qLabel);
+        
+        if (qLabel.includes('23')) {
+           window.DEBUG_PARSER.push(`Row ${ri}: qLabel='${qLabel}', parsed=${JSON.stringify(qm)}`);
+        }
+        
         if (!qm) continue;
         const quarter = qm.q;
         const year    = qm.y;
 
         for (const snap of snapshotCols) {
           const v = parseNum(row[snap.col]);
+          
+          if (year === 2023 && snap.label === 'abr-26') {
+             window.DEBUG_PARSER.push(`Row ${ri} abr-26: rawV='${row[snap.col]}', parseNum=${v}`);
+          }
+          
           if (v == null) continue;
 
           let forecast = isForecastCell(ri, snap.col);
