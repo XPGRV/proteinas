@@ -182,13 +182,13 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const usRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BeefUS')], { header: 1, raw: true });
     
     let femCol = 7, boiCol = 15;
-    for (let i = 0; i < Math.min(10, usRaw.length); i++) {
+    for (let i = 0; i < Math.min(50, usRaw.length); i++) {
       const r = usRaw[i];
       if (!r) continue;
       for (let j = 0; j < r.length; j++) {
         const val = String(r[j] || '').toLowerCase().trim();
         if (val.includes('% fêmea') || val.includes('% femea') || val.includes('fêmeas') || val.includes('heifer and cow') || val.includes('pct_femeas') || val.includes('% female') || val === 'femeas' || val.includes('cow slaughter')) femCol = j;
-        if (val.includes('boi/bezerro') || val.includes('boi bezerro') || val.includes('steer/calf') || val.includes('steer / calf') || val.includes('boi_bezerro')) boiCol = j;
+        if (val.includes('boi/bezerro') || val.includes('boi bezerro') || val.includes('steer/calf') || val.includes('steer / calf') || val.includes('steer and calf') || val.includes('steer & calf') || val.includes('boi_bezerro')) boiCol = j;
       }
     }
 
@@ -268,9 +268,6 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
 
       const snapshots  = snapshotCols.map(s => s.label);
       const bySnapshot = {};
-
-      // Hardcode explicit column index for the quarter label (col B in Excel)
-      const qLabelCol = 1;
       
       window.DEBUG_PARSER = window.DEBUG_PARSER || [];
       window.DEBUG_PARSER.length = 0; // Clear previous logs
@@ -278,8 +275,15 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       for (let ri = 2; ri < raw.length; ri++) {
         const row    = raw[ri];
         if (!row) continue;
-        const qLabel = String(row[qLabelCol] || '').trim();
-        const qm     = parseQLabel(qLabel);
+        
+        let qm = null;
+        let qLabel = '';
+        // Look for the quarter label in the first 3 columns
+        for (let c = 0; c <= 2; c++) {
+          qLabel = String(row[c] || '').trim();
+          qm = parseQLabel(qLabel);
+          if (qm) break;
+        }
         
         if (qLabel.includes('23')) {
            window.DEBUG_PARSER.push(`Row ${ri}: qLabel='${qLabel}', parsed=${JSON.stringify(qm)}`);
