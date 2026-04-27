@@ -583,9 +583,6 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
     );
   }
 
-  const tMin = femPoints[0].t;
-  const tMax = femPoints[femPoints.length - 1].t;
-
   const femVals = femPoints.map(p => p.v);
   const femPad  = (Math.max(...femVals) - Math.min(...femVals)) * 0.15;
   const vLeftMin  = Math.floor((Math.min(...femVals) - femPad) / 2) * 2;
