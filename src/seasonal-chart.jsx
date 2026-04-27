@@ -148,6 +148,7 @@ const SeasonalChart = ({
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
   const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
   const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
+  const { shouldRender: showBarsRender, isLeaving: barsLeaving } = window.useFadeOut(chartStyle === 'bars', 500);
 
   return (
     <div className="chart-wrap">
@@ -210,8 +211,8 @@ const SeasonalChart = ({
           </g>
         )}
 
-        {/* Year series */}
-        {chartStyle === 'bars' ? (
+        {/* Year series — bars */}
+        {showBarsRender && (
           <g clipPath={`url(#clip-${gradId})`}>
             {sortedAsc.map((yr, idx) => (
               <g key={yr}>
@@ -224,14 +225,18 @@ const SeasonalChart = ({
                     fill={yearColor(yr)}
                     opacity={seriesOpacity(yr)}
                     rx={1}
-                    style={{cursor: 'pointer'}}
+                    className={`rx-bar${barsLeaving ? ' rx-bar-leaving' : ''}`}
+                    style={{animationDelay: barsLeaving ? '0s' : `${mi * 0.045}s`, cursor: 'pointer'}}
                     onClick={() => setPinnedYear(p => p === yr ? null : yr)}
                   />
                 ))}
               </g>
             ))}
           </g>
-        ) : (
+        )}
+
+        {/* Year series — lines + area */}
+        {chartStyle !== 'bars' && (
           <g clipPath={`url(#clip-${gradId})`}>
             {displayYears.map((yr) => {
               const isCurrent = yr === latestYear;

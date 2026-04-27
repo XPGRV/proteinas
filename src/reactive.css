@@ -206,6 +206,15 @@
   animation: rx-bar-rise 0.7s cubic-bezier(0.34, 1.2, 0.64, 1) backwards;
   /* per-bar delay set inline via style.animationDelay */
 }
+/* Bars: drop into x-axis on leave */
+@keyframes rx-bar-drop {
+  from { clip-path: inset(0 0 0 0); }
+  to   { clip-path: inset(100% 0 0 0); }
+}
+.chart-svg .rx-bar.rx-bar-leaving {
+  animation: rx-bar-drop 0.45s cubic-bezier(0.4, 0, 0.8, 1) forwards !important;
+  animation-delay: 0s !important;
+}
 
 /* Event dots: sync with line draw — per-month delay set inline */
 .chart-svg .rx-event-dot {
