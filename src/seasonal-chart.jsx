@@ -207,6 +207,7 @@ const SeasonalChart = ({
             <path
               d={stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
               stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none"
+              className="rx-stat-mean"
             />
           </g>
         )}

@@ -380,8 +380,11 @@ function ProductionChart({
               const bot = [...stats].map((s,i) => s ? `L${x(i)},${y(s.p25)}` : '').reverse().join(' ');
               return top + ' ' + bot + ' Z';
             })()} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.08}}/>
-            <path d={stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
-              stroke="var(--fg)" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 3" fill="none"/>
+            <path
+              d={stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
+              stroke="var(--fg)" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 3" fill="none"
+              className="rx-stat-mean"
+            />
           </g>
         )}
 

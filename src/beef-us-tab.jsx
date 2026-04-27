@@ -191,7 +191,7 @@ const EdgebeeefChart = ({
           <g>
             <path d={statsMaxPath + ' ' + statsMinPath + ' Z'} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.05}}/>
             <path d={statsP75Path + ' ' + statsP25Path + ' Z'} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.08}}/>
-            <path d={statsMeanPath} stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none"/>
+            <path d={statsMeanPath} stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none" className="rx-stat-mean"/>
           </g>
         )}
 
