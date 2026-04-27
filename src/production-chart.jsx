@@ -188,7 +188,7 @@ function ProductionChart({
     if (!showStats) return null;
     const byQ = [[], [], [], []];
     for (const yr of selectedHistYears) {
-      (histSeries[yr] || []).forEach((v, qi) => { if (v != null) byQ[qi].push(v); });
+      (histSeries[yr]?.values || []).forEach((v, qi) => { if (v != null) byQ[qi].push(v); });
     }
     return byQ.map(vals => {
       if (vals.length < 2) return null;
@@ -199,7 +199,7 @@ function ProductionChart({
 
   // ── Y range ──────────────────────────────────────────────────────────────────
   const allVals = [];
-  for (const yr of selectedHistYears) (histSeries[yr] || []).forEach(v => v != null && allVals.push(v));
+  for (const yr of selectedHistYears) (histSeries[yr]?.values || []).forEach(v => v != null && allVals.push(v));
   for (const yr of compYears) {
     (indexedA[yr]?.values || []).forEach((v, i) => {
       if (v != null && (showForecast || !indexedA[yr].forecast[i])) allVals.push(v);
@@ -536,7 +536,7 @@ function ProductionChart({
           <g pointerEvents="none">
             <line x1={x(hover)} x2={x(hover)} y1={padT} y2={H-padB} stroke="var(--fg)" strokeOpacity="0.2" strokeWidth="1"/>
             {sortedHist.map(yr => {
-              const v = histSeries[yr]?.[hover];
+              const v = histSeries[yr]?.values[hover];
               if (v == null) return null;
               return <circle key={yr} cx={x(hover)} cy={y(v)} r={3.5} fill="var(--bg)" stroke={yearColor(yr)} strokeWidth={1.5}/>;
             })}
@@ -573,7 +573,7 @@ function ProductionChart({
           if (va != null && (showForecast || !fcA)) rows.push({ label:`${yr} · ${fmtSnap(pair?.a)}${fcA?' (fc)':''}`, color:clr, val:va, muted:true });
         }
         for (const yr of [...sortedHist].reverse()) {
-          const v = histSeries[yr]?.[hover];
+          const v = histSeries[yr]?.values[hover];
           if (v != null) rows.push({ label:String(yr), color:yearColor(yr), val:v });
         }
         if (!rows.length) return null;
