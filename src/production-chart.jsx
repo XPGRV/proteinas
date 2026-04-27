@@ -943,11 +943,10 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   const numYears = allYears.length;
   if (!numYears) return null;
 
-  const slotW   = chartW / numYears;
-  const bBarW   = Math.min(slotW * 0.50, 38);
-  const aBarW   = Math.min(slotW * 0.28, 22);
-  const bOffset = -bBarW * 0.35;
-  const aOffset =  bBarW * 0.65;
+  const slotW = chartW / numYears;
+  const bBarW = Math.min(slotW * 0.50, 38);
+  const aBarW = Math.min(slotW * 0.28, 22);
+  const barGap = 5; // gap between B and A bars for comparison years
 
   const xCenter = i => padL + (i + 0.5) * slotW;
 
@@ -1050,9 +1049,10 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const bForecast = bData && showForecast ? bData.forecast : 0;
             const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
 
-            const cx   = xCenter(i);
-            const bX   = cx + bOffset - bBarW / 2;
-            const aX   = cx + aOffset - aBarW / 2;
+            const cx = xCenter(i);
+            // (iii) Historical bars centered; comparison bars side-by-side around center
+            const bX = isComp ? cx - barGap / 2 - bBarW : cx - bBarW / 2;
+            const aX = cx + barGap / 2;
 
             const bRealY = y(bRealized);
             const bRealH = Math.max(0, yBase - bRealY);
@@ -1065,21 +1065,16 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
 
             return (
               <g key={yr}>
-                {/* Hover column highlight */}
-                {isHov && (
-                  <rect x={padL + i * slotW} y={padT} width={slotW} height={chartH}
-                    fill="var(--fg)" opacity={0.04} pointerEvents="none"/>
-                )}
                 {/* B bar — solid realized portion */}
                 {bRealH > 0 && (
                   <rect x={bX} y={bRealY} width={bBarW} height={bRealH}
-                    fill={clr} opacity={isHov ? 0.88 : 0.72} rx={2}/>
+                    fill={clr} opacity={isHov ? 0.95 : 0.72} rx={2}/>
                 )}
                 {/* B bar — hatched forecast portion (on top) */}
                 {bFcH > 0 && (
                   <>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
-                      fill={clr} opacity={0.14} rx={2}/>
+                      fill={clr} opacity={isHov ? 0.22 : 0.14} rx={2}/>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
                       fill={`url(#${patId(yr)})`} rx={2}/>
                   </>
@@ -1087,14 +1082,9 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
                 {/* A bar — outline only (older revision) */}
                 {isComp && aTotH > 0 && (
                   <rect x={aX} y={aTotY} width={aBarW} height={aTotH}
-                    fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={0.55}
+                    fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={isHov ? 0.85 : 0.55}
                     strokeDasharray="3 2" rx={2}/>
                 )}
-                {/* Year label */}
-                <text x={cx} y={yBase + 16} textAnchor="middle"
-                  className="tick-label" style={{ fontSize: numYears > 13 ? 9 : 11 }}>
-                  {yr}
-                </text>
               </g>
             );
           })}
@@ -1102,6 +1092,17 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
 
         {/* X axis baseline */}
         <line x1={padL} x2={W - padR} y1={yBase} y2={yBase} stroke="var(--border)" strokeWidth={1}/>
+
+        {/* (i) Year labels — outside clipPath so they're visible below the axis */}
+        {allYears.map((yr, i) => {
+          const cx = xCenter(i);
+          return (
+            <text key={yr} x={cx} y={yBase + 16} textAnchor="middle"
+              className="tick-label" style={{ fontSize: numYears > 13 ? 9 : 11 }}>
+              {yr}
+            </text>
+          );
+        })}
       </svg>
 
       {/* Hover tooltip */}
