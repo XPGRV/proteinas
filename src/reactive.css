@@ -186,7 +186,13 @@
   stroke-dasharray: var(--len, 3000);
   animation: rx-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
-.chart-svg .grid-line, .chart-svg .axis-line { animation: rx-fade-in 0.6s ease-out backwards; }
+/* grid-line has opacity:0.6 in CSS — animate to that exact value to avoid flash */
+@keyframes rx-grid-fade {
+  from { opacity: 0; }
+  to   { opacity: 0.6; }
+}
+.chart-svg .grid-line { animation: rx-grid-fade 0.6s ease-out both; }
+.chart-svg .axis-line { animation: rx-fade-in  0.6s ease-out backwards; }
 
 /* Entry for ALL other svg things: bars, event dots, legend */
 .chart-svg rect:not(.rx-bar):not(.rx-no-anim),
