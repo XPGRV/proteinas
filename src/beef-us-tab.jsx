@@ -796,6 +796,7 @@ function BeefUSTab({ data, accent }) {
         <CicloBoiUS data={data} accent={chartAccent} events={window.EVENTS_US || []} showEvents={showEventsCiclo}/>
       </section>
       <window.ProductionCard data={data} accent={chartAccent} events={window.EVENTS_US || []}/>
+      <window.AnnualProductionCard data={data} accent={chartAccent}/>
     </main>
   );
 }

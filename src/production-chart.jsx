@@ -917,4 +917,388 @@ function ProductionCard({ data, accent, events = [] }) {
   );
 }
 
-Object.assign(window, { ProductionCard });
+// ── buildAnnualSeries ─────────────────────────────────────────────────────────
+function buildAnnualSeries(records) {
+  const byYear = {};
+  for (const { year, quarter, value, isForecast } of (records || [])) {
+    if (!byYear[year]) byYear[year] = { realized: 0, forecast: 0, total: 0 };
+    const v = value || 0;
+    byYear[year].total += v;
+    if (isForecast) byYear[year].forecast += v;
+    else byYear[year].realized += v;
+  }
+  return byYear;
+}
+
+// ── AnnualProductionChart ─────────────────────────────────────────────────────
+function AnnualProductionChart({ annualB, annualA, compYears, allYears, showForecast, accent }) {
+  const { useState } = React;
+  const W = 1000, H = 300;
+  const padL = 72, padR = 24, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const [hover, setHover] = useState(null);
+
+  const numYears = allYears.length;
+  if (!numYears) return null;
+
+  const slotW   = chartW / numYears;
+  const bBarW   = Math.min(slotW * 0.50, 38);
+  const aBarW   = Math.min(slotW * 0.28, 22);
+  const bOffset = -bBarW * 0.35;
+  const aOffset =  bBarW * 0.65;
+
+  const xCenter = i => padL + (i + 0.5) * slotW;
+
+  const latestYear = Math.max(...allYears);
+  const yearColor  = yr => {
+    const palette = [
+      'oklch(0.75 0.15 200)',
+      'oklch(0.68 0.16 255)',
+      'oklch(0.74 0.15 310)',
+      'oklch(0.78 0.17 35)',
+      'oklch(0.80 0.15 60)',
+      'oklch(0.72 0.16 0)',
+      'oklch(0.76 0.13 170)',
+    ];
+    const age = latestYear - yr;
+    if (age === 0) return accent;
+    return age - 1 < palette.length ? palette[age - 1] : 'oklch(0.48 0.01 260)';
+  };
+
+  // Y range
+  const allVals = [];
+  for (const yr of allYears) {
+    const b = annualB[yr];
+    const a = annualA[yr];
+    if (b) allVals.push(showForecast ? b.total : b.realized);
+    if (a) allVals.push(showForecast ? a.total : a.realized);
+  }
+  if (!allVals.length) return null;
+
+  const hiVal = Math.max(...allVals);
+  const yMax  = hiVal * 1.14;
+  const yBase = padT + chartH;
+  const y     = v => padT + (1 - v / yMax) * chartH;
+
+  // Nice ticks
+  const rawStep = yMax / 5;
+  const mag  = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+  const nn   = rawStep / mag;
+  const nice = nn < 1.5 ? 1 : nn < 3 ? 2 : nn < 7 ? 5 : 10;
+  const step = nice * mag;
+  const yTicks = [];
+  for (let v = 0; v <= yMax + step * 0.01; v += step) yTicks.push(parseFloat(v.toPrecision(10)));
+
+  const tickFmt = v => {
+    if (step >= 1000000) return (v / 1000000).toFixed(0) + 'M';
+    if (step >= 1000)    return (v / 1000).toFixed(0) + 'k';
+    if (step >= 100)     return (v / 1000).toFixed(1) + 'k';
+    return Math.round(v).toLocaleString('pt-BR');
+  };
+  const fmtVal = v => v == null ? '—' : Math.round(v).toLocaleString('pt-BR');
+
+  const gradId    = 'annual-prod';
+  const patId     = yr => `hatch-ann-${yr}`;
+  const hoverYear = hover != null ? allYears[hover] : null;
+
+  const onMove = e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px   = (e.clientX - rect.left) * (W / rect.width);
+    const xi   = Math.floor((px - padL) / slotW);
+    setHover(xi >= 0 && xi < numYears ? xi : null);
+  };
+
+  return (
+    <div className="chart-wrap" style={{ position: 'relative' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
+        onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+
+        <defs>
+          <clipPath id={`clip-${gradId}`}>
+            <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
+          </clipPath>
+          {allYears.map(yr => (
+            <pattern key={yr} id={patId(yr)} patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke={yearColor(yr)} strokeWidth="2.2" strokeOpacity="0.55"/>
+            </pattern>
+          ))}
+        </defs>
+
+        {/* Y grid + ticks */}
+        {yTicks.map(v => (
+          <g key={v}>
+            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} className="grid-line"/>
+            <text x={padL - 6} y={y(v)} className="tick-label" textAnchor="end" dominantBaseline="middle">
+              {tickFmt(v)}
+            </text>
+          </g>
+        ))}
+
+        {/* Bars */}
+        <g clipPath={`url(#clip-${gradId})`}>
+          {allYears.map((yr, i) => {
+            const isComp = compYears.includes(yr);
+            const clr    = yearColor(yr);
+            const bData  = annualB[yr];
+            const aData  = annualA[yr];
+            const isHov  = hover === i;
+
+            const bTotal    = bData ? (showForecast ? bData.total    : bData.realized) : 0;
+            const bRealized = bData ? bData.realized : 0;
+            const bForecast = bData && showForecast ? bData.forecast : 0;
+            const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
+
+            const cx   = xCenter(i);
+            const bX   = cx + bOffset - bBarW / 2;
+            const aX   = cx + aOffset - aBarW / 2;
+
+            const bRealY = y(bRealized);
+            const bRealH = Math.max(0, yBase - bRealY);
+            const bTotY  = y(bTotal);
+            const bTotH  = Math.max(0, yBase - bTotY);
+            const bFcH   = Math.max(0, bTotH - bRealH);
+
+            const aTotY  = y(aTotal);
+            const aTotH  = Math.max(0, yBase - aTotY);
+
+            return (
+              <g key={yr}>
+                {/* Hover column highlight */}
+                {isHov && (
+                  <rect x={padL + i * slotW} y={padT} width={slotW} height={chartH}
+                    fill="var(--fg)" opacity={0.04} pointerEvents="none"/>
+                )}
+                {/* B bar — solid realized portion */}
+                {bRealH > 0 && (
+                  <rect x={bX} y={bRealY} width={bBarW} height={bRealH}
+                    fill={clr} opacity={isHov ? 0.88 : 0.72} rx={2}/>
+                )}
+                {/* B bar — hatched forecast portion (on top) */}
+                {bFcH > 0 && (
+                  <>
+                    <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
+                      fill={clr} opacity={0.14} rx={2}/>
+                    <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
+                      fill={`url(#${patId(yr)})`} rx={2}/>
+                  </>
+                )}
+                {/* A bar — outline only (older revision) */}
+                {isComp && aTotH > 0 && (
+                  <rect x={aX} y={aTotY} width={aBarW} height={aTotH}
+                    fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={0.55}
+                    strokeDasharray="3 2" rx={2}/>
+                )}
+                {/* Year label */}
+                <text x={cx} y={yBase + 16} textAnchor="middle"
+                  className="tick-label" style={{ fontSize: numYears > 13 ? 9 : 11 }}>
+                  {yr}
+                </text>
+              </g>
+            );
+          })}
+        </g>
+
+        {/* X axis baseline */}
+        <line x1={padL} x2={W - padR} y1={yBase} y2={yBase} stroke="var(--border)" strokeWidth={1}/>
+      </svg>
+
+      {/* Hover tooltip */}
+      {hoverYear != null && (() => {
+        const bData  = annualB[hoverYear];
+        const aData  = annualA[hoverYear];
+        const isComp = compYears.includes(hoverYear);
+        const xi     = allYears.indexOf(hoverYear);
+        const clr    = yearColor(hoverYear);
+        const left   = xi < numYears * 0.6 ? '62%' : '6%';
+
+        const bTotal = bData ? (showForecast ? bData.total : bData.realized) : null;
+        const aTotal = aData ? (showForecast ? aData.total : aData.realized) : null;
+        const delta  = bTotal != null && aTotal != null ? bTotal - aTotal : null;
+
+        return (
+          <div style={{
+            position: 'absolute', top: 24, left,
+            background: 'var(--card-bg)', border: '1px solid var(--border)',
+            borderRadius: 8, padding: '10px 14px', fontSize: 12,
+            pointerEvents: 'none', lineHeight: 1.7, minWidth: 170,
+          }}>
+            <div style={{ fontWeight: 700, marginBottom: 4, color: clr }}>{hoverYear}</div>
+            {bData && (
+              <>
+                <div>Total: <b style={{ fontFamily: 'var(--font-mono)' }}>{fmtVal(bTotal)}</b></div>
+                {bData.realized > 0 && showForecast && bData.forecast > 0 && (
+                  <>
+                    <div style={{ color: 'var(--fg-dim)', fontSize: 11 }}>Realizado: {fmtVal(bData.realized)}</div>
+                    <div style={{ color: 'var(--fg-dim)', fontSize: 11 }}>Forecast: {fmtVal(bData.forecast)}</div>
+                  </>
+                )}
+              </>
+            )}
+            {isComp && aData && aTotal != null && (
+              <>
+                <div style={{ marginTop: 6, color: 'var(--fg-dim)', fontSize: 11 }}>
+                  Revisão anterior: {fmtVal(aTotal)}
+                </div>
+                {delta != null && (
+                  <div style={{
+                    color: delta >= 0 ? '#4caf50' : '#f55',
+                    fontSize: 11, fontWeight: 600,
+                  }}>
+                    Δ {fmtVal(Math.abs(delta))}{delta >= 0 ? ' ↑' : ' ↓'}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, padding: '4px 8px 8px', flexWrap: 'wrap', fontSize: 11, color: 'var(--fg-dim)', alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ display: 'inline-block', width: 14, height: 10, background: 'oklch(0.6 0.1 200)', opacity: 0.75, borderRadius: 2 }}/>
+          Realizado
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{
+            display: 'inline-block', width: 14, height: 10, borderRadius: 2,
+            background: 'repeating-linear-gradient(45deg, oklch(0.6 0.1 200) 0px, oklch(0.6 0.1 200) 2px, transparent 2px, transparent 5px)',
+            opacity: 0.75,
+          }}/>
+          Forecast
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{
+            display: 'inline-block', width: 14, height: 10, borderRadius: 2,
+            border: '1.5px dashed oklch(0.6 0.1 200)', opacity: 0.7,
+          }}/>
+          Revisão anterior
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── AnnualProductionCard ──────────────────────────────────────────────────────
+function AnnualProductionCard({ data, accent }) {
+  const { useState, useMemo, useEffect, useRef } = React;
+
+  const production  = data?.production;
+  const snapshots   = production?.snapshots  || [];
+  const bySnapshot  = production?.bySnapshot || {};
+
+  const pairs = useMemo(() => {
+    const p = [];
+    for (let i = snapshots.length - 1; i >= 1; i--) p.push({ a: snapshots[i-1], b: snapshots[i] });
+    return p;
+  }, [snapshots.join(',')]);
+
+  const [pairIdx,      setPairIdx]      = useState(0);
+  const [showForecast, setShowForecast] = useState(true);
+  const [yearRange,    setYearRange]    = useState('10a');
+  const [pairDropOpen, setPairDropOpen] = useState(false);
+  const pairRef = useRef(null);
+
+  useEffect(() => {
+    if (!pairDropOpen) return;
+    const h = e => { if (pairRef.current && !pairRef.current.contains(e.target)) setPairDropOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [pairDropOpen]);
+
+  const pair    = pairs[Math.min(pairIdx, pairs.length - 1)];
+  const annualB = useMemo(() => buildAnnualSeries(pair ? bySnapshot[pair.b] : []), [bySnapshot, pair?.b]);
+  const annualA = useMemo(() => buildAnnualSeries(pair ? bySnapshot[pair.a] : []), [bySnapshot, pair?.a]);
+
+  const allYears = useMemo(() => {
+    const s = new Set([...Object.keys(annualB), ...Object.keys(annualA)].map(Number));
+    return [...s].sort((a, b) => a - b);
+  }, [annualB, annualA]);
+
+  const compYears = useMemo(() => {
+    if (!pair) return [];
+    return allYears.filter(yr => {
+      const b = annualB[yr], a = annualA[yr];
+      if (!b || !a) return false;
+      return b.forecast > 0 || a.forecast > 0 || Math.abs(b.total - a.total) > 0.5;
+    });
+  }, [annualB, annualA, allYears, pair?.a, pair?.b]);
+
+  const filteredYears = useMemo(() => {
+    if (yearRange === '5a')  return allYears.slice(-5);
+    if (yearRange === '10a') return allYears.slice(-10);
+    return allYears;
+  }, [allYears, yearRange]);
+
+  const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo]||mo)+'-'+yr; };
+  const fmtPair = p => p ? `${fmtSnap(p.b)} vs ${fmtSnap(p.a)}` : '—';
+
+  if (!snapshots.length || !production?.bySnapshot) {
+    return (
+      <div style={{ padding: 40, color: 'var(--fg-dim)', textAlign: 'center' }}>
+        Aguardando dados de produção...
+      </div>
+    );
+  }
+
+  return (
+    <section className="card card-full" data-card-id="us-annual">
+      <div className="card-head">
+        <div>
+          <div className="card-eyebrow">USDA · Produção bovina anual · 000 lb</div>
+          <h3 className="card-title">Revisão de Forecast · Anual</h3>
+          <div className="card-sub">
+            {pair ? `${fmtSnap(pair.b)} vs ${fmtSnap(pair.a)}` : ''}
+          </div>
+        </div>
+        <div className="card-controls">
+          <div className="card-ctrl-row">
+            <div className="year-seg">
+              {['5a', '10a', 'Todos'].map(p => (
+                <button key={p} className={`year-seg-btn ${yearRange === p ? 'is-on' : ''}`}
+                  onClick={() => setYearRange(p)}>{p}</button>
+              ))}
+            </div>
+            <div className="year-drop-wrap" ref={pairRef} style={{ marginLeft: 12 }}>
+              <button
+                className={`year-seg-btn ${pairDropOpen ? 'is-active' : ''}`}
+                style={{ minWidth: 148, justifyContent: 'space-between' }}
+                onClick={() => setPairDropOpen(o => !o)}>
+                {fmtPair(pair)} ▾
+              </button>
+              {pairDropOpen && (
+                <div className="year-drop" style={{ minWidth: 160 }}>
+                  {pairs.map((p, i) => (
+                    <div key={i} className={`year-drop-item ${i === pairIdx ? 'is-on' : ''}`}
+                      onClick={() => { setPairIdx(i); setPairDropOpen(false); }}>
+                      <span className="year-drop-check">{i === pairIdx ? '✓' : ''}</span>
+                      {fmtPair(p)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="card-ctrl-row">
+            <div className="ctrl-btn-group">
+              <button className={`ctrl-btn ${!showForecast ? 'is-on' : ''}`}
+                onClick={() => setShowForecast(s => !s)}>SEM FORECAST</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <AnnualProductionChart
+        annualB={filteredYears.reduce((acc, yr) => { if (annualB[yr]) acc[yr] = annualB[yr]; return acc; }, {})}
+        annualA={filteredYears.reduce((acc, yr) => { if (annualA[yr]) acc[yr] = annualA[yr]; return acc; }, {})}
+        compYears={compYears}
+        allYears={filteredYears}
+        showForecast={showForecast}
+        accent={accent}
+      />
+    </section>
+  );
+}
+
+Object.assign(window, { ProductionCard, AnnualProductionCard });
