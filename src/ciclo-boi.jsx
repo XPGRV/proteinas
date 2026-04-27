@@ -156,35 +156,42 @@ const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
         })}
       </svg>
 
-      {hover && (
-        <div className="hover-card" style={{left: `calc(${(xs(hover.t)/W*100).toFixed(1)}% + 14px)`}}>
-          <div className="hover-month">{window.MONTHS_PT[hover.month - 1]}/{hover.year}</div>
-          <div className="hover-rows">
-            <div className="hover-row">
-              <span className="hover-year" style={{color: rawColor}}>%Fêmeas</span>
-              <span className="hover-val">{hover.v.toFixed(0)}<span className="hover-unit"> %</span></span>
-            </div>
-            {(() => {
-              const mm = mm12.find(p => p.year === hover.year && p.month === hover.month);
-              if (!mm) return null;
-              return (
-                <div className="hover-row">
-                  <span className="hover-year" style={{color: accent}}>MM12</span>
-                  <span className="hover-val">{mm.mm.toFixed(1)}<span className="hover-unit"> %</span></span>
-                </div>
-              );
-            })()}
-          </div>
-          {nearEvent && (
-            <div className="hover-events">
-              <div className="hover-event">
-                <span className="hover-event-year">{nearEvent.year}</span>
-                {nearEvent.label}
+      {hover && (() => {
+        const xPos = xs(hover.t);
+        const isRightSide = xPos > chartW * 0.7;
+        const style = isRightSide 
+          ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 14px)` }
+          : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 14px)` };
+        return (
+          <div className="hover-card" style={style}>
+            <div className="hover-month">{window.MONTHS_PT[hover.month - 1]}/{hover.year}</div>
+            <div className="hover-rows">
+              <div className="hover-row">
+                <span className="hover-year" style={{color: rawColor}}>%Fêmeas</span>
+                <span className="hover-val">{hover.v.toFixed(0)}<span className="hover-unit"> %</span></span>
               </div>
+              {(() => {
+                const mm = mm12.find(p => p.year === hover.year && p.month === hover.month);
+                if (!mm) return null;
+                return (
+                  <div className="hover-row">
+                    <span className="hover-year" style={{color: accent}}>MM12</span>
+                    <span className="hover-val">{mm.mm.toFixed(1)}<span className="hover-unit"> %</span></span>
+                  </div>
+                );
+              })()}
             </div>
-          )}
-        </div>
-      )}
+            {nearEvent && (
+              <div className="hover-events">
+                <div className="hover-event">
+                  <span className="hover-event-year">{nearEvent.year}</span>
+                  {nearEvent.label}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="ciclo-legend">
         <span className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>

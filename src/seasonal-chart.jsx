@@ -460,13 +460,12 @@ const SeasonalChart = ({
   );
 };
 
-const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xFrac, highlightYear, yearColor }) => {
+const HoverCard = ({ month, years, seasonal, stats, events, fmtOpts, unit, xPos, W, highlightYear, yearColor }) => {
   const sorted = [...years].sort((a,b) => b-a);
-  const style = {
-    left: `calc(${(xFrac * 100).toFixed(1)}% + 18px)`,
-    right: 'auto',
-    transform: 'none',
-  };
+  const isRightSide = xPos > W * 0.7;
+  const style = isRightSide
+    ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 18px)` }
+    : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 18px)` };
   return (
     <div className="hover-card" style={style}>
       <div className="hover-month">{window.MONTHS_PT[month]}</div>

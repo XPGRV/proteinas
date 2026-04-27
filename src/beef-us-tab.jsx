@@ -294,7 +294,13 @@ const EdgebeeefChart = ({
           ? (events||[]).filter(ev => ev.month - 1 === hoverMo && selectedYears.includes(ev.year))
           : [];
         return (
-          <div className="hover-card" style={{left:`calc(${(x(hover)/W*100).toFixed(1)}% + 14px)`}}>
+          <div className="hover-card" style={(() => {
+            const xPos = x(hover);
+            const isRightSide = xPos > chartW * 0.7;
+            return isRightSide 
+              ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 14px)` }
+              : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 14px)` };
+          })()}>
             <div className="hover-month">{doyToLabel(hover)}</div>
             <div className="hover-rows">
               {rows.map(({yr, pt}) => (
