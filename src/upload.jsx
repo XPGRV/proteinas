@@ -227,7 +227,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       const month = pd.month;
       const pct_femeas       = (() => { const v = parseNum(r[femCol]);  if (v == null) return null; return v > 1 ? Math.round(v * 10) / 10 : Math.round(v * 1000) / 10; })();
       const boi_bezerro_mm12 = parseNum(r[boiCol]);
-      const abates_total     = parseNum(r[3]);   // col D
+      const abates_total     = (() => { const v = parseNum(r[3]); return v != null ? Math.round(v * 1000) : null; })(); // col D, dado em 000 cabeças → cabeças
       const preco_boi        = parseNum(r[12]);  // col M
       const preco_bezerro    = parseNum(r[13]);  // col N
       const usdbrl           = bbgCambioByMonth[`${year}-${month}`]   ?? null;

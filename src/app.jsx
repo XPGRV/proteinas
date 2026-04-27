@@ -601,9 +601,9 @@ function TickerBar({ data, activeDataset }) {
       ? [
           ['EDGEBEEF',   'edgebeef_value',        '$/cwt',  'us-edgebeef'],
           ['%FÊMEAS',    'pct_femeas',            '%',      'us-ciclo'],
-          ['CÂMBIO',     'usdbrl',                'R$',     null],
+          ['USD/BRL',    'usdbrl',                'R$',     null],
           ['ABATES',     'abates_total',          'cab',    'us-production'],
-          ['BOI·GORDO',  'preco_boi',             '¢/lb',   'us-ciclo'],
+          ['BOI',        'preco_boi',             '¢/lb',   'us-ciclo'],
           ['BEZERRO',    'preco_bezerro',         '¢/lb',   'us-ciclo'],
         ]
       : [
@@ -634,6 +634,13 @@ function TickerBar({ data, activeDataset }) {
   const COPIES = 4; // cópias suficientes para sempre ter buffer à direita
   const oneWidthRef = useRef(0); // largura de uma cópia, medida após mount
 
+  // Reset posição e largura sempre que o dataset mudar — evita o "tilt"
+  // causado por oneWidthRef desatualizado ao trocar de aba
+  useEffect(() => {
+    posRef.current = 0;
+    oneWidthRef.current = 0;
+  }, [activeDataset]);
+
   const animate = useCallback(() => {
     if (!trackRef.current) return;
 
@@ -643,12 +650,12 @@ function TickerBar({ data, activeDataset }) {
 
     posRef.current -= velRef.current;
 
-    // Mede a largura de uma cópia na primeira vez (ou se ainda for 0)
+    // Mede a largura de uma cópia na primeira vez (ou após reset de dataset)
     if (oneWidthRef.current === 0 && trackRef.current.scrollWidth > 0) {
       oneWidthRef.current = trackRef.current.scrollWidth / COPIES;
     }
-    // Snap de volta assim que deslocar uma cópia — garante loop infinito sem gap
-    if (oneWidthRef.current > 0 && posRef.current <= -oneWidthRef.current) {
+    // while em vez de if: corrige qualquer drift acumulado no mesmo frame
+    while (oneWidthRef.current > 0 && posRef.current <= -oneWidthRef.current) {
       posRef.current += oneWidthRef.current;
     }
 
@@ -686,7 +693,7 @@ function TickerBar({ data, activeDataset }) {
     <div className="rx-ticker" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <div className="rx-ticker-track" ref={trackRef} style={{animation: 'none'}}>
         {tape.map((it, i) => {
-          const fmt = it.unit === 'cab' ? window.fmtCompact(it.value) :
+          const fmt = it.unit === 'cab' ? Math.round(it.value).toLocaleString('pt-BR') :
                       it.unit === '%' ? it.value.toFixed(1) :
                       it.value.toFixed(2).replace('.', ',');
           const dir = it.delta == null ? '' : it.delta >= 0 ? 'is-up' : 'is-down';
