@@ -292,7 +292,7 @@ function ProductionChart({
         <strong>DEBUG CHART:</strong><br/>
         Anos em A ({pair?.a}): {Object.keys(indexedA).join(', ')}<br/>
         Anos em B ({pair?.b}): {Object.keys(indexedB).join(', ')}<br/>
-        histYears: {histYears.join(', ')}<br/>
+        selectedHistYears: {selectedHistYears.join(', ')}<br/>
         compYears: {compYears.join(', ')}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
