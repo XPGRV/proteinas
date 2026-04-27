@@ -374,12 +374,12 @@ function ProductionChart({
               const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.max)}` : '').join(' ');
               const bot = [...stats].map((s,i) => s ? `L${x(i)},${y(s.min)}` : '').reverse().join(' ');
               return top + ' ' + bot + ' Z';
-            })()} fill="var(--fg)" opacity="0.05"/>
+            })()} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.05}}/>
             <path d={(() => {
               const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.p75)}` : '').join(' ');
               const bot = [...stats].map((s,i) => s ? `L${x(i)},${y(s.p25)}` : '').reverse().join(' ');
               return top + ' ' + bot + ' Z';
-            })()} fill="var(--fg)" opacity="0.08"/>
+            })()} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.08}}/>
             <path d={stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.mean)}` : '').join(' ')}
               stroke="var(--fg)" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 3" fill="none"/>
           </g>
@@ -703,6 +703,20 @@ function ProductionChart({
             </React.Fragment>
           );
         })}
+        {showStats && (<>
+          <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+            <span style={{display:'inline-block',width:16,height:2,borderTop:'2px dashed var(--fg)',opacity:0.5,verticalAlign:'middle',marginRight:2}}/>
+            Média histórica
+          </span>
+          <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+            <span style={{display:'inline-block',width:16,height:8,background:'var(--fg)',opacity:0.08,verticalAlign:'middle',marginRight:2,borderRadius:1}}/>
+            P25–P75
+          </span>
+          <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+            <span style={{display:'inline-block',width:16,height:8,background:'var(--fg)',opacity:0.05,verticalAlign:'middle',marginRight:2,borderRadius:1}}/>
+            Mín–Máx
+          </span>
+        </>)}
       </div>
     </div>
   );

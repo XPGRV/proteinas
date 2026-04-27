@@ -189,8 +189,8 @@ const EdgebeeefChart = ({
         {/* Stats band */}
         {showStats && statsDoys.length > 0 && (
           <g>
-            <path d={statsMaxPath + ' ' + statsMinPath + ' Z'} fill="var(--fg)" opacity="0.05"/>
-            <path d={statsP75Path + ' ' + statsP25Path + ' Z'} fill="var(--fg)" opacity="0.08"/>
+            <path d={statsMaxPath + ' ' + statsMinPath + ' Z'} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.05}}/>
+            <path d={statsP75Path + ' ' + statsP25Path + ' Z'} fill="var(--fg)" className="rx-stat-band" style={{'--rx-stat-op': 0.08}}/>
             <path d={statsMeanPath} stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none"/>
           </g>
         )}
@@ -358,6 +358,10 @@ const EdgebeeefChart = ({
             <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
               <span style={{display:'inline-block',width:16,height:8,background:'var(--fg)',opacity:0.08,verticalAlign:'middle',marginRight:2,borderRadius:1}}/>
               P25–P75
+            </span>
+            <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+              <span style={{display:'inline-block',width:16,height:8,background:'var(--fg)',opacity:0.05,verticalAlign:'middle',marginRight:2,borderRadius:1}}/>
+              Mín–Máx
             </span>
           </>
         )}
