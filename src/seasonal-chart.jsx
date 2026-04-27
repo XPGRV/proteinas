@@ -41,13 +41,14 @@ const SeasonalChart = ({
         if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
       }
     }
-    if (showStats && !hideAvg && stats) {
+    // usa showStatsRender (não showStats) para manter a escala estável durante a saída das bandas
+    if (showStatsRender && !hideAvg && stats) {
       for (const s of stats) { if (!s) continue; lo = Math.min(lo, s.min); hi = Math.max(hi, s.max); }
     }
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     const pad = (hi - lo) * 0.1 || 1;
     return { yMin: lo - pad*0.3, yMax: hi + pad*0.5 };
-  }, [seasonal, selectedYears.join(','), stats, showStats, hideAvg]);
+  }, [seasonal, selectedYears.join(','), stats, showStatsRender, hideAvg]);
 
   const x = (m) => padL + (m / 11) * chartW;
   const y = (v) => padT + (1 - (v - yMin)/(yMax - yMin)) * chartH;
