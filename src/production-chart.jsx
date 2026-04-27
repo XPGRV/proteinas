@@ -21,6 +21,7 @@ function ProductionControls({
   const [pairDropOpen, setPairDropOpen] = useState(false);
   const histRef = useRef(null);
   const pairRef = useRef(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   const presets = [
     { label: '3a',    yrs: histYears.slice(-3) },
@@ -127,6 +128,11 @@ function ProductionControls({
           <button className={`ctrl-btn ${!showForecast ? 'is-on' : ''}`} onClick={() => setShowForecast(s => !s)}>
             SEM FORECAST
           </button>
+          {/* (v) DEBUG TOGGLE */}
+          <button className={`ctrl-btn ${showDebug ? 'is-on' : ''}`} 
+            onClick={() => setShowDebug(!showDebug)}>
+            DEBUG FC
+          </button>
         </div>
         <div style={{marginLeft: 16}}>
           <div className="seg">
@@ -135,6 +141,19 @@ function ProductionControls({
           </div>
         </div>
       </div>
+
+      {showDebug && (
+        <div style={{marginTop: 12, padding: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 10, fontFamily: 'monospace'}}>
+          <div style={{fontWeight:'bold', marginBottom: 4, color: 'var(--fg-dim)'}}>DEBUG: RECENT PARSER DETECTIONS</div>
+          <div style={{maxHeight: 120, overflow: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 4}}>
+            {(window.PARSER_LOG || []).slice(-40).reverse().map((l, i) => (
+              <div key={i} style={{color: l.isForecast ? 'var(--accent)' : '#aaa', whiteSpace: 'nowrap'}}>
+                {l.snap} | {l.year} Q{l.quarter}: {l.isForecast ? 'FC ⚬' : 'REAL'}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -384,9 +403,9 @@ function ProductionChart({
               {dashedPath && (
                 <path
                   d={dashedPath} fill="none" stroke={clr}
-                  strokeWidth={isSel ? 2.5 : (isLast ? 2 : 1.25)}
-                  opacity={dimmed ? 0.15 : (isLast ? 1 : 0.8)}
-                  strokeDasharray="6 6"
+                  strokeWidth={isSel ? 3 : (isLast ? 2.5 : 1.5)}
+                  opacity={dimmed ? 0.2 : (isLast ? 1 : 0.8)}
+                  strokeDasharray="10 8"
                   strokeLinejoin="round" strokeLinecap="round"
                   className={leaving ? 'rx-leaving' : ''}/>
               )}
@@ -426,14 +445,14 @@ function ProductionChart({
               {a && (
                 <g opacity={dimmed ? 0.08 : 0.38}>
                   {aSolid  && <path d={aSolid}  fill="none" stroke={clr} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="6 6" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.8"/>}
+                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={2} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.9"/>}
                 </g>
               )}
               {/* Line B — newer snapshot, full opacity */}
               {b && (
                 <g opacity={dimmed ? 0.12 : 1}>
                   {bSolid  && <path d={bSolid}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={2.5} strokeDasharray="6 6" strokeLinejoin="round" strokeLinecap="round"/>}
+                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={3} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round"/>}
                 </g>
               )}
               {/* (iii) Click targets — cover solid + dashed for BOTH A and B */}
