@@ -896,15 +896,19 @@ body {
 .hover-card {
   position: absolute;
   top: 16px;
-  background: color-mix(in oklch, var(--bg-panel) 90%, transparent);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-strong);
+  background: color-mix(in oklch, var(--bg-panel) 65%, transparent);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  border-top: 1px solid oklch(1 0 0 / 0.2);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
-  box-shadow: 0 12px 32px oklch(0 0 0 / 0.4);
+  box-shadow: 
+    0 12px 32px oklch(0 0 0 / 0.4),
+    0 0 0 1px oklch(1 0 0 / 0.05);
   pointer-events: none;
   min-width: 160px;
-  z-index: 10;
+  z-index: 100;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .hover-month {
   font-family: var(--font-mono);

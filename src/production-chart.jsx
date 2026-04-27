@@ -216,18 +216,8 @@ function ProductionChart({
 
   if (!allVals.length) {
     return (
-      <div style={{padding:40, color:'var(--fg-dim)'}}>
-        {/* DIAGNÓSTICO DEFINITIVO - NÃO APAGAR */}
-        <div style={{fontSize: 10, color: 'blue', padding: '10px', background: '#eef', marginBottom: 10, whiteSpace: 'pre-wrap'}}>
-          <strong>DEBUG CHART (No Data):</strong><br/>
-          Anos em A ({pair?.a}): {Object.keys(indexedA).join(', ')}<br/>
-          Anos em B ({pair?.b}): {Object.keys(indexedB).join(', ')}<br/>
-          selectedHistYears: {selectedHistYears.join(', ')}<br/>
-          compYears: {compYears.join(', ')}<br/><br/>
-          <strong>PARSER TRACE (2023 abr-26):</strong><br/>
-          {window.DEBUG_PARSER ? window.DEBUG_PARSER.join('\n') : 'N/A'}
-        </div>
-        Sem dados de produção
+      <div style={{padding:40, color:'var(--fg-dim)', textAlign: 'center'}}>
+        Aguardando dados de produção...
       </div>
     );
   }

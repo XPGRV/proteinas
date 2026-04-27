@@ -572,14 +572,13 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
   const [hover, setHover] = React.useState(null);
   const { shouldRender: showEventsRender, isLeaving: eventsLeaving } = window.useFadeOut(showEvents, 400);
 
+  const tMin = femPoints.length ? femPoints[0].t : 2000;
+  const tMax = femPoints.length ? femPoints[femPoints.length - 1].t : 2026;
+
   if (!femPoints.length) {
-    const row2024 = data.beef_us?.find(r => r.year === 2024) || data.beef_us?.[data.beef_us?.length - 1];
     return (
-      <div style={{ color: 'oklch(0.72 0.18 25)', padding: '20px', fontFamily: 'monospace', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
-        <strong>DEBUG - Ciclo do Boi Vazio:</strong><br/>
-        Total linhas em data.beef_us: {data.beef_us ? data.beef_us.length : 'undefined'}<br/>
-        Amostra de uma linha recente (ex: 2024): {row2024 ? JSON.stringify(row2024) : 'Nenhuma'}<br/><br/>
-        Se pct_femeas e boi_bezerro estiverem null na linha recente, significa que o leitor JS não conseguiu extrair o número dessas colunas.
+      <div style={{ padding: 40, color: 'var(--fg-dim)', textAlign: 'center' }}>
+        Aguardando dados do ciclo...
       </div>
     );
   }
@@ -705,31 +704,39 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
         })}
       </svg>
 
-      {hover && (
-        <div className="hover-card" style={{left:`calc(${(xs(hover.t)/W*100).toFixed(1)}% + 14px)`}}>
-          <div className="hover-month">{window.MONTHS_PT[hover.month-1]}/{hover.year}</div>
-          <div className="hover-rows">
-            <div className="hover-row">
-              <span className="hover-year" style={{color:rawColor}}>%Fêmeas</span>
-              <span className="hover-val">{hover.v.toFixed(1)}<span className="hover-unit"> %</span></span>
-            </div>
-            {hoverBoi && (
+      {hover && (() => {
+        const xPos = xs(hover.t);
+        const isRightSide = xPos > chartW * 0.7;
+        const style = isRightSide 
+          ? { right: `calc(${((W - xPos) / W * 100).toFixed(1)}% + 14px)` }
+          : { left: `calc(${(xPos / W * 100).toFixed(1)}% + 14px)` };
+
+        return (
+          <div className="hover-card" style={style}>
+            <div className="hover-month">{window.MONTHS_PT[hover.month-1]}/{hover.year}</div>
+            <div className="hover-rows">
               <div className="hover-row">
-                <span className="hover-year" style={{color:accent}}>Boi/Bezerro</span>
-                <span className="hover-val">{hoverBoi.v.toFixed(3)}</span>
+                <span className="hover-year" style={{color:rawColor}}>%Fêmeas</span>
+                <span className="hover-val">{hover.v.toFixed(1)}<span className="hover-unit"> %</span></span>
+              </div>
+              {hoverBoi && (
+                <div className="hover-row">
+                  <span className="hover-year" style={{color:accent}}>Boi/Bezerro</span>
+                  <span className="hover-val">{hoverBoi.v.toFixed(3)}</span>
+                </div>
+              )}
+            </div>
+            {nearEvent && (
+              <div className="hover-events">
+                <div className="hover-event">
+                  <span className="hover-event-year">{nearEvent.year}</span>
+                  {nearEvent.label}
+                </div>
               </div>
             )}
           </div>
-          {nearEvent && (
-            <div className="hover-events">
-              <div className="hover-event">
-                <span className="hover-event-year">{nearEvent.year}</span>
-                {nearEvent.label}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       <div className="ciclo-legend">
         <span className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
