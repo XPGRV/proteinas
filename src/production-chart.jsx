@@ -370,7 +370,7 @@ function ProductionChart({
 
         {/* Stats band */}
         {showStatsRender && stats && (
-          <g>
+          <g clipPath={`url(#clip-${gradId})`}>
             <path d={(() => {
               const top = stats.map((s,i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.max)}` : '').join(' ');
               const bot = [...stats].map((s,i) => s ? `L${x(i)},${y(s.min)}` : '').reverse().join(' ');

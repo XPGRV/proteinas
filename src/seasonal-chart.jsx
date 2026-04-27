@@ -41,14 +41,13 @@ const SeasonalChart = ({
         if (v != null) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
       }
     }
-    // usa showStatsRender (não showStats) para manter a escala estável durante a saída das bandas
-    if (showStatsRender && !hideAvg && stats) {
+    if (showStats && !hideAvg && stats) {
       for (const s of stats) { if (!s) continue; lo = Math.min(lo, s.min); hi = Math.max(hi, s.max); }
     }
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     const pad = (hi - lo) * 0.1 || 1;
     return { yMin: lo - pad*0.3, yMax: hi + pad*0.5 };
-  }, [seasonal, selectedYears.join(','), stats, showStatsRender, hideAvg]);
+  }, [seasonal, selectedYears.join(','), stats, showStats, hideAvg]);
 
   const x = (m) => padL + (m / 11) * chartW;
   const y = (v) => padT + (1 - (v - yMin)/(yMax - yMin)) * chartH;
@@ -189,7 +188,7 @@ const SeasonalChart = ({
 
         {/* Historical band */}
         {showStatsRender && stats && chartStyle !== 'bars' && (
-          <g>
+          <g clipPath={`url(#clip-${gradId})`}>
             <path
               d={(() => {
                 const top = stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i)},${y(s.max)}` : '').join(' ');

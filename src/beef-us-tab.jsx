@@ -189,7 +189,7 @@ const EdgebeeefChart = ({
 
         {/* Stats band */}
         {showStatsRender && statsDoys.length > 0 && (
-          <g>
+          <g clipPath={`url(#clip-${gradId})`}>
             <path d={statsMaxPath + ' ' + statsMinPath + ' Z'} fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.05}}/>
             <path d={statsP75Path + ' ' + statsP25Path + ' Z'} fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.08}}/>
             <path d={statsMeanPath} stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none" className={`rx-stat-mean${statsLeaving ? ' rx-stat-leaving' : ''}`}/>
