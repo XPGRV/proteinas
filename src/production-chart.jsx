@@ -209,7 +209,28 @@ function ProductionChart({
     });
   }
 
-  if (!allVals.length) return <div style={{padding:40, color:'var(--fg-dim)'}}>Sem dados de produção</div>;
+  // ── ALL hooks must come before any early return ──────────────────────────────
+  const sortedHist = [...selectedHistYears].sort((a,b) => a-b).filter(yr => histSeries[yr]);
+  // Anos saindo: rastreia para animação reversa de undraw
+  const { displayYears: displayHistYears, isLeaving } = window.useTrackedYears(sortedHist);
+
+  if (!allVals.length) {
+    return (
+      <div style={{padding:40, color:'var(--fg-dim)'}}>
+        {/* DIAGNÓSTICO DEFINITIVO - NÃO APAGAR */}
+        <div style={{fontSize: 10, color: 'blue', padding: '10px', background: '#eef', marginBottom: 10, whiteSpace: 'pre-wrap'}}>
+          <strong>DEBUG CHART (No Data):</strong><br/>
+          Anos em A ({pair?.a}): {Object.keys(indexedA).join(', ')}<br/>
+          Anos em B ({pair?.b}): {Object.keys(indexedB).join(', ')}<br/>
+          selectedHistYears: {selectedHistYears.join(', ')}<br/>
+          compYears: {compYears.join(', ')}<br/><br/>
+          <strong>PARSER TRACE (2023 abr-26):</strong><br/>
+          {window.DEBUG_PARSER ? window.DEBUG_PARSER.join('\n') : 'N/A'}
+        </div>
+        Sem dados de produção
+      </div>
+    );
+  }
 
   const lo = Math.min(...allVals), hi = Math.max(...allVals);
   const rng = hi - lo || 1;
@@ -275,9 +296,6 @@ function ProductionChart({
   const fmtVal   = v => v == null ? '—' : Math.round(v).toLocaleString('pt-BR');
   const fmtLabel = v => v == null ? '' : Math.round(v).toLocaleString('pt-BR');
 
-  const sortedHist = [...selectedHistYears].sort((a,b) => a-b).filter(yr => histSeries[yr]);
-  // Anos saindo: rastreia para animação reversa de undraw
-  const { displayYears: displayHistYears, isLeaving } = window.useTrackedYears(sortedHist);
   const gradId = 'prod-grad';
   const EVENT_COLOR = 'oklch(0.85 0.18 80)';
   // Events that fall in the hovered quarter among visible years
