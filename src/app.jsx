@@ -1,5 +1,5 @@
 // Main app — 2 tabs (Preços/Spreads, Abates)
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 const PALETTES = {
   neon:       { name: 'Néon',       accent: 'oklch(0.82 0.18 155)' },
