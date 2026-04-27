@@ -949,8 +949,9 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   const numYears = allYears.length;
   if (!numYears) return null;
 
-  // Layout based on visible (non-leaving) years so slots don't resize during exit
-  const slotW = chartW / numYears;
+  // Layout uses displayYears (includes leaving) so slots don't resize until exit animation ends
+  const numDisplay = displayYears.length;
+  const slotW = chartW / numDisplay;
   const bBarW = Math.min(slotW * 0.50, 38);
   const aBarW = Math.min(slotW * 0.28, 22);
   const barGap = 5;
@@ -1007,14 +1008,15 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
 
   const gradId    = 'annual-prod';
   const patId     = yr => `hatch-ann-${yr}`;
-  const hoverYear = hover != null ? allYears[hover] : null;
+  // Hover and positions based on displayYears so they match the stable layout
+  const hoverYear = hover != null ? displayYears[hover] : null;
 
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px   = (e.clientX - rect.left) * (W / rect.width);
     const py   = (e.clientY - rect.top)  * (H / rect.height);
     const xi   = Math.floor((px - padL) / slotW);
-    setHover(xi >= 0 && xi < numYears ? xi : null);
+    setHover(xi >= 0 && xi < numDisplay ? xi : null);
     setMouseY(py);
   };
 
@@ -1046,23 +1048,21 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
 
         {/* Bars — includes leaving years for exit animation */}
         <g clipPath={`url(#clip-${gradId})`}>
-          {displayYears.map((yr) => {
+          {displayYears.map((yr, di) => {
             const leaving = isLeaving(yr);
-            // Position within the visible (non-leaving) slots; leaving bars keep last position
-            const visIdx  = allYears.indexOf(yr);
-            const slotIdx = visIdx >= 0 ? visIdx : allYears.length - 1;
 
             const isComp = compYears.includes(yr);
             const clr    = yearColor(yr);
             const bData  = annualB[yr];
             const aData  = annualA[yr];
-            const isHov  = !leaving && hover === visIdx;
+            const isHov  = !leaving && hover === di;
 
             const bTotal    = bData ? (showForecast ? bData.total    : bData.realized) : 0;
             const bRealized = bData ? bData.realized : 0;
             const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
 
-            const cx = xCenter(slotIdx);
+            // Position by index in displayYears (stable during exit animation)
+            const cx = xCenter(di);
             const bX = isComp ? cx - barGap / 2 - bBarW : cx - bBarW / 2;
             const aX = cx + barGap / 2;
 
@@ -1074,8 +1074,9 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const aTotY  = y(aTotal);
             const aTotH  = Math.max(0, yBase - aTotY);
 
-            // Entry: right-to-left (newest = index numYears-1 → delay 0; oldest → delay max)
-            const entryDelay = `${(numYears - 1 - slotIdx) * 0.04}s`;
+            // Entry right-to-left: newest bar (rightmost in allYears) gets delay 0
+            const allIdx     = allYears.indexOf(yr);
+            const entryDelay = allIdx >= 0 ? `${(numYears - 1 - allIdx) * 0.04}s` : '0s';
             const barClass   = `rx-bar${leaving ? ' rx-bar-leaving' : ''}`;
             const barStyle   = leaving ? {} : { animationDelay: entryDelay };
 
@@ -1110,12 +1111,13 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
         {/* X axis baseline */}
         <line x1={padL} x2={W - padR} y1={yBase} y2={yBase} stroke="var(--border)" strokeWidth={1}/>
 
-        {/* Year labels — only for visible (non-leaving) years */}
-        {allYears.map((yr, i) => {
-          const cx = xCenter(i);
+        {/* Year labels — stable positions from displayYears; hide leaving ones */}
+        {displayYears.map((yr, di) => {
+          const cx = xCenter(di);
+          if (isLeaving(yr)) return null;
           return (
             <text key={yr} x={cx} y={yBase + 16} textAnchor="middle"
-              className="tick-label" style={{ fontSize: numYears > 13 ? 9 : 11 }}>
+              className="tick-label" style={{ fontSize: numDisplay > 13 ? 9 : 11 }}>
               {yr}
             </text>
           );
