@@ -927,7 +927,8 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   if (!numYears) return null;
 
   const slotW = chartW / numYears;
-  const bBarW = Math.min(slotW * 0.50, 38);
+  const barGap = 4;
+  const bBarW  = Math.min(slotW * 0.38, 28);
 
   const xCenter = i => padL + (i + 0.5) * slotW;
 
@@ -1033,7 +1034,9 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
 
             const cx = xCenter(di);
-            const bX = cx - bBarW / 2;   // always centered
+            // Comparison: pair centered on cx (B left, A right); solo: B centered
+            const bX = isComp ? cx - barGap / 2 - bBarW : cx - bBarW / 2;
+            const aX = cx + barGap / 2;
 
             const bRealY = y(bRealized);
             const bRealH = Math.max(0, yBase - bRealY);
@@ -1064,7 +1067,7 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
                   </>
                 )}
                 {isComp && aTotH > 0 && (
-                  <rect x={bX} y={aTotY} width={bBarW} height={aTotH}
+                  <rect x={aX} y={aTotY} width={bBarW} height={aTotH}
                     fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={isHov ? 0.85 : 0.55}
                     strokeDasharray="3 2" rx={2}
                     className="rx-bar" style={{ animationDelay: entryDelay }}/>
