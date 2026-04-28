@@ -271,11 +271,11 @@ function PrecosTab({ data, accent }) {
           accent={accent} data={computedData} dataset="beef"
           field="beef_carcass_brl_kg" usdField="carcass_mi_usd"
           unit="R$/kg" usdUnit="US$/kg" hasUSD decimals={2}/>
-        <PriceCard cardId="card-carne-me" title="Preço Carne · Mercado Externo" sub="Bloomberg · BACAINDX Index"
+        <PriceCard cardId="card-carne-me" title="Preço Carne · Mercado Externo" sub="SECEX · Preço Carne Exportação"
           accent={accent} data={data} dataset="beef"
           field="beef_me_brl_kg" usdField="beef_me_usd_kg"
           unit="R$/kg" usdUnit="US$/kg" hasUSD decimals={2}/>
-        <PriceCard cardId="card-cattle" title="Preço Boi" sub="Bloomberg · BAINPECU Index"
+        <PriceCard cardId="card-cattle" title="Preço Boi" sub="Bloomberg · BACAINDX Index"
           accent={accent} data={data} dataset="beef"
           field="cattle_brl_kg" usdField="cattle_usd_kg"
           unit="R$/kg" usdUnit="US$/kg" hasUSD decimals={2}/>

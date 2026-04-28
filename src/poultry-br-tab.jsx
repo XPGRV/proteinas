@@ -32,7 +32,7 @@ const PoultryBRTab = ({ data, accent }) => {
         <window.PriceCard
           cardId="card-frango-mi"
           title="Preço Frango · Mercado Interno"
-          sub="FrangoBR · Coluna L"
+          sub="Bloomberg · BACHSP Index"
           accent={accent} data={data} dataset="frango"
           field="frango_mi_brl_kg" unit="R$/kg" decimals={2}
           events={FRANGO_EVENTS}
@@ -40,7 +40,7 @@ const PoultryBRTab = ({ data, accent }) => {
         <window.PriceCard
           cardId="card-frango-me"
           title="Preço Frango · Mercado Externo"
-          sub="FrangoBR · Coluna N"
+          sub="SECEX · Preço Frango Exportação"
           accent={accent} data={data} dataset="frango"
           field="frango_me_brl_kg" unit="R$/kg" decimals={2}
           events={FRANGO_EVENTS}
@@ -48,7 +48,7 @@ const PoultryBRTab = ({ data, accent }) => {
         <window.PriceCard
           cardId="card-feed-grain"
           title="Feed Grain"
-          sub="FrangoBR · Coluna H"
+          sub="Cálculo próprio · 66% Corn - BAINCORN Index + 33% Soybean - BASMSBPA Index"
           accent={accent} data={data} dataset="frango"
           field="feed_grain_brl_kg" unit="R$/kg" decimals={2}
           events={FRANGO_EVENTS}
@@ -61,7 +61,7 @@ const PoultryBRTab = ({ data, accent }) => {
         <window.PriceCard
           cardId="card-spread-mi-frango"
           title="Spread MI"
-          sub="FrangoBR · Coluna O"
+          sub="Cálculo próprio · Preço Frango MI - Feed Grain"
           accent={accent} data={data} dataset="frango"
           field="spread_mi" unit="R$/kg" decimals={2}
           events={FRANGO_EVENTS}
@@ -69,7 +69,7 @@ const PoultryBRTab = ({ data, accent }) => {
         <window.PriceCard
           cardId="card-spread-me-frango"
           title="Spread ME"
-          sub="FrangoBR · Coluna Q"
+          sub="Cálculo próprio · Preço Frango ME - Feed Grain"
           accent={accent} data={data} dataset="frango"
           field="spread_me" unit="R$/kg" decimals={2}
           events={FRANGO_EVENTS}
