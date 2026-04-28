@@ -726,17 +726,14 @@ function TickerBar({ data, activeDataset }) {
     if (el) {
       const top = el.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top, behavior: 'smooth' });
-      el.classList.remove('rx-card-target');
-      void el.offsetWidth;
-      el.classList.add('rx-card-target');
-      const _cleanup = (e) => {
-        if (e.animationName !== 'rx-card-target') return;
-        el.removeEventListener('animationend', _cleanup);
-        el.style.transition = 'none';
-        el.classList.remove('rx-card-target');
-        requestAnimationFrame(() => { el.style.transition = ''; });
-      };
-      el.addEventListener('animationend', _cleanup);
+      // Web Animations API — sem manipular classes CSS, sem interferir com rx-fade-up
+      const accentRaw = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      if (el._rxCardAnim) { try { el._rxCardAnim.cancel(); } catch (_) {} }
+      el._rxCardAnim = el.animate([
+        { boxShadow: `0 0 0 0 color-mix(in oklch, ${accentRaw} 60%, transparent)` },
+        { boxShadow: `0 0 0 10px color-mix(in oklch, ${accentRaw} 0%, transparent)`, offset: 0.6 },
+        { boxShadow: '0 0 0 0 transparent' },
+      ], { duration: 1400, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'none' });
     } else {
       window.dispatchEvent(new CustomEvent('rx-goto-card', { detail: { target } }));
       setTimeout(() => onItemClick(target), 80);
