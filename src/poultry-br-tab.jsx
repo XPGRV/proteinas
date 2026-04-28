@@ -1,4 +1,18 @@
 // Poultry BR Tab — FrangoBR sheet data
+const FRANGO_EVENTS = [
+  { year: 2015, month: 10, label: 'Embargo russo à carne de frango brasileira' },
+  { year: 2018, month: 3,  label: 'Carne Fraca — impacto exportações' },
+  { year: 2020, month: 3,  label: 'COVID-19 — alta demanda doméstica, fechamento food service' },
+  { year: 2020, month: 6,  label: 'China suspende importações de frango do Brasil (COVID)' },
+  { year: 2021, month: 1,  label: 'Alta milho/soja — pressão custos feed grain' },
+  { year: 2022, month: 2,  label: 'Guerra Ucrânia — disparada milho e soja (feed grain)' },
+  { year: 2022, month: 11, label: 'Gripe aviária H5N1 — alertas globais, Brasil sem foco comercial' },
+  { year: 2023, month: 5,  label: 'H5N1 detectado em aves silvestres no litoral do Brasil' },
+  { year: 2023, month: 7,  label: 'Brasil mantém status zona livre — exportações preservadas' },
+  { year: 2024, month: 5,  label: '1º foco H5N1 em granja comercial (RS) — embargo por vários países' },
+  { year: 2024, month: 9,  label: 'Controle do foco; países iniciam revisão de embargos' },
+];
+
 const PoultryBRTab = ({ data, accent }) => {
   if (!data.frango || !data.frango.length) {
     return (
@@ -21,6 +35,7 @@ const PoultryBRTab = ({ data, accent }) => {
           sub="FrangoBR · Coluna L"
           accent={accent} data={data} dataset="frango"
           field="frango_mi_brl_kg" unit="R$/kg" decimals={2}
+          events={FRANGO_EVENTS}
         />
         <window.PriceCard
           cardId="card-frango-me"
@@ -28,6 +43,7 @@ const PoultryBRTab = ({ data, accent }) => {
           sub="FrangoBR · Coluna N"
           accent={accent} data={data} dataset="frango"
           field="frango_me_brl_kg" unit="R$/kg" decimals={2}
+          events={FRANGO_EVENTS}
         />
         <window.PriceCard
           cardId="card-feed-grain"
@@ -35,6 +51,7 @@ const PoultryBRTab = ({ data, accent }) => {
           sub="FrangoBR · Coluna H"
           accent={accent} data={data} dataset="frango"
           field="feed_grain_brl_kg" unit="R$/kg" decimals={2}
+          events={FRANGO_EVENTS}
         />
       </div>
 
@@ -47,6 +64,7 @@ const PoultryBRTab = ({ data, accent }) => {
           sub="FrangoBR · Coluna O"
           accent={accent} data={data} dataset="frango"
           field="spread_mi" unit="R$/kg" decimals={2}
+          events={FRANGO_EVENTS}
         />
         <window.PriceCard
           cardId="card-spread-me-frango"
@@ -54,6 +72,7 @@ const PoultryBRTab = ({ data, accent }) => {
           sub="FrangoBR · Coluna Q"
           accent={accent} data={data} dataset="frango"
           field="spread_me" unit="R$/kg" decimals={2}
+          events={FRANGO_EVENTS}
         />
       </div>
     </main>
