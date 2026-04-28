@@ -729,7 +729,14 @@ function TickerBar({ data, activeDataset }) {
       el.classList.remove('rx-card-target');
       void el.offsetWidth;
       el.classList.add('rx-card-target');
-      setTimeout(() => el.classList.remove('rx-card-target'), 1400);
+      const _cleanup = (e) => {
+        if (e.animationName !== 'rx-card-target') return;
+        el.removeEventListener('animationend', _cleanup);
+        el.style.transition = 'none';
+        el.classList.remove('rx-card-target');
+        requestAnimationFrame(() => { el.style.transition = ''; });
+      };
+      el.addEventListener('animationend', _cleanup);
     } else {
       window.dispatchEvent(new CustomEvent('rx-goto-card', { detail: { target } }));
       setTimeout(() => onItemClick(target), 80);

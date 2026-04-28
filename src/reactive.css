@@ -177,7 +177,7 @@
 }
 .card.rx-card-target,
 [data-card-id].rx-card-target {
-  animation: rx-card-target 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: rx-card-target 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* === Chart line draw-on entry === */
