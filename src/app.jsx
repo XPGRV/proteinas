@@ -79,6 +79,8 @@ function App({ data: propData, initialData, initialMeta }) {
 
   const accent = activeDataset === 'beef_us'
     ? 'oklch(0.72 0.18 240)'
+    : activeDataset === 'poultry_br'
+    ? 'oklch(0.78 0.18 85)'
     : tweaks.accent || PALETTES[tweaks.palette].accent;
   const typeStack = TYPE_STACKS[tweaks.typography];
 
@@ -87,7 +89,11 @@ function App({ data: propData, initialData, initialMeta }) {
     document.documentElement.dataset.theme = tweaks.theme || 'refined';
     // Theme drives accent unless user picks a custom palette swatch.
     const themeAccent = (window.THEMES && window.THEMES[tweaks.theme]?.accent) || accent;
-    const finalAccent = activeDataset === 'beef_us' ? 'oklch(0.72 0.18 240)' : themeAccent;
+    const finalAccent = activeDataset === 'beef_us'
+      ? 'oklch(0.72 0.18 240)'
+      : activeDataset === 'poultry_br'
+      ? 'oklch(0.78 0.18 85)'
+      : themeAccent;
     document.documentElement.style.setProperty('--accent', finalAccent);
     document.documentElement.style.setProperty('--font-sans', typeStack.sans);
     document.documentElement.style.setProperty('--font-mono', typeStack.mono);
@@ -159,7 +165,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-brand-logobox" style={isPoultry ? {background:'oklch(0.82 0.18 90)'} : {}}>
+        <div className="sidebar-brand-logobox" style={isPoultry ? {background:'oklch(0.90 0.18 100)'} : {}}>
           <img src="src/xp-asset-logo.svg" alt="XP Asset Management" className="sidebar-brand-logo"/>
         </div>
         <div className="sidebar-brand-text">
