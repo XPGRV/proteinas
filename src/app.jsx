@@ -729,7 +729,7 @@ function TickerBar({ data, activeDataset }) {
       el.classList.remove('rx-card-target');
       void el.offsetWidth;
       el.classList.add('rx-card-target');
-      setTimeout(() => el.classList.remove('rx-card-target'), 1600);
+      setTimeout(() => el.classList.remove('rx-card-target'), 1400);
     } else {
       window.dispatchEvent(new CustomEvent('rx-goto-card', { detail: { target } }));
       setTimeout(() => onItemClick(target), 80);

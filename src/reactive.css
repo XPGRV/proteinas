@@ -178,7 +178,6 @@
 .card.rx-card-target,
 [data-card-id].rx-card-target {
   animation: rx-card-target 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  border-color: color-mix(in oklch, var(--accent) 50%, var(--border)) !important;
 }
 
 /* === Chart line draw-on entry === */
