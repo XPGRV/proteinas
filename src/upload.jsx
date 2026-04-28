@@ -367,6 +367,12 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   // ── FrangoBR ─────────────────────────────────────────────────────────────────
   if (findSheet('FrangoBR')) {
     const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
+
+    // Debug: log header rows and first data row to console so we can verify column indices
+    console.log('[FrangoBR] header rows:', frangoRaw.slice(0, 5));
+    const firstData = frangoRaw.find((r, i) => i >= 4 && r && r[1]);
+    if (firstData) console.log('[FrangoBR] first data row (length', firstData.length, '):', firstData);
+
     const frango = [];
     for (let i = 4; i < frangoRaw.length; i++) {
       const r = frangoRaw[i];
