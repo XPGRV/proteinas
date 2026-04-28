@@ -364,6 +364,27 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     }
   }
 
+  // ── FrangoBR ─────────────────────────────────────────────────────────────────
+  if (findSheet('FrangoBR')) {
+    const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
+    const frango = [];
+    for (let i = 4; i < frangoRaw.length; i++) {
+      const r = frangoRaw[i];
+      if (!r || !r[1]) continue;
+      const md = parseMonthTag(r[1]);
+      if (!md) continue;
+      frango.push({
+        year: md.year, month: md.month,
+        feed_grain_brl_kg: parseNum(r[7]),
+        frango_mi_brl_kg:  parseNum(r[11]),
+        frango_me_brl_kg:  parseNum(r[13]),
+        spread_mi:         parseNum(r[14]),
+        spread_me:         parseNum(r[16]),
+      });
+    }
+    result.frango = trimEmpty(frango);
+  }
+
   if (Object.keys(result).length === 0) throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${sheets.join(', ')}`);
   return result;
 }
@@ -381,10 +402,10 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       const ab = await file.arrayBuffer();
       // Detecção pelo nome do arquivo para evitar ler abas erradas
       // (BeefBR.xlsm também tem BBG_Dados mas não deve atualizar o BeefUS)
-      const nameLC = file.name.toLowerCase();
-      const forceUS = nameLC.includes('beefus');
-      const forceBR = nameLC.includes('beefbr') || (!forceUS);
-      const parsed = await parseWorkbook(ab, { parseBR: forceBR && !forceUS, parseUS: forceUS });
+      const nameLC      = file.name.toLowerCase();
+      const forceUS     = nameLC.includes('beefus');
+      const forcePoultry = nameLC.includes('frango');
+      const parsed = await parseWorkbook(ab, { parseBR: !forceUS && !forcePoultry, parseUS: forceUS });
 
       // Mescla com dados existentes para preservar beef_us / edgebeef_daily
       const fullData = { ...(window.__dashboardData || {}), ...parsed };
@@ -392,7 +413,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
 
       // Meta separado por planilha — não sobrescreve o log da outra aba
       const metaEntry = { source: file.name, updated: new Date().toISOString() };
-      const metaKey   = forceUS ? 'us' : 'br';
+      const metaKey   = forceUS ? 'us' : forcePoultry ? 'poultry_br' : 'br';
       const prevMeta  = window.__dashboardMeta || {};
       const fullMeta  = { ...prevMeta, [metaKey]: metaEntry };
       window.__dashboardMeta = fullMeta;
@@ -435,6 +456,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       if (parsed.edgebeef_daily) parts.push(`${parsed.edgebeef_daily.length} Edgebeef diário`);
       if (parsed.beef_us)        parts.push(`${parsed.beef_us.length}L BeefUS`);
       if (parsed.production)     parts.push(`${parsed.production.snapshots.length} snapshots Produção`);
+      if (parsed.frango)         parts.push(`${parsed.frango.length}L FrangoBR`);
       const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
       setStatus({ kind: 'ok', msg: `✓ ${parts.join(' · ')}${cloudBadge}` });
       setTimeout(() => setStatus(null), 5000);
