@@ -380,18 +380,19 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
 
     // Auto-detect column positions by scanning headers in the first 6 rows.
-    // Falls back to user-confirmed positions (W=22, X=23) if headers aren't found.
-    let colSif = 22, colSidra = 23;
+    // Falls back to user-confirmed positions (W=22, X=23, Z=25) if headers aren't found.
+    let colSif = 22, colSidra = 23, colChick = 25;
     const SIF_KEYS   = ['sif', 'abate sif', 'abates sif'];
     const SIDRA_KEYS = ['sidra', 'abate sidra', 'abates sidra'];
-    outer: for (let hi = 0; hi < Math.min(6, frangoRaw.length); hi++) {
+    const CHICK_KEYS = ['chick', 'chick placed', 'apinco', 'pintos', 'pinto'];
+    for (let hi = 0; hi < Math.min(6, frangoRaw.length); hi++) {
       const hr = frangoRaw[hi] || [];
       for (let c = 0; c < hr.length; c++) {
         const cell = String(hr[c] || '').toLowerCase().trim();
-        if (SIF_KEYS.some(k => cell === k || cell.endsWith(k)))   { colSif   = c; }
-        if (SIDRA_KEYS.some(k => cell === k || cell.endsWith(k))) { colSidra = c; }
+        if (SIF_KEYS.some(k   => cell === k || cell.endsWith(k))) colSif   = c;
+        if (SIDRA_KEYS.some(k => cell === k || cell.endsWith(k))) colSidra = c;
+        if (CHICK_KEYS.some(k => cell === k || cell.includes(k))) colChick = c;
       }
-      if (colSif !== 22 || colSidra !== 23) break outer; // found via headers
     }
 
     // Auto-detect data start row: first row (after row 2) where col B parses as a month tag.
@@ -416,7 +417,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         spread_me:         parseNum(r[16]),
         abates_sif:        parseNum(r[colSif]),
         abates_sidra:      parseNum(r[colSidra]),
-        chick_placed:      parseNum(r[25]),  // col Z — APINCO
+        chick_placed:      parseNum(r[colChick]),  // col Z — APINCO
       });
     }
     result.frango = trimSifLag(trimEmpty(frango), 'abates_sif');
