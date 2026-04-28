@@ -21,8 +21,6 @@ function ProductionControls({
   const [pairDropOpen, setPairDropOpen] = useState(false);
   const histRef = useRef(null);
   const pairRef = useRef(null);
-  const [showDebug, setShowDebug] = useState(false);
-
   const presets = [
     { label: '3a',    yrs: histYears.slice(-3) },
     { label: '5a',    yrs: histYears.slice(-5) },
@@ -124,14 +122,8 @@ function ProductionControls({
           <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>
             EVENTOS
           </button>
-          {/* (iv) Hide forecast toggle */}
           <button className={`ctrl-btn ${!showForecast ? 'is-on' : ''}`} onClick={() => setShowForecast(s => !s)}>
             SEM FORECAST
-          </button>
-          {/* (v) DEBUG TOGGLE */}
-          <button className={`ctrl-btn ${showDebug ? 'is-on' : ''}`} 
-            onClick={() => setShowDebug(!showDebug)}>
-            DEBUG FC
           </button>
         </div>
         <div style={{marginLeft: 16}}>
@@ -142,18 +134,6 @@ function ProductionControls({
         </div>
       </div>
 
-      {showDebug && (
-        <div style={{marginTop: 12, padding: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 10, fontFamily: 'monospace'}}>
-          <div style={{fontWeight:'bold', marginBottom: 4, color: 'var(--fg-dim)'}}>DEBUG: RECENT PARSER DETECTIONS</div>
-          <div style={{maxHeight: 120, overflow: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 4}}>
-            {(window.PARSER_LOG || []).slice(-40).reverse().map((l, i) => (
-              <div key={i} style={{color: l.isForecast ? 'var(--accent)' : '#aaa', whiteSpace: 'nowrap'}}>
-                {l.snap} | {l.year} Q{l.quarter}: {l.isForecast ? 'FC ⚬' : 'REAL'}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -205,7 +185,7 @@ function ProductionChart({
 
   // Stats band
   const stats = React.useMemo(() => {
-    if (!showStats) return null;
+    if (!showStatsRender) return null;
     const byQ = [[], [], [], []];
     for (const yr of selectedHistYears) {
       (histSeries[yr]?.values || []).forEach((v, qi) => { if (v != null) byQ[qi].push(v); });
@@ -215,7 +195,7 @@ function ProductionChart({
       const s = [...vals].sort((a, b) => a - b);
       return { min: s[0], max: s[s.length-1], p25: s[Math.floor(s.length*.25)], p75: s[Math.floor(s.length*.75)], mean: vals.reduce((a,b)=>a+b,0)/vals.length };
     });
-  }, [showStats, histSeries, selectedHistYears]);
+  }, [showStatsRender, histSeries, selectedHistYears]);
 
   // ── Y range ──────────────────────────────────────────────────────────────────
   const allVals = [];

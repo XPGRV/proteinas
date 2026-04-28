@@ -66,12 +66,12 @@ const EdgebeeefChart = ({
 
   // Stats
   const stats = React.useMemo(() => {
-    if (!showStats) return {};
+    if (!showStatsRender) return {};
     const latest = Math.max(...allYears);
     const fromYr = Math.max(allYears[0], latest - 10);
     const histYears = allYears.filter(y => y >= fromYr && y < latest);
     return buildDailyStats(byYear, histYears);
-  }, [byYear, allYears, showStats]);
+  }, [byYear, allYears, showStatsRender]);
 
   const x = doy => padL + ((doy - 1) / 364) * chartW;
   const y = v   => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
