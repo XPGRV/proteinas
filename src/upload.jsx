@@ -45,6 +45,16 @@ function trimEmpty(arr) {
   );
 }
 
+// Nula os últimos N meses com dado não-nulo para um campo (dados SIF em revisão)
+function trimLastN(arr, field, n) {
+  const toNull = new Set();
+  let count = 0;
+  for (let i = arr.length - 1; i >= 0 && count < n; i--) {
+    if (arr[i][field] != null) { toNull.add(i); count++; }
+  }
+  return arr.map((row, i) => toNull.has(i) ? { ...row, [field]: null } : row);
+}
+
 async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {}) {
   if (!window.XLSX) {
     await new Promise((res, rej) => {
@@ -89,7 +99,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         usdbrl:              parseNum(r[39]),
       });
     }
-    result.beef = trimEmpty(beef);
+    result.beef = trimLastN(trimEmpty(beef), 'abates_total', 2);
   }
 
   if (parseBR && findSheet('SECEX')) {
@@ -390,7 +400,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         abates_sidra:      parseNum(r[23]),  // col X
       });
     }
-    result.frango = trimEmpty(frango);
+    result.frango = trimLastN(trimEmpty(frango), 'abates_sif', 2);
   }
 
   if (Object.keys(result).length === 0) throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${sheets.join(', ')}`);
