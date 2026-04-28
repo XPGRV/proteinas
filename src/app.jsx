@@ -44,10 +44,10 @@ function App({ data: propData, initialData, initialMeta }) {
       const t = e.detail?.target || '';
       const precosCards  = ['card-cattle','card-carne-mi','card-carne-me','card-spread-mi','card-spread-me'];
       const abatesCards  = ['card-abates','card-femeas','card-ciclo'];
-      const poultryCards = ['card-frango-mi','card-frango-me','card-feed-grain','card-spread-mi-frango','card-spread-me-frango','card-abates-frango'];
+      const poultryCards = ['card-frango-mi','card-frango-me','card-feed-grain','card-spread-mi-frango','card-spread-me-frango','card-abates-frango','card-chick-placed'];
       if (poultryCards.includes(t)) {
         setActiveDataset('poultry_br');
-        setTab(t === 'card-abates-frango' ? 'abates' : 'precos');
+        setTab(['card-abates-frango','card-chick-placed'].includes(t) ? 'abates' : 'precos');
       } else {
         if (activeDataset !== 'beef_br') setActiveDataset('beef_br');
         if (precosCards.includes(t)) setTab('precos');
@@ -664,6 +664,7 @@ function TickerBar({ data, activeDataset }) {
           ['SPREAD·MI',   'spread_mi',            'R$/kg',  'card-spread-mi-frango'],
           ['SPREAD·ME',   'spread_me',            'R$/kg',  'card-spread-me-frango'],
           ['ABATES·SIF',  'abates_sif',           'cab',    'card-abates-frango'],
+          ['CHICK·PL',    'chick_placed',         'cab',    'card-chick-placed'],
         ]
       : [
           ['BOI',         'cattle_brl_kg',        'R$/kg',  'card-cattle'],

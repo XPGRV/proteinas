@@ -48,6 +48,15 @@ const PoultryProducaoTab = ({ data, accent }) => {
           </div>
         }
       />
+
+      <window.PriceCard
+        cardId="card-chick-placed"
+        title="Chick Placed" sub="APINCO · Pintos destinados ao abate"
+        accent={accent} data={data}
+        dataset="frango" field="chick_placed"
+        unit="cab." big fullWidth height={420}
+        events={FRANGO_EVENTS}
+      />
     </main>
   );
 };

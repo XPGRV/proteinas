@@ -416,6 +416,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         spread_me:         parseNum(r[16]),
         abates_sif:        parseNum(r[colSif]),
         abates_sidra:      parseNum(r[colSidra]),
+        chick_placed:      parseNum(r[25]),  // col Z — APINCO
       });
     }
     result.frango = trimSifLag(trimEmpty(frango), 'abates_sif');
