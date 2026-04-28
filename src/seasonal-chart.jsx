@@ -295,14 +295,28 @@ const SeasonalChart = ({
             return x(mi);
           });
 
-          // Assign label rows (0 or 1) for pinned year — greedy by cx to avoid overlap
+          // Pre-compute label layout (lx, anchor, pixel bounds) for each event
+          const layouts = yearEvents.map((ev, i) => {
+            const approxW = ev.label.length * 5.5;
+            const cx = cxArr[i];
+            let lx, anchor;
+            if (cx - approxW / 2 < padL)        { lx = padL;      anchor = 'start'; }
+            else if (cx + approxW / 2 > W - padR) { lx = W - padR; anchor = 'end';   }
+            else                                   { lx = cx;        anchor = 'middle'; }
+            const left  = anchor === 'start' ? lx : anchor === 'end' ? lx - approxW : lx - approxW / 2;
+            const right = anchor === 'start' ? lx + approxW : anchor === 'end' ? lx : lx + approxW / 2;
+            return { lx, anchor, left, right };
+          });
+
+          // Assign label rows using actual pixel bounds (not fixed threshold)
           const rowArr = new Array(yearEvents.length).fill(0);
-          if (isPinned && yearEvents.length > 1) {
+          if (isPinned) {
             const order = cxArr.map((_, i) => i).sort((a, b) => cxArr[a] - cxArr[b]);
-            for (let j = 1; j < order.length; j++) {
-              if (cxArr[order[j]] - cxArr[order[j - 1]] < 110) {
-                rowArr[order[j]] = 1 - rowArr[order[j - 1]];
-              }
+            const rowRight = [-Infinity, -Infinity]; // rightmost pixel used per row
+            for (const i of order) {
+              const { left, right } = layouts[i];
+              if (left >= rowRight[0] + 4) { rowArr[i] = 0; rowRight[0] = right; }
+              else                          { rowArr[i] = 1; rowRight[1] = right; }
             }
           }
 
@@ -316,20 +330,9 @@ const SeasonalChart = ({
               ? `${(mi * 0.045 + 0.6).toFixed(2)}s`
               : `${(mi / 11 * 1.1).toFixed(2)}s`;
 
-            const labelText = ev.label;
+            const { lx, anchor } = layouts[i];
             const row = rowArr[i];
             const labelY = padT + 2 + row * 13;
-
-            // Width-aware anchor/lx — prevents SVG clipping at both edges
-            const approxW = labelText.length * 5.5;
-            let lx, anchor;
-            if (cx - approxW / 2 < padL) {
-              lx = padL; anchor = 'start';
-            } else if (cx + approxW / 2 > W - padR) {
-              lx = W - padR; anchor = 'end';
-            } else {
-              lx = cx; anchor = 'middle';
-            }
 
             return (
               <g key={`ev-${yr}-${i}-${chartStyle === 'bars' ? 'bars' : 'line'}`}
@@ -347,7 +350,7 @@ const SeasonalChart = ({
                   <text x={lx} y={labelY}
                     textAnchor={anchor} dominantBaseline="hanging"
                     style={{fontFamily:'var(--font-mono)', fontSize:9, fill:EVENT_COLOR, fontWeight:600, letterSpacing:'0.01em'}}
-                  >{labelText}</text>
+                  >{ev.label}</text>
                 )}
               </g>
             );
