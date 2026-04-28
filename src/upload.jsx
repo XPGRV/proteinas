@@ -380,18 +380,32 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
 
     // Auto-detect column positions by scanning headers in the first 6 rows.
-    // Falls back to user-confirmed positions (W=22, X=23, Z=25) if headers aren't found.
-    let colSif = 22, colSidra = 23, colChick = 25;
+    // Falls back to user-confirmed positions (W=22, X=23) if headers aren't found.
+    let colSif = 22, colSidra = 23;
     const SIF_KEYS   = ['sif', 'abate sif', 'abates sif'];
     const SIDRA_KEYS = ['sidra', 'abate sidra', 'abates sidra'];
-    const CHICK_KEYS = ['chick', 'chick placed', 'apinco', 'pintos', 'pinto'];
     for (let hi = 0; hi < Math.min(6, frangoRaw.length); hi++) {
       const hr = frangoRaw[hi] || [];
       for (let c = 0; c < hr.length; c++) {
         const cell = String(hr[c] || '').toLowerCase().trim();
         if (SIF_KEYS.some(k   => cell === k || cell.endsWith(k))) colSif   = c;
         if (SIDRA_KEYS.some(k => cell === k || cell.endsWith(k))) colSidra = c;
-        if (CHICK_KEYS.some(k => cell === k || cell.includes(k))) colChick = c;
+      }
+    }
+
+    // Chick Placed — lê direto da aba Production (col J = índice 9) porque a col Z
+    // do FrangoBR é fórmula cross-sheet sem cache, invisível pro SheetJS.
+    // Linha 3 em diante (índice 2); dados reais começam em jan/2009 (linha ~111).
+    const chickMap = {};
+    if (findSheet('Production')) {
+      const prodRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('Production')], { header: 1, raw: false });
+      for (let i = 2; i < prodRaw.length; i++) {
+        const r = prodRaw[i];
+        if (!r) continue;
+        const md = parseMonthTag(r[0]) || parseMonthTag(r[1]);
+        if (!md) continue;
+        const v = parseNum(r[9]); // col J
+        if (v != null) chickMap[`${md.year}-${md.month}`] = v;
       }
     }
 
@@ -417,7 +431,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         spread_me:         parseNum(r[16]),
         abates_sif:        parseNum(r[colSif]),
         abates_sidra:      parseNum(r[colSidra]),
-        chick_placed:      parseNum(r[colChick]),  // col Z — APINCO
+        chick_placed:      chickMap[`${md.year}-${md.month}`] ?? null,
       });
     }
     result.frango = trimSifLag(trimEmpty(frango), 'abates_sif');
