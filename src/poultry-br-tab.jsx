@@ -56,15 +56,17 @@ const PoultryProducaoTab = ({ data, accent }) => {
         dataset="frango" field="chick_placed"
         unit="cab." big fullWidth height={420}
         events={FRANGO_EVENTS}
+        footerNote={
+          <span>
+            <strong style={{color:'var(--fg)'}}>OBS:</strong> Gráficos não atualizam automaticamente, pedir com sellside:{' '}
+            <a href="https://wa.me/5511993131978" target="_blank" rel="noopener noreferrer"
+               style={{color:'var(--accent)',textDecoration:'none',borderBottom:'1px solid color-mix(in oklch,var(--accent) 40%,transparent)'}}>Pedro XPI</a>
+            {' / '}
+            <a href="https://wa.me/554196717107" target="_blank" rel="noopener noreferrer"
+               style={{color:'var(--accent)',textDecoration:'none',borderBottom:'1px solid color-mix(in oklch,var(--accent) 40%,transparent)'}}>Henrique BBI</a>
+          </span>
+        }
       />
-      <p style={{fontSize:11,color:'var(--fg-dim)',margin:'2px 0 12px',lineHeight:1.6}}>
-        <strong style={{color:'var(--fg-muted)'}}>OBS:</strong> Gráficos não atualizam automaticamente, pedir com sellside:{' '}
-        <a href="https://wa.me/5511993131978" target="_blank" rel="noopener noreferrer"
-           style={{color:'var(--accent)',textDecoration:'none',borderBottom:'1px solid color-mix(in oklch,var(--accent) 40%,transparent)'}}>Pedro XPI</a>
-        {' / '}
-        <a href="https://wa.me/554196717107" target="_blank" rel="noopener noreferrer"
-           style={{color:'var(--accent)',textDecoration:'none',borderBottom:'1px solid color-mix(in oklch,var(--accent) 40%,transparent)'}}>Henrique BBI</a>
-      </p>
     </main>
   );
 };

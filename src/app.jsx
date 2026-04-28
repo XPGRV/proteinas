@@ -363,7 +363,7 @@ function AbatesTab({ data, accent }) {
 function PriceCard({
   title, sub, accent, data, dataset, field, usdField,
   unit, usdUnit, hasUSD, decimals, big,
-  fullWidth, height = 320, headerExtra, cardId, events: eventsProp,
+  fullWidth, height = 320, headerExtra, cardId, events: eventsProp, footerNote,
 }) {
   const eventsData = eventsProp !== undefined ? eventsProp : (window.EVENTS || []);
   const years = useMemo(() => window.availableYears(data, dataset, field), [data, dataset, field]);
@@ -441,6 +441,11 @@ function PriceCard({
         accent={accent} unit={activeUnit} decimals={decimals} big={big}
         height={height}
       />
+      {footerNote && (
+        <div style={{padding:'6px 16px 10px',fontSize:11,color:'var(--fg-dim)',lineHeight:1.6}}>
+          {footerNote}
+        </div>
+      )}
     </section>
   );
 }
