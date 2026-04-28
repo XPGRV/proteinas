@@ -172,8 +172,9 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-brand-logobox" style={{background:'#000'}}>
-          <img src="src/xp-asset-logo.svg" alt="XP Asset Management" className="sidebar-brand-logo"/>
+        <div className="sidebar-brand-logobox" style={isPoultry ? {background:'oklch(0.83 0.20 88)'} : {}}>
+          <img src="src/xp-asset-logo.svg" alt="XP Asset Management" className="sidebar-brand-logo"
+            style={isPoultry ? {filter:'brightness(0)'} : {}}/>
         </div>
         <div className="sidebar-brand-text">
           <div className="sidebar-brand-title">Setorial</div>
