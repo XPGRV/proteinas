@@ -45,14 +45,15 @@ function trimEmpty(arr) {
   );
 }
 
-// Nula os últimos N meses com dado não-nulo para um campo (dados SIF em revisão)
-function trimLastN(arr, field, n) {
-  const toNull = new Set();
-  let count = 0;
-  for (let i = arr.length - 1; i >= 0 && count < n; i--) {
-    if (arr[i][field] != null) { toNull.add(i); count++; }
-  }
-  return arr.map((row, i) => toNull.has(i) ? { ...row, [field]: null } : row);
+// Nula o campo para qualquer mês mais recente que (hoje - lagMonths).
+// Ex: hoje = Abr/26, lag=2 → nula Mar/26 e Abr/26; Fev/26 fica intacto.
+function trimSifLag(arr, field, lagMonths = 2) {
+  const now = new Date();
+  const cutoff = now.getFullYear() * 12 + now.getMonth() - lagMonths; // ordinal 0-indexed
+  return arr.map(row => {
+    const ord = row.year * 12 + (row.month - 1);
+    return ord > cutoff ? { ...row, [field]: null } : row;
+  });
 }
 
 async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {}) {
@@ -99,7 +100,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         usdbrl:              parseNum(r[39]),
       });
     }
-    result.beef = trimLastN(trimEmpty(beef), 'abates_total', 2);
+    result.beef = trimSifLag(trimEmpty(beef), 'abates_total');
   }
 
   if (parseBR && findSheet('SECEX')) {
@@ -378,13 +379,30 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
   if (findSheet('FrangoBR')) {
     const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
 
-    // Debug: log header rows and first data row to console so we can verify column indices
-    console.log('[FrangoBR] header rows:', frangoRaw.slice(0, 5));
-    const firstData = frangoRaw.find((r, i) => i >= 4 && r && r[1]);
-    if (firstData) console.log('[FrangoBR] first data row (length', firstData.length, '):', firstData);
+    // Auto-detect column positions by scanning headers in the first 6 rows.
+    // Falls back to user-confirmed positions (W=22, X=23) if headers aren't found.
+    let colSif = 22, colSidra = 23;
+    const SIF_KEYS   = ['sif', 'abate sif', 'abates sif'];
+    const SIDRA_KEYS = ['sidra', 'abate sidra', 'abates sidra'];
+    outer: for (let hi = 0; hi < Math.min(6, frangoRaw.length); hi++) {
+      const hr = frangoRaw[hi] || [];
+      for (let c = 0; c < hr.length; c++) {
+        const cell = String(hr[c] || '').toLowerCase().trim();
+        if (SIF_KEYS.some(k => cell === k || cell.endsWith(k)))   { colSif   = c; }
+        if (SIDRA_KEYS.some(k => cell === k || cell.endsWith(k))) { colSidra = c; }
+      }
+      if (colSif !== 22 || colSidra !== 23) break outer; // found via headers
+    }
+
+    // Auto-detect data start row: first row (after row 2) where col B parses as a month tag.
+    let dataStart = 4;
+    for (let i = 2; i < Math.min(10, frangoRaw.length); i++) {
+      const r = frangoRaw[i];
+      if (r && r[1] && parseMonthTag(r[1])) { dataStart = i; break; }
+    }
 
     const frango = [];
-    for (let i = 4; i < frangoRaw.length; i++) {
+    for (let i = dataStart; i < frangoRaw.length; i++) {
       const r = frangoRaw[i];
       if (!r || !r[1]) continue;
       const md = parseMonthTag(r[1]);
@@ -396,11 +414,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         frango_me_brl_kg:  parseNum(r[13]),
         spread_mi:         parseNum(r[14]),
         spread_me:         parseNum(r[16]),
-        abates_sif:        parseNum(r[22]),  // col W
-        abates_sidra:      parseNum(r[23]),  // col X
+        abates_sif:        parseNum(r[colSif]),
+        abates_sidra:      parseNum(r[colSidra]),
       });
     }
-    result.frango = trimLastN(trimEmpty(frango), 'abates_sif', 2);
+    result.frango = trimSifLag(trimEmpty(frango), 'abates_sif');
   }
 
   if (Object.keys(result).length === 0) throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${sheets.join(', ')}`);
