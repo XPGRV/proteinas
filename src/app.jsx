@@ -442,7 +442,7 @@ function PriceCard({
         height={height}
       />
       {footerNote && (
-        <div style={{padding:'6px 16px 10px',fontSize:11,color:'var(--fg-dim)',lineHeight:1.6}}>
+        <div style={{padding:'6px 0 4px',fontSize:11,color:'var(--fg-dim)',lineHeight:1.6}}>
           {footerNote}
         </div>
       )}
