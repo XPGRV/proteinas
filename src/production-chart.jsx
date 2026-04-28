@@ -913,7 +913,8 @@ function buildAnnualSeries(records) {
 }
 
 // ── AnnualProductionChart ─────────────────────────────────────────────────────
-function AnnualProductionChart({ annualB, annualA, compYears, allYears, showForecast, accent }) {
+function AnnualProductionChart({ annualB, annualA, compYears, allYears, showForecast, accent, pair }) {
+  const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo]||mo)+'-'+yr; };
   const { useState } = React;
   const W = 1000, H = 300;
   const padL = 72, padR = 24, padT = 20, padB = 40;
@@ -1141,6 +1142,41 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
           </div>
         );
       })()}
+
+      {/* Legend */}
+      <div className="ciclo-legend" style={{flexWrap:'wrap', gap:4}}>
+        {[...allYears].reverse().map(yr => (
+          <span key={yr} className="legend-year" style={{padding:'2px 6px', userSelect:'none'}}>
+            <span style={{
+              display:'inline-block', width:12, height:12,
+              background: yearColor(yr), opacity:0.75, borderRadius:2,
+              verticalAlign:'middle', marginRight:4,
+            }}/>
+            {yr}
+          </span>
+        ))}
+        <span style={{flex:'1 0 100%', height:0}}/>
+        {showForecast && (
+          <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+            <span style={{
+              display:'inline-block', width:14, height:10,
+              background:'repeating-linear-gradient(45deg, var(--fg) 0, var(--fg) 1.2px, transparent 0, transparent 4px)',
+              opacity:0.45, borderRadius:1, verticalAlign:'middle', marginRight:4,
+            }}/>
+            Forecast
+          </span>
+        )}
+        {compYears.length > 0 && (
+          <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+            <span style={{
+              display:'inline-block', width:14, height:10,
+              border:'1.5px dashed var(--fg)', opacity:0.45,
+              borderRadius:2, verticalAlign:'middle', marginRight:4,
+            }}/>
+            {pair ? fmtSnap(pair.a) : 'Revisão ant.'}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -1265,6 +1301,7 @@ function AnnualProductionCard({ data, accent, pairIdx: pairIdxProp }) {
         allYears={filteredYears}
         showForecast={showForecast}
         accent={accent}
+        pair={pair}
       />
     </section>
   );
