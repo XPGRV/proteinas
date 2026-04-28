@@ -1163,7 +1163,7 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
               background:'repeating-linear-gradient(45deg, var(--fg) 0, var(--fg) 1.2px, transparent 0, transparent 4px)',
               opacity:0.45, borderRadius:1, verticalAlign:'middle', marginRight:4,
             }}/>
-            Forecast
+            Forecast {fmtSnap(pair?.b)}
           </span>
         )}
         {compYears.length > 0 && (
@@ -1173,7 +1173,7 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
               border:'1.5px dashed var(--fg)', opacity:0.45,
               borderRadius:2, verticalAlign:'middle', marginRight:4,
             }}/>
-            {pair ? fmtSnap(pair.a) : 'Revisão ant.'}
+            Forecast {fmtSnap(pair?.a)}
           </span>
         )}
       </div>
