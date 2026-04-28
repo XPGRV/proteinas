@@ -923,18 +923,11 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
   const [hover,  setHover]  = useState(null);
   const [mouseY, setMouseY] = useState(0);
 
-  // Track leaving years for smooth exit animation
-  const { displayYears, isLeaving } = window.useTrackedYears(allYears);
-
   const numYears = allYears.length;
   if (!numYears) return null;
 
-  // Layout uses displayYears (includes leaving) so slots don't resize until exit animation ends
-  const numDisplay = displayYears.length;
-  const slotW = chartW / numDisplay;
+  const slotW = chartW / numYears;
   const bBarW = Math.min(slotW * 0.50, 38);
-  const aBarW = Math.min(slotW * 0.28, 22);
-  const barGap = 5;
 
   const xCenter = i => padL + (i + 0.5) * slotW;
 
@@ -989,15 +982,14 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
 
   const gradId    = 'annual-prod';
   const patId     = yr => `hatch-ann-${yr}`;
-  // Hover and positions based on displayYears so they match the stable layout
-  const hoverYear = hover != null ? displayYears[hover] : null;
+  const hoverYear = hover != null ? allYears[hover] : null;
 
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px   = (e.clientX - rect.left) * (W / rect.width);
     const py   = (e.clientY - rect.top)  * (H / rect.height);
     const xi   = Math.floor((px - padL) / slotW);
-    setHover(xi >= 0 && xi < numDisplay ? xi : null);
+    setHover(xi >= 0 && xi < numYears ? xi : null);
     setMouseY(py);
   };
 
@@ -1027,25 +1019,21 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
           </g>
         ))}
 
-        {/* Bars — includes leaving years for exit animation */}
+        {/* Bars — centered, no exit animation */}
         <g clipPath={`url(#clip-${gradId})`}>
-          {displayYears.map((yr, di) => {
-            const leaving = isLeaving(yr);
-
+          {allYears.map((yr, di) => {
             const isComp = compYears.includes(yr);
             const clr    = yearColor(yr);
             const bData  = annualB[yr];
             const aData  = annualA[yr];
-            const isHov  = !leaving && hover === di;
+            const isHov  = hover === di;
 
             const bTotal    = bData ? (showForecast ? bData.total    : bData.realized) : 0;
             const bRealized = bData ? bData.realized : 0;
             const aTotal    = aData ? (showForecast ? aData.total    : aData.realized) : 0;
 
-            // Position by index in displayYears (stable during exit animation)
             const cx = xCenter(di);
-            const bX = isComp ? cx - barGap / 2 - bBarW : cx - bBarW / 2;
-            const aX = cx + barGap / 2;
+            const bX = cx - bBarW / 2;   // always centered
 
             const bRealY = y(bRealized);
             const bRealH = Math.max(0, yBase - bRealY);
@@ -1055,34 +1043,31 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
             const aTotY  = y(aTotal);
             const aTotH  = Math.max(0, yBase - aTotY);
 
-            // Entry right-to-left: newest bar (rightmost in allYears) gets delay 0
-            const allIdx     = allYears.indexOf(yr);
-            const entryDelay = allIdx >= 0 ? `${(numYears - 1 - allIdx) * 0.04}s` : '0s';
-            const barClass   = `rx-bar${leaving ? ' rx-bar-leaving' : ''}`;
-            const barStyle   = leaving ? {} : { animationDelay: entryDelay };
+            // Entry right-to-left delay
+            const entryDelay = `${(numYears - 1 - di) * 0.04}s`;
 
             return (
               <g key={yr}>
                 {bRealH > 0 && (
                   <rect x={bX} y={bRealY} width={bBarW} height={bRealH}
                     fill={clr} opacity={isHov ? 0.95 : 0.72} rx={2}
-                    className={barClass} style={barStyle}/>
+                    className="rx-bar" style={{ animationDelay: entryDelay }}/>
                 )}
                 {bFcH > 0 && (
                   <>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
                       fill={clr} opacity={isHov ? 0.22 : 0.14} rx={2}
-                      className={barClass} style={barStyle}/>
+                      className="rx-bar" style={{ animationDelay: entryDelay }}/>
                     <rect x={bX} y={bTotY} width={bBarW} height={bFcH}
                       fill={`url(#${patId(yr)})`} rx={2}
-                      className={barClass} style={barStyle}/>
+                      className="rx-bar" style={{ animationDelay: entryDelay }}/>
                   </>
                 )}
                 {isComp && aTotH > 0 && (
-                  <rect x={aX} y={aTotY} width={aBarW} height={aTotH}
+                  <rect x={bX} y={aTotY} width={bBarW} height={aTotH}
                     fill="none" stroke={clr} strokeWidth={1.5} strokeOpacity={isHov ? 0.85 : 0.55}
                     strokeDasharray="3 2" rx={2}
-                    className={barClass} style={barStyle}/>
+                    className="rx-bar" style={{ animationDelay: entryDelay }}/>
                 )}
               </g>
             );
@@ -1092,17 +1077,13 @@ function AnnualProductionChart({ annualB, annualA, compYears, allYears, showFore
         {/* X axis baseline */}
         <line x1={padL} x2={W - padR} y1={yBase} y2={yBase} stroke="var(--border)" strokeWidth={1}/>
 
-        {/* Year labels — stable positions from displayYears; hide leaving ones */}
-        {displayYears.map((yr, di) => {
-          const cx = xCenter(di);
-          if (isLeaving(yr)) return null;
-          return (
-            <text key={yr} x={cx} y={yBase + 16} textAnchor="middle"
-              className="tick-label" style={{ fontSize: numDisplay > 13 ? 9 : 11 }}>
-              {yr}
-            </text>
-          );
-        })}
+        {/* Year labels */}
+        {allYears.map((yr, di) => (
+          <text key={yr} x={xCenter(di)} y={yBase + 16} textAnchor="middle"
+            className="tick-label" style={{ fontSize: numYears > 13 ? 9 : 11 }}>
+            {yr}
+          </text>
+        ))}
       </svg>
 
       {/* Hover card — mesmo padrão dos outros gráficos */}
