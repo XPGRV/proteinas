@@ -77,18 +77,25 @@ function App({ data: propData, initialData, initialMeta }) {
     });
   };
 
+  // chartAccent — cor passada aos gráficos (linha do ano mais recente, barras)
+  // Poultry BR usa o mesmo verde/tema dos outros; só o UI fica âmbar
   const accent = activeDataset === 'beef_us'
+    ? 'oklch(0.72 0.18 240)'
+    : tweaks.accent || PALETTES[tweaks.palette].accent;
+
+  // uiAccent — CSS var, sidebar highlights, logo box
+  const uiAccent = activeDataset === 'beef_us'
     ? 'oklch(0.72 0.18 240)'
     : activeDataset === 'poultry_br'
     ? 'oklch(0.78 0.18 85)'
-    : tweaks.accent || PALETTES[tweaks.palette].accent;
+    : accent;
+
   const typeStack = TYPE_STACKS[tweaks.typography];
 
   useEffect(() => {
     document.documentElement.dataset.density = tweaks.density;
     document.documentElement.dataset.theme = tweaks.theme || 'refined';
-    // Theme drives accent unless user picks a custom palette swatch.
-    const themeAccent = (window.THEMES && window.THEMES[tweaks.theme]?.accent) || accent;
+    const themeAccent = (window.THEMES && window.THEMES[tweaks.theme]?.accent) || uiAccent;
     const finalAccent = activeDataset === 'beef_us'
       ? 'oklch(0.72 0.18 240)'
       : activeDataset === 'poultry_br'
@@ -97,7 +104,7 @@ function App({ data: propData, initialData, initialMeta }) {
     document.documentElement.style.setProperty('--accent', finalAccent);
     document.documentElement.style.setProperty('--font-sans', typeStack.sans);
     document.documentElement.style.setProperty('--font-mono', typeStack.mono);
-  }, [accent, typeStack, tweaks.density, tweaks.theme, activeDataset]);
+  }, [uiAccent, typeStack, tweaks.density, tweaks.theme, activeDataset]);
 
   const onUpload = (d, m) => { setData(d); setMeta(m); window.__dashboardData = d; window.__dashboardMeta = m; };
 
