@@ -282,46 +282,71 @@ const SeasonalChart = ({
 
         {/* Event dots — always above series lines */}
         {showEventsRender && sortedAsc.filter(yr => !pinnedYear || yr === pinnedYear).map(yr => {
+          const isPinned = yr === pinnedYear;
           const yearEvents = events.filter(e => e.year === yr);
+
+          // Pre-compute cx for all events in this year
+          const cxArr = yearEvents.map(ev => {
+            const mi = ev.month - 1;
+            if (chartStyle === 'bars') {
+              const idx = sortedAsc.indexOf(yr);
+              return xBar(mi) - (selectedYears.length * barW) / 2 + idx * barW + (barW - 1) / 2;
+            }
+            return x(mi);
+          });
+
+          // Assign label rows (0 or 1) for pinned year — greedy by cx to avoid overlap
+          const rowArr = new Array(yearEvents.length).fill(0);
+          if (isPinned && yearEvents.length > 1) {
+            const order = cxArr.map((_, i) => i).sort((a, b) => cxArr[a] - cxArr[b]);
+            for (let j = 1; j < order.length; j++) {
+              if (cxArr[order[j]] - cxArr[order[j - 1]] < 110) {
+                rowArr[order[j]] = 1 - rowArr[order[j - 1]];
+              }
+            }
+          }
+
           return yearEvents.map((ev, i) => {
             const mi = ev.month - 1;
             const v = seasonal[yr]?.[mi];
             if (v == null) return null;
-            let cx, cy;
-            if (chartStyle === 'bars') {
-              const idx = sortedAsc.indexOf(yr);
-              cx = xBar(mi) - (selectedYears.length * barW) / 2 + idx * barW + (barW - 1) / 2;
-              cy = y(v);
-            } else {
-              cx = x(mi);
-              cy = y(v);
-            }
-            // delay synced with line draw (1.2s) or bar rise (stagger 0.045s + 0.7s rise)
+            const cx = cxArr[i];
+            const cy = y(v);
             const dotDelay = chartStyle === 'bars'
               ? `${(mi * 0.045 + 0.6).toFixed(2)}s`
               : `${(mi / 11 * 1.1).toFixed(2)}s`;
-            const isPinned = yr === pinnedYear;
+
             const labelText = ev.label;
-            const nearRight = cx > W - padR - 80;
-            const nearLeft  = cx < padL + 80;
-            const anchor = nearRight ? 'end' : nearLeft ? 'start' : 'middle';
-            const lx = nearRight ? cx - 8 : nearLeft ? cx + 8 : cx;
-            const labelY = padT + 2;
+            const row = rowArr[i];
+            const labelY = padT + 2 + row * 13;
+
+            // Width-aware anchor/lx — prevents SVG clipping at both edges
+            const approxW = labelText.length * 5.5;
+            let lx, anchor;
+            if (cx - approxW / 2 < padL) {
+              lx = padL; anchor = 'start';
+            } else if (cx + approxW / 2 > W - padR) {
+              lx = W - padR; anchor = 'end';
+            } else {
+              lx = cx; anchor = 'middle';
+            }
+
             return (
-              <g key={`ev-${yr}-${i}-${chartStyle === 'bars' ? 'bars' : 'line'}`} className={eventsLeaving ? 'rx-events-leaving' : ''}>
+              <g key={`ev-${yr}-${i}-${chartStyle === 'bars' ? 'bars' : 'line'}`}
+                 className={eventsLeaving ? 'rx-events-leaving' : ''}>
                 <window.EventDot cx={cx} cy={cy}
                   r={isPinned ? 5 : 3}
                   fill={isPinned ? 'var(--bg)' : EVENT_COLOR}
                   stroke={EVENT_COLOR} strokeWidth={1.5}
                   delaySec={parseFloat(dotDelay)}/>
                 {isPinned && (
-                  <line className="rx-event-beam" x1={cx} y1={labelY + 12} x2={cx} y2={cy - 6}
+                  <line className="rx-event-beam" x1={cx} y1={labelY + 11} x2={cx} y2={cy - 6}
                     stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>
                 )}
                 {isPinned && (
                   <text x={lx} y={labelY}
                     textAnchor={anchor} dominantBaseline="hanging"
-                    style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600, letterSpacing:'0.01em'}}
+                    style={{fontFamily:'var(--font-mono)', fontSize:9, fill:EVENT_COLOR, fontWeight:600, letterSpacing:'0.01em'}}
                   >{labelText}</text>
                 )}
               </g>
