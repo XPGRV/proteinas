@@ -380,6 +380,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
         frango_me_brl_kg:  parseNum(r[13]),
         spread_mi:         parseNum(r[14]),
         spread_me:         parseNum(r[16]),
+        abates_sif:        parseNum(r[22]),  // col W
+        abates_sidra:      parseNum(r[23]),  // col X
       });
     }
     result.frango = trimEmpty(frango);

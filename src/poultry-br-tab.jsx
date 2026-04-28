@@ -13,18 +13,50 @@ const FRANGO_EVENTS = [
   { year: 2024, month: 9,  label: 'Controle do foco; países iniciam revisão de embargos' },
 ];
 
-const PoultryBRTab = ({ data, accent }) => {
-  if (!data.frango || !data.frango.length) {
-    return (
-      <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M12 16V4M8 8l4-4 4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
-        </svg>
-        <div style={{fontSize:16,fontWeight:500,color:'var(--fg)'}}>Sem dados de frango</div>
-        <div style={{fontSize:13,textAlign:'center',maxWidth:320}}>Faça upload da planilha FrangoBR.xlsm para visualizar os gráficos.</div>
-      </main>
-    );
-  }
+const EmptyFrango = () => (
+  <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M12 16V4M8 8l4-4 4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+    </svg>
+    <div style={{fontSize:16,fontWeight:500,color:'var(--fg)'}}>Sem dados de frango</div>
+    <div style={{fontSize:13,textAlign:'center',maxWidth:320}}>Faça upload da planilha FrangoBR.xlsm para visualizar os gráficos.</div>
+  </main>
+);
+
+// ── Aba Produção ──────────────────────────────────────────────────────────────
+const PoultryProducaoTab = ({ data, accent }) => {
+  const [source, setSource] = React.useState('sidra');
+  if (!data.frango || !data.frango.length) return <EmptyFrango />;
+
+  const field = source === 'sidra' ? 'abates_sidra' : 'abates_sif';
+  const sub   = source === 'sidra' ? 'SIDRA · Cabeças abatidas' : 'SIF · Cabeças abatidas';
+
+  return (
+    <main className="main">
+      <window.PriceCard
+        key={`abates-frango-${source}`}
+        cardId="card-abates-frango"
+        title="Abates de Frango" sub={sub}
+        accent={accent} data={data}
+        dataset="frango" field={field}
+        unit="cab." big fullWidth height={420}
+        events={FRANGO_EVENTS}
+        headerExtra={
+          <div className="seg" style={{marginBottom:4}}>
+            <button className={`seg-btn ${source==='sidra'?'is-on':''}`} onClick={() => setSource('sidra')}>SIDRA</button>
+            <button className={`seg-btn ${source==='sif'?'is-on':''}`} onClick={() => setSource('sif')}>SIF</button>
+          </div>
+        }
+      />
+    </main>
+  );
+};
+
+// ── Aba Preços & Spreads ──────────────────────────────────────────────────────
+const PoultryBRTab = ({ data, accent, tab }) => {
+  if (tab === 'abates') return <PoultryProducaoTab data={data} accent={accent}/>;
+
+  if (!data.frango || !data.frango.length) return <EmptyFrango />;
 
   return (
     <main className="main">

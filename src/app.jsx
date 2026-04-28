@@ -44,9 +44,10 @@ function App({ data: propData, initialData, initialMeta }) {
       const t = e.detail?.target || '';
       const precosCards  = ['card-cattle','card-carne-mi','card-carne-me','card-spread-mi','card-spread-me'];
       const abatesCards  = ['card-abates','card-femeas','card-ciclo'];
-      const poultryCards = ['card-frango-mi','card-frango-me','card-feed-grain','card-spread-mi-frango','card-spread-me-frango'];
+      const poultryCards = ['card-frango-mi','card-frango-me','card-feed-grain','card-spread-mi-frango','card-spread-me-frango','card-abates-frango'];
       if (poultryCards.includes(t)) {
         setActiveDataset('poultry_br');
+        setTab(t === 'card-abates-frango' ? 'abates' : 'precos');
       } else {
         if (activeDataset !== 'beef_br') setActiveDataset('beef_br');
         if (precosCards.includes(t)) setTab('precos');
@@ -140,7 +141,7 @@ function App({ data: propData, initialData, initialMeta }) {
         {activeDataset === 'beef_us' ? (
           <window.BeefUSTab data={data} accent={accent}/>
         ) : activeDataset === 'poultry_br' ? (
-          <window.PoultryBRTab data={data} accent={accent}/>
+          <window.PoultryBRTab data={data} accent={accent} tab={tab}/>
         ) : tab === 'precos' ? (
           <PrecosTab data={data} accent={accent}/>
         ) : (
@@ -200,7 +201,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
             className={`sidebar-item ${isBR && tab==='abates' ? 'is-on' : ''}`}
             onClick={() => onPick('beef_br', 'abates')}>
             <span className="sidebar-item-icon">{SIcon.abates}</span>
-            <span className="sidebar-item-label">Abates</span>
+            <span className="sidebar-item-label">Produção</span>
           </button>
         </div>
 
@@ -212,13 +213,24 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
           <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>Beef US</span>
         </button>
 
-        <button
-          className={`sidebar-item ${isPoultry ? 'is-on' : ''}`}
-          onClick={() => onPick('poultry_br')}
-          style={{marginTop:6}}>
-          <span className="sidebar-item-icon">{SIcon.chicken}</span>
-          <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>Poultry BR</span>
-        </button>
+        <div className="sidebar-group" style={{marginTop:6}}>
+          <div className="sidebar-group-header">
+            <span className="sidebar-item-icon" style={isPoultry ? undefined : {color:'var(--fg-dim)', opacity:0.6}}>{SIcon.chicken}</span>
+            <span>Poultry BR</span>
+          </div>
+          <button
+            className={`sidebar-item ${isPoultry && tab==='precos' ? 'is-on' : ''}`}
+            onClick={() => onPick('poultry_br', 'precos')}>
+            <span className="sidebar-item-icon">{SIcon.bar}</span>
+            <span className="sidebar-item-label">Preços & Spreads</span>
+          </button>
+          <button
+            className={`sidebar-item ${isPoultry && tab==='abates' ? 'is-on' : ''}`}
+            onClick={() => onPick('poultry_br', 'abates')}>
+            <span className="sidebar-item-icon">{SIcon.abates}</span>
+            <span className="sidebar-item-label">Produção</span>
+          </button>
+        </div>
       </div>
 
       <div className="sidebar-spacer"/>
@@ -651,6 +663,7 @@ function TickerBar({ data, activeDataset }) {
           ['FEED·GRAIN',  'feed_grain_brl_kg',    'R$/kg',  'card-feed-grain'],
           ['SPREAD·MI',   'spread_mi',            'R$/kg',  'card-spread-mi-frango'],
           ['SPREAD·ME',   'spread_me',            'R$/kg',  'card-spread-me-frango'],
+          ['ABATES·SIF',  'abates_sif',           'cab',    'card-abates-frango'],
         ]
       : [
           ['BOI',         'cattle_brl_kg',        'R$/kg',  'card-cattle'],
