@@ -59,6 +59,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
   const { shouldRender: showStatsRender, isLeaving: statsLeaving } = window.useFadeOut(showStats && chartStyle !== 'bars', 500);
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 450);
 
   const [pinnedYear, setPinnedYear] = React.useState(null);
   const [hoverBm, setHoverBm] = React.useState(null);
@@ -253,14 +254,14 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               const isPinned = yr === pinnedYear;
               return (
                 <g key={yr}>
-                  {(chartStyle === 'area' || isPinned) && (
+                  {(showAreaRender || isPinned) && (
                     <path d={buildAreaPath(yr)}
                       fill={`url(#grad-bm-${yr})`}
                       style={{
                         '--rx-area-op': seriesOpacity(yr) * 0.7,
                         pointerEvents: 'none'
                       }}
-                      className={`rx-area ${leaving ? 'rx-leaving' : ''}`}/>
+                      className={`rx-area ${leaving ? 'rx-leaving' : ''} ${areaLeaving && !isPinned ? 'rx-area-leaving' : ''}`}/>
                   )}
                   <path d={path} fill="none" stroke={color}
                     strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
@@ -411,6 +412,8 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   const [W, setW] = React.useState(1000);
   const [hovered, setHovered]             = React.useState(null);
   const [pinnedCompany, setPinnedCompany] = React.useState(null);
+
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 450);
 
   React.useEffect(() => {
     if (!svgRef.current) return;
@@ -576,13 +579,13 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
             const isPinned = pinnedCompany === f.key;
             return (
               <g key={f.key}>
-                {(chartStyle === 'area' || isPinned) && (
+                {(showAreaRender || isPinned) && (
                   <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
                     style={{
                       '--rx-area-op': lineOpacity(f.key) * 0.7,
                       pointerEvents: 'none'
                     }}
-                    className="rx-area"/>
+                    className={`rx-area ${areaLeaving && !isPinned ? 'rx-area-leaving' : ''}`}/>
                 )}
                 <path d={path} fill="none" stroke={f.color}
                   strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
