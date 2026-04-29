@@ -153,13 +153,6 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               </linearGradient>
             );
           })}
-          {/* Gradients for continuous mode (one per company) */}
-          {fields.map(f => (
-            <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`} x1="0" x2="0" y1="0" y2="1" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor={f.color} stopOpacity="0.3"/>
-              <stop offset="100%" stopColor={f.color} stopOpacity="0"/>
-            </linearGradient>
-          ))}
         </defs>
 
         {/* Grid + Y labels */}
