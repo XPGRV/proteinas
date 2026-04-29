@@ -241,7 +241,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
               </svg>
             </span>
-            <span className="sidebar-item-label">IPCA Processados</span>
+            <span className="sidebar-item-label">Processados</span>
           </button>
         </div>
       </div>
