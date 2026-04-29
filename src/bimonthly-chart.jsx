@@ -60,6 +60,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
   const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
   const { shouldRender: showStatsRender, isLeaving: statsLeaving } = window.useFadeOut(showStats && chartStyle !== 'bars', 500);
   const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 450);
+  const { shouldRender: showBarsRender, isLeaving: barsLeaving } = window.useFadeOut(chartStyle === 'bars', 300);
 
   const [pinnedYear, setPinnedYear] = React.useState(null);
   const [hoverBm, setHoverBm] = React.useState(null);
@@ -208,35 +209,39 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
         ))}
 
         {/* Year series — bars */}
-        {chartStyle === 'bars' && (
+        {showBarsRender && (
           <g clipPath="url(#bm-sea-clip)">
-            {sortedYears.map((yr, idx) => (
-              <g key={yr}>
-                {[1,2,3,4,5,6].map(bm => {
-                  const v = seasonal[yr]?.[bm];
-                  if (v == null) return null;
-                  return (
-                    <rect key={bm}
-                      x={xBar(bm, idx) - barW/2}
-                      y={Math.min(y(0), y(v))}
-                      width={barW - 1}
-                      height={Math.max(1, Math.abs(y(0) - y(v)))}
-                      fill={yearColor(yr, selectedYears)}
-                      opacity={seriesOpacity(yr)}
-                      rx={1}
-                      className="rx-bar-animated"
-                      style={{
-                        cursor: 'pointer',
-                        transformOrigin: `0px ${y(0)}px`,
-                        transition: 'opacity 0.4s ease, fill 0.4s ease',
-                        animationDelay: `${bm * 0.05}s`
-                      }}
-                      onClick={() => setPinnedYear(p => p === yr ? null : yr)}
-                    />
-                  );
-                })}
-              </g>
-            ))}
+            {displayYears.map((yr, idx) => {
+              const leaving = isLeaving(yr);
+              return (
+                <g key={yr}>
+                  {[1,2,3,4,5,6].map(bm => {
+                    const v = seasonal[yr]?.[bm];
+                    if (v == null) return null;
+                    const y0 = y(0);
+                    const yV = y(v);
+                    return (
+                      <rect key={bm}
+                        x={xBar(bm, idx) - barW/2}
+                        y={Math.min(y0, yV)}
+                        width={barW - 1}
+                        height={Math.max(1, Math.abs(y0 - yV))}
+                        fill={yearColor(yr, selectedYears)}
+                        opacity={seriesOpacity(yr)}
+                        rx={1}
+                        className={`rx-bar ${leaving || barsLeaving ? 'rx-bar-leaving' : ''}`}
+                        style={{
+                          cursor: 'pointer',
+                          transformOrigin: `0px ${y0.toFixed(1)}px`,
+                          animationDelay: `${bm * 0.05}s`
+                        }}
+                        onClick={() => setPinnedYear(p => p === yr ? null : yr)}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            })}
           </g>
         )}
 
