@@ -176,4 +176,26 @@ const EventDot = ({ cx, cy, r, fill, stroke, strokeWidth, delaySec, ...rest }) =
   );
 };
 
-Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, latestNonNull, getValue, useTrackedYears, useFadeOut, EventDot });
+function buildBimonthlyStats(bmRows, fieldKey, fromYear, toYear) {
+  const byBm = Array.from({length: 6}, () => []);
+  for (const r of bmRows) {
+    if (r.year < fromYear || r.year > toYear) continue;
+    const v = r[fieldKey];
+    if (v != null) byBm[r.bimonth - 1].push(v);
+  }
+  return byBm.map(vals => {
+    if (!vals.length) return null;
+    const sorted = [...vals].sort((a,b) => a-b);
+    const sum = sorted.reduce((a,b) => a+b, 0);
+    return {
+      min: sorted[0],
+      max: sorted[sorted.length-1],
+      mean: sum / sorted.length,
+      p25: sorted[Math.floor(sorted.length * 0.25)],
+      p75: sorted[Math.floor(sorted.length * 0.75)],
+      n: sorted.length,
+    };
+  });
+}
+
+Object.assign(window, { MONTHS_PT, EVENTS, EVENTS_US, fmt, fmtCompact, availableYears, buildSeasonal, buildStats, buildBimonthlyStats, latestNonNull, getValue, useTrackedYears, useFadeOut, EventDot });

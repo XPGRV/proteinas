@@ -37,23 +37,10 @@ function makeYearColor(accent) {
 }
 
 // ── Seasonal (eixo bimestral, 1 empresa, anos sobrepostos) ────────────────────
-function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, height = 420 }) {
-  const svgRef     = React.useRef(null);
-  const [W, setW]  = React.useState(760);
-  const [hoverBm, setHoverBm] = React.useState(null);
-  const [hoverX, setHoverX]   = React.useState(0);
-  const [mouseY, setMouseY]   = React.useState(0);
-  const [pinnedYear, setPinnedYear] = React.useState(null);
-
-  React.useEffect(() => {
-    if (!svgRef.current) return;
-    const obs = new ResizeObserver(([e]) => setW(Math.floor(e.contentRect.width)));
-    obs.observe(svgRef.current);
-    return () => obs.disconnect();
-  }, []);
-
+function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 420 }) {
+  const W = 1000;
   const H = height;
-  const padL = 58, padR = 24, padT = 14, padB = 36;
+  const padL = 58, padR = 48, padT = 16, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -67,28 +54,38 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
   }, [bmRows, fieldKey]);
 
   const yearColor = React.useMemo(() => makeYearColor(accent), [accent]);
-
   const sortedYears  = [...selectedYears].sort((a, b) => a - b);
   const latestYear   = sortedYears[sortedYears.length - 1];
-  const displayYears = pinnedYear ? [pinnedYear] : sortedYears;
 
-  const allVals = React.useMemo(() =>
-    bmRows.filter(r => selectedYears.includes(r.year)).map(r => r[fieldKey]).filter(v => v != null),
-    [bmRows, selectedYears, fieldKey]
-  );
+  const { displayYears, isLeaving } = window.useTrackedYears(selectedYears);
+  const { shouldRender: showStatsRender, isLeaving: statsLeaving } = window.useFadeOut(showStats && chartStyle !== 'bars', 500);
+
+  const [pinnedYear, setPinnedYear] = React.useState(null);
+  const [hoverBm, setHoverBm] = React.useState(null);
+  const [mouseX, setMouseX]   = React.useState(0);
+  const [mouseY, setMouseY]   = React.useState(0);
+
+  const allVals = React.useMemo(() => {
+    const vals = bmRows.filter(r => selectedYears.includes(r.year)).map(r => r[fieldKey]).filter(v => v != null);
+    if (showStats && stats) {
+      stats.forEach(s => { if (s) { vals.push(s.min, s.max); } });
+    }
+    return vals;
+  }, [bmRows, selectedYears, fieldKey, showStats, stats]);
+
   if (!allVals.length) {
     return <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>Sem dados</div>;
   }
 
   const minV = Math.min(...allVals), maxV = Math.max(...allVals);
   const span = maxV - minV || 1;
-  const yMin = minV - span * 0.08, yMax = maxV + span * 0.08;
+  const yMin = minV - span * 0.1, yMax = maxV + span * 0.15;
 
   const x   = bm => padL + ((bm - 1) / 5) * chartW;
   const y   = v  => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
   const fmt = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
 
-  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.15) : (yr === latestYear ? 1 : 0.80);
+  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.1) : (yr === latestYear ? 1 : 0.80);
   const seriesWidth   = yr => pinnedYear ? (yr === pinnedYear ? 3.5 : 1.2) : (yr === latestYear ? 3 : 1.8);
 
   const range = yMax - yMin;
@@ -122,24 +119,28 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
     return d + ` L${pts[pts.length-1][0].toFixed(1)},${y0.toFixed(1)} L${pts[0][0].toFixed(1)},${y0.toFixed(1)} Z`;
   };
 
-  const onMouseMove = React.useCallback((e) => {
-    if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const bm = Math.round(((e.clientX - rect.left - padL) / chartW) * 5) + 1;
+  const barW = (chartW / 6) * 0.8 / Math.max(selectedYears.length, 1);
+  const xBar = (bm, yrIdx) => x(bm) - (selectedYears.length * barW)/2 + yrIdx * barW + barW/2;
+
+  const onMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (W / rect.width);
+    const py = (e.clientY - rect.top) * (H / rect.height);
+    const bm = Math.round(((px - padL) / chartW) * 5) + 1;
     if (bm >= 1 && bm <= 6) {
-      setHoverBm(bm); setHoverX(x(bm)); setMouseY(e.clientY - rect.top);
+      setHoverBm(bm); setMouseX(px); setMouseY(py);
     }
-  }, [chartW]);
+  };
 
   return (
-    <div style={{position:'relative'}}>
-      <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
+    <div className="chart-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMouseMove} onMouseLeave={() => setHoverBm(null)}>
         <defs>
           <clipPath id="bm-sea-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
-          {sortedYears.map(yr => (
+          {displayYears.map(yr => (
             <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.25"/>
               <stop offset="100%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0"/>
@@ -152,70 +153,99 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
-            <text x={padL - 10} y={y(v) + 4} textAnchor="end" fontSize={11} fontWeight={500} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{fmt(v)}</text>
+            <text x={W - padR + 8} y={y(v)} className="tick-label" textAnchor="start" dominantBaseline="middle">{fmt(v)}</text>
           </g>
         ))}
 
-        {/* Linha do zero destacada */}
-        {yMin <= 0 && yMax >= 0 && (
-          <line x1={padL} x2={W - padR} y1={y(0)} y2={y(0)}
-            stroke="var(--fg)" strokeWidth={1} strokeOpacity={0.35}/>
+        {/* Historical band */}
+        {showStatsRender && stats && chartStyle !== 'bars' && (
+          <g clipPath="url(#bm-sea-clip)">
+            <path
+              d={(() => {
+                const top = stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i+1)},${y(s.max)}` : '').join(' ');
+                const bot = [...stats].map((s, i) => s ? `L${x(i+1)},${y(s.min)}` : '').reverse().join(' ');
+                return top + ' ' + bot + ' Z';
+              })()}
+              fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.05}}
+            />
+            <path
+              d={(() => {
+                const top = stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i+1)},${y(s.p75)}` : '').join(' ');
+                const bot = [...stats].map((s, i) => s ? `L${x(i+1)},${y(s.p25)}` : '').reverse().join(' ');
+                return top + ' ' + bot + ' Z';
+              })()}
+              fill="var(--fg)" className={`rx-stat-band${statsLeaving ? ' rx-stat-leaving' : ''}`} style={{'--rx-stat-op': 0.08}}
+            />
+            <path
+              d={stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i+1)},${y(s.mean)}` : '').join(' ')}
+              stroke="var(--fg)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 3" fill="none"
+              className={`rx-stat-mean${statsLeaving ? ' rx-stat-leaving' : ''}`}
+            />
+          </g>
         )}
 
-        {/* X axis */}
-        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border-strong)" strokeWidth={1}/>
-        {[1,2,3,4,5,6].map(bm => (
-          <g key={bm}>
-            <line x1={x(bm)} x2={x(bm)} y1={padT + chartH} y2={padT + chartH + 5} stroke="var(--fg-mute)" strokeWidth={1}/>
-            <text x={x(bm)} y={padT + chartH + 20} textAnchor="middle" fontSize={11} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{BM_LABELS[bm - 1]}</text>
-          </g>
+        {/* X axis labels */}
+        {BM_LABELS.map((label, i) => (
+          <text key={i} x={x(i + 1)} y={H - padB + 20} className="tick-label" textAnchor="middle">{label}</text>
         ))}
 
-        {/* Linhas por ano (multi-ponto, com clip) */}
-        <g clipPath="url(#bm-sea-clip)">
-          {displayYears.map(yr => {
-            const color = yearColor(yr, selectedYears);
-            const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
-            if (bmsWithData.length <= 1) return null; // pontos únicos renderizados fora do clip
-            const path = buildPath(yr);
-            const isLatest = yr === latestYear && !pinnedYear;
-            return (
+        {/* Year series — bars */}
+        {chartStyle === 'bars' && (
+          <g clipPath="url(#bm-sea-clip)">
+            {sortedYears.map((yr, idx) => (
               <g key={yr}>
-                {isLatest && (
-                  <path d={buildAreaPath(yr)} fill={`url(#grad-bm-${yr})`} opacity={0.6}/>
-                )}
-                <path d={path} fill="none" stroke={color}
-                  strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
-                  opacity={seriesOpacity(yr)}/>
-                <path d={path} fill="none" stroke="transparent" strokeWidth={12}
-                  style={{cursor:'pointer'}}
-                  onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+                {[1,2,3,4,5,6].map(bm => {
+                  const v = seasonal[yr]?.[bm];
+                  if (v == null) return null;
+                  return (
+                    <rect key={bm}
+                      x={xBar(bm, idx) - barW/2}
+                      y={y(v)}
+                      width={barW - 1}
+                      height={y(yMin) - y(v)}
+                      fill={yearColor(yr, selectedYears)}
+                      opacity={seriesOpacity(yr)}
+                      rx={1}
+                      style={{cursor: 'pointer'}}
+                      onClick={() => setPinnedYear(p => p === yr ? null : yr)}
+                    />
+                  );
+                })}
               </g>
-            );
-          })}
-        </g>
+            ))}
+          </g>
+        )}
 
-        {/* Pontos únicos — fora do clip para não cortar nas bordas */}
-        {displayYears.map(yr => {
-          const color = yearColor(yr, selectedYears);
-          const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
-          if (bmsWithData.length !== 1) return null;
-          const bm = bmsWithData[0];
-          const v = seasonal[yr][bm];
-          const isCurrent = yr === latestYear;
-          return (
-            <g key={`single-${yr}`} onClick={() => setPinnedYear(p => p === yr ? null : yr)} style={{cursor:'pointer'}}>
-              <circle cx={x(bm)} cy={y(v)} r={14} fill="transparent"/>
-              <circle cx={x(bm)} cy={y(v)}
-                r={isCurrent ? 6 : 5}
-                fill="var(--bg)" stroke={color}
-                strokeWidth={isCurrent ? 2.5 : 1.5}
-                opacity={seriesOpacity(yr)}/>
-            </g>
-          );
-        })}
+        {/* Year series — lines + area */}
+        {chartStyle !== 'bars' && (
+          <g clipPath="url(#bm-sea-clip)">
+            {displayYears.map(yr => {
+              const color = yearColor(yr, selectedYears);
+              const values = [1,2,3,4,5,6].map(bm => seasonal[yr]?.[bm]);
+              const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
+              if (bmsWithData.length <= 1) return null;
+              const path = buildPath(yr);
+              const leaving = isLeaving(yr);
+              const isPinned = yr === pinnedYear;
+              return (
+                <g key={yr}>
+                  {(chartStyle === 'area' || (yr === latestYear && !pinnedYear)) && (
+                    <path d={buildAreaPath(yr)} fill={`url(#grad-bm-${yr})`}
+                      opacity={seriesOpacity(yr) * 0.8} className={leaving ? 'rx-leaving' : ''}/>
+                  )}
+                  <path d={path} fill="none" stroke={color}
+                    strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
+                    opacity={seriesOpacity(yr)} className={leaving ? 'rx-leaving' : ''}/>
+                  <path d={path} fill="none" stroke="transparent" strokeWidth={12}
+                    style={{cursor:'pointer'}}
+                    onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+                </g>
+              );
+            })}
+          </g>
+        )}
 
-        {/* Data labels quando um ano está pinado — estilo SeasonalChart */}
+        {/* Data labels for pinned year */}
         {pinnedYear && (
           <g>
             {[1,2,3,4,5,6].map(bm => {
@@ -232,7 +262,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
                   <circle cx={cx} cy={cy} r={3.5} fill={color} opacity={0.9}/>
                   <text x={lx} y={above ? cy - 8 : cy + 14}
                     textAnchor={anchor} dominantBaseline="auto"
-                    style={{fontFamily:'var(--font-mono)', fontSize:10, fill:color, fontWeight:500, letterSpacing:'0.02em'}}>
+                    style={{fontFamily:'var(--font-mono)', fontSize:11, fill:color, fontWeight:500, letterSpacing:'0.02em'}}>
                     {fmt(v)}
                   </text>
                 </g>
@@ -244,51 +274,73 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
         {/* Hover crosshair + dots */}
         {hoverBm != null && (
           <g>
-            <line x1={x(hoverBm)} x2={x(hoverBm)} y1={padT} y2={padT + chartH}
-              stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
-            {displayYears.map(yr => {
-              const v = seasonal[yr]?.[hoverBm];
-              if (v == null) return null;
-              const isPinned = yr === pinnedYear;
-              const isCurrent = yr === latestYear;
-              return (
-                <circle key={yr} cx={x(hoverBm)} cy={y(v)}
-                  r={isPinned ? 6 : isCurrent ? 5 : 4}
-                  fill="var(--bg)" stroke={yearColor(yr, selectedYears)}
-                  strokeWidth={isPinned ? 3 : isCurrent ? 2.5 : 1.5}
-                  style={{cursor:'pointer'}}
-                  onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
-              );
-            })}
+            {chartStyle !== 'bars' && (
+              <line x1={x(hoverBm)} x2={x(hoverBm)} y1={padT} y2={padT + chartH}
+                stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
+            )}
+            {chartStyle === 'bars' ? (
+              sortedYears.map((yr, idx) => {
+                const v = seasonal[yr]?.[hoverBm];
+                if (v == null) return null;
+                return (
+                  <rect key={yr}
+                    x={xBar(hoverBm, idx) - barW/2}
+                    y={y(v)} width={barW - 1} height={y(yMin) - y(v)}
+                    fill="none" stroke={yearColor(yr, selectedYears)} strokeWidth={2} rx={1}
+                    style={{cursor: 'pointer'}}
+                    onClick={() => setPinnedYear(p => p === yr ? null : yr)}
+                  />
+                );
+              })
+            ) : (
+              displayYears.map(yr => {
+                const v = seasonal[yr]?.[hoverBm];
+                if (v == null) return null;
+                const isPinned = yr === pinnedYear;
+                const isCurrent = yr === latestYear;
+                return (
+                  <circle key={yr} cx={x(hoverBm)} cy={y(v)}
+                    r={isPinned ? 6 : isCurrent ? 5 : 4}
+                    fill="var(--bg)" stroke={yearColor(yr, selectedYears)}
+                    strokeWidth={isPinned ? 3 : isCurrent ? 2.5 : 1.5}
+                    style={{cursor:'pointer'}}
+                    onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+                );
+              })
+            )}
           </g>
         )}
+
+        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} className="axis-line"/>
       </svg>
 
       {/* Tooltip */}
-      {hoverBm != null && (() => {
-        const isRight = hoverX > W * 0.75;
-        const visYears = [...displayYears].sort((a, b) => b - a);
-        return (
-          <div className="hover-card" style={{
-            left:`${(hoverX / W * 100).toFixed(1)}%`,
-            top: Math.max(10, Math.min(H - 110, mouseY - 40)),
-            transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
-          }}>
-            <div className="hover-month">{BM_LABELS[hoverBm - 1]}</div>
-            <div className="hover-rows">
-              {visYears.map(yr => {
-                const v = seasonal[yr]?.[hoverBm];
-                return (
-                  <div key={yr} className="hover-row">
-                    <span className="hover-year" style={{color: yearColor(yr, selectedYears)}}>{yr}</span>
-                    <span className="hover-val">{fmt(v)}</span>
-                  </div>
-                );
-              })}
-            </div>
+      {hoverBm != null && (
+        <div className="hover-card" style={{
+          left:`${(mouseX / W * 100).toFixed(1)}%`,
+          top: Math.max(10, Math.min(H - 120, mouseY - 40)),
+          transform: mouseX > W * 0.75 ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+        }}>
+          <div className="hover-month">{BM_LABELS[hoverBm - 1]}</div>
+          <div className="hover-rows">
+            {[...displayYears].sort((a, b) => b - a).map(yr => {
+              const v = seasonal[yr]?.[hoverBm];
+              return (
+                <div key={yr} className="hover-row">
+                  <span className="hover-year" style={{color: yearColor(yr, selectedYears)}}>{yr}</span>
+                  <span className="hover-val">{fmt(v)}</span>
+                </div>
+              );
+            })}
+            {showStats && stats && stats[hoverBm - 1] && (
+              <div className="hover-row hover-stat">
+                <span className="hover-year">média {stats[hoverBm - 1].n}a</span>
+                <span className="hover-val">{fmt(stats[hoverBm - 1].mean)}</span>
+              </div>
+            )}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Legenda de anos */}
       <div className="ciclo-legend">
@@ -305,6 +357,20 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
             {yr}
           </span>
         ))}
+        {showStats && chartStyle !== 'bars' && (<>
+          <span className="legend-year" style={{opacity: 0.6, userSelect: 'none', padding: '2px 6px'}}>
+            <span style={{display:'inline-block', width:16, height:2, borderTop:'2px dashed var(--fg)', opacity:0.5, verticalAlign:'middle', marginRight:2}}/>
+            Média histórica
+          </span>
+          <span className="legend-year" style={{opacity: 0.6, userSelect: 'none', padding: '2px 6px'}}>
+            <span style={{display:'inline-block', width:16, height:8, background:'var(--fg)', opacity:0.08, verticalAlign:'middle', marginRight:2, borderRadius:1}}/>
+            P25–P75
+          </span>
+          <span className="legend-year" style={{opacity: 0.6, userSelect: 'none', padding: '2px 6px'}}>
+            <span style={{display:'inline-block', width:16, height:8, background:'var(--fg)', opacity:0.05, verticalAlign:'middle', marginRight:2, borderRadius:1}}/>
+            Mín–Máx
+          </span>
+        </>)}
       </div>
     </div>
   );
@@ -531,6 +597,8 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
   const [range, setRange]           = React.useState('5');
   const [selYears, setSelYears]     = React.useState(null);
   const [activeFieldIdx, setActiveFieldIdx] = React.useState(0);
+  const [chartStyle, setChartStyle] = React.useState('line');
+  const [showStats, setShowStats]   = React.useState(false);
 
   const allRows   = data[dataset] || [];
   const fieldKeys = fields.map(f => f.key);
@@ -555,6 +623,11 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
   });
   const rangeNum = range === 'all' ? 'all' : parseInt(range);
 
+  const stats = React.useMemo(() => {
+    const latest = years[years.length - 1];
+    return window.buildBimonthlyStats(bmRows, fields[activeFieldIdx].key, Math.max(2015, latest - 10), latest - 1);
+  }, [bmRows, activeFieldIdx, fields, years]);
+
   if (!bmRows.length) {
     return (
       <section className="card card-full" data-card-id={cardId}>
@@ -572,8 +645,34 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
         </div>
 
         <div className="card-controls">
-          {/* Linha 1: empresa (esquerda, sazonal) + modo (direita) */}
-          <div className="card-ctrl-row" style={{display:'flex', gap:8, alignItems:'center', justifyContent:'flex-end'}}>
+          {/* Linha 1: Modo (esquerda) + Style (direita) */}
+          <div className="card-ctrl-row" style={{display:'flex', gap:24, alignItems:'center', justifyContent:'flex-end'}}>
+            <div className="seg">
+              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
+              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+            </div>
+
+            {mode === 'seasonal' && (
+              <div className="seg">
+                {[['line','Linha'],['area','Área'],['bars','Barras']].map(([v, l]) => (
+                  <button key={v} className={`seg-btn ${chartStyle===v?'is-on':''}`} onClick={() => setChartStyle(v)}>{l}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Linha 2: Empresa (seasonal) ou Toggles */}
+          <div className="card-ctrl-row">
+            {mode === 'seasonal' && (
+              <div className="ctrl-btn-group" style={{marginRight: 16}}>
+                <button
+                  className={`ctrl-btn ${showStats && chartStyle !== 'bars' ? 'is-on' : ''} ${chartStyle === 'bars' ? 'is-disabled' : ''}`}
+                  onClick={() => chartStyle !== 'bars' && setShowStats(v => !v)}>
+                  MÉDIA + FAIXA
+                </button>
+              </div>
+            )}
+
             {mode === 'seasonal' && (
               <div className="seg">
                 {fields.map((f, i) => (
@@ -585,10 +684,6 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
                 ))}
               </div>
             )}
-            <div className="seg">
-              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
-              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
-            </div>
           </div>
 
           {/* Seletor de período */}
@@ -624,6 +719,9 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           fieldKey={fields[activeFieldIdx].key}
           accent={accent}
           selectedYears={activeYears}
+          chartStyle={chartStyle}
+          showStats={showStats}
+          stats={stats}
           height={height}
         />
       ) : (
