@@ -200,10 +200,9 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
 // ── ContinuousCard ────────────────────────────────────────────────────────────
 function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit = '', decimals = 1, height = 360, events: eventsProp, footerNote }) {
   const [range, setRange]           = React.useState('5a');
-  const [showEvents, setShowEvents] = React.useState(true);
   const [chartStyle, setChartStyle] = React.useState('line');
 
-  const eventsData = eventsProp !== undefined ? eventsProp : (window.EVENTS || []);
+  const eventsData = []; // eventos desativados neste gráfico
   const allRows    = data[dataset] || [];
 
   const rangeNum = range === 'all' ? 'all' : parseInt(range);
@@ -240,7 +239,7 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
           </div>
         </div>
 
-        {/* Controles simplificados — sem Média+Faixa, sem Área, sem seleção individual de anos */}
+        {/* Controles simplificados — sem Média+Faixa, sem Barras, sem Eventos, sem seleção individual de anos */}
         <div className="card-controls">
           <div className="card-ctrl-row">
             <div className="year-seg">
@@ -254,18 +253,11 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
             </div>
           </div>
           <div className="card-ctrl-row">
-            <div className="ctrl-btn-group">
-              <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(v => !v)}>
-                EVENTOS
-              </button>
-            </div>
-            <div style={{marginLeft:16}}>
-              <div className="seg">
-                {[['line','Linha'],['bars','Barras']].map(([v, l]) => (
-                  <button key={v} className={`seg-btn ${chartStyle === v ? 'is-on' : ''}`}
-                    onClick={() => setChartStyle(v)}>{l}</button>
-                ))}
-              </div>
+            <div className="seg">
+              {[['line','Linha'],['area','Área']].map(([v, l]) => (
+                <button key={v} className={`seg-btn ${chartStyle === v ? 'is-on' : ''}`}
+                  onClick={() => setChartStyle(v)}>{l}</button>
+              ))}
             </div>
           </div>
         </div>
@@ -274,7 +266,7 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
       <ContinuousChart
         rows={rows} field={field} accent={accent}
         unit={unit} decimals={decimals} height={height}
-        events={eventsData} showEvents={showEvents}
+        events={eventsData} showEvents={false}
         chartStyle={chartStyle}
       />
 

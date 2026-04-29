@@ -664,37 +664,39 @@ function TickerBar({ data, activeDataset }) {
              : activeDataset === 'poultry_br' ? 'frango'
              : 'beef';
     if (!data[ds] || !data[ds].length) return [];
-    const rows = data[ds];
+    // [sym, field, unit, cardTarget, dsOverride?]
     const fields = activeDataset === 'beef_us'
       ? [
-          ['EDGEBEEF',    'edgebeef_value',       '$/cwt',  'us-edgebeef'],
-          ['%FÊMEAS',     'pct_femeas',           '%',      'us-ciclo'],
-          ['USD/BRL',     'usdbrl',               'R$',     null],
-          ['ABATES',      'abates_total',         'cab',    'us-production'],
-          ['BOI',         'preco_boi',            '¢/lb',   'us-ciclo'],
-          ['BEZERRO',     'preco_bezerro',        '¢/lb',   'us-ciclo'],
+          ['EDGEBEEF',    'edgebeef_value',       '$/cwt',   'us-edgebeef'],
+          ['%FÊMEAS',     'pct_femeas',           '%',       'us-ciclo'],
+          ['USD/BRL',     'usdbrl',               'R$',      null],
+          ['ABATES',      'abates_total',         'cab',     'us-production'],
+          ['BOI',         'preco_boi',            '¢/lb',    'us-ciclo'],
+          ['BEZERRO',     'preco_bezerro',        '¢/lb',    'us-ciclo'],
         ]
       : activeDataset === 'poultry_br'
       ? [
-          ['FRANGO·MI',   'frango_mi_brl_kg',     'R$/kg',  'card-frango-mi'],
-          ['FRANGO·ME',   'frango_me_brl_kg',     'R$/kg',  'card-frango-me'],
-          ['FEED·GRAIN',  'feed_grain_brl_kg',    'R$/kg',  'card-feed-grain'],
-          ['SPREAD·MI',   'spread_mi',            'R$/kg',  'card-spread-mi-frango'],
-          ['SPREAD·ME',   'spread_me',            'R$/kg',  'card-spread-me-frango'],
-          ['ABATES·SIF',  'abates_sif',           'cab',    'card-abates-frango'],
-          ['CHICK·PL',    'chick_placed',         'cab',    'card-chick-placed'],
+          ['FRANGO·MI',   'frango_mi_brl_kg',     'R$/kg',   'card-frango-mi'],
+          ['FRANGO·ME',   'frango_me_brl_kg',     'R$/kg',   'card-frango-me'],
+          ['FEED·GRAIN',  'feed_grain_brl_kg',    'R$/kg',   'card-feed-grain'],
+          ['SPREAD·MI',   'spread_mi',            'R$/kg',   'card-spread-mi-frango'],
+          ['SPREAD·ME',   'spread_me',            'R$/kg',   'card-spread-me-frango'],
+          ['ABATES·SIF',  'abates_sif',           'cab',     'card-abates-frango'],
+          ['CHICK·PL',    'chick_placed',         'cab',     'card-chick-placed'],
+          ['PROCESSADOS', 'ipca_base100',         'Base 100','card-ipca-processados', 'processados'],
         ]
       : [
-          ['BOI',         'cattle_brl_kg',        'R$/kg',  'card-cattle'],
-          ['CARNE·MI',    'beef_carcass_brl_kg',  'R$/kg',  'card-carne-mi'],
-          ['CARNE·ME',    'beef_me_brl_kg',       'R$/kg',  'card-carne-me'],
-          ['SPREAD·MI',   'spread_mi',            'R$/kg',  'card-spread-mi'],
-          ['SPREAD·ME',   'spread_me',            'R$/kg',  'card-spread-me'],
-          ['USD/BRL',     'usdbrl',               'R$',     null],
-          ['ABATES',      'abates_total',         'cab',    'card-abates'],
-          ['%FÊMEAS',     'pct_femeas',           '%',      'card-femeas'],
+          ['BOI',         'cattle_brl_kg',        'R$/kg',   'card-cattle'],
+          ['CARNE·MI',    'beef_carcass_brl_kg',  'R$/kg',   'card-carne-mi'],
+          ['CARNE·ME',    'beef_me_brl_kg',       'R$/kg',   'card-carne-me'],
+          ['SPREAD·MI',   'spread_mi',            'R$/kg',   'card-spread-mi'],
+          ['SPREAD·ME',   'spread_me',            'R$/kg',   'card-spread-me'],
+          ['USD/BRL',     'usdbrl',               'R$',      null],
+          ['ABATES',      'abates_total',         'cab',     'card-abates'],
+          ['%FÊMEAS',     'pct_femeas',           '%',       'card-femeas'],
         ];
-    return fields.map(([sym, f, u, target]) => {
+    return fields.map(([sym, f, u, target, dsOverride]) => {
+      const rows = data[dsOverride || ds] || [];
       let last = null, prev = null;
       for (let i = rows.length - 1; i >= 0; i--) {
         if (rows[i][f] != null) {

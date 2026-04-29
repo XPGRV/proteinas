@@ -88,11 +88,10 @@ const PoultryIpcaTab = ({ data, accent }) => {
     <main className="main">
       <window.ContinuousCard
         cardId="card-ipca-processados"
-        title="IPCA Processados — Base 100"
-        sub="Cálculo próprio · Subitens ponderados"
+        title="IPCA Processados"
+        sub="Cálculo próprio · Subitens ponderados (Ham = 15,8%, Hot Dog = 7,2%, Sausage = 52,3%, Mortadella = 8,4%, Salami = 1,4%, Margarine = 14,9%)"
         accent={accent} data={data} dataset="processados"
-        field="ipca_base100" unit="" decimals={1} height={400}
-        events={FRANGO_EVENTS}
+        field="ipca_base100" unit="Base 100" decimals={1} height={400}
       />
     </main>
   );
