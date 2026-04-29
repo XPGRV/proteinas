@@ -37,7 +37,7 @@ function makeYearColor(accent) {
 }
 
 // ── Seasonal (eixo bimestral, 1 empresa, anos sobrepostos) ────────────────────
-function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 420 }) {
+function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 340 }) {
   const W = 1000;
   const H = height;
   const padL = 58, padR = 48, padT = 16, padB = 40;
@@ -115,7 +115,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
     }
     if (!pts.length) return '';
     const d = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-    const y0 = y(yMin);
+    const y0 = y(0);
     return d + ` L${pts[pts.length-1][0].toFixed(1)},${y0.toFixed(1)} L${pts[0][0].toFixed(1)},${y0.toFixed(1)} Z`;
   };
 
@@ -155,6 +155,11 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
             <text x={W - padR + 8} y={y(v)} className="tick-label" textAnchor="start" dominantBaseline="middle">{fmt(v)}</text>
           </g>
+        ))}
+
+        {/* Vertical Gridlines */}
+        {[1,2,3,4,5,6].map(bm => (
+          <line key={`vgrid-${bm}`} x1={x(bm)} x2={x(bm)} y1={padT} y2={padT + chartH} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.25}/>
         ))}
 
         {/* Historical band */}
@@ -202,7 +207,8 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                       x={xBar(bm, idx) - barW/2}
                       y={y(v)}
                       width={barW - 1}
-                      height={y(yMin) - y(v)}
+                      height={Math.abs(y(0) - y(v))}
+                      y={Math.min(y(0), y(v))}
                       fill={yearColor(yr, selectedYears)}
                       opacity={seriesOpacity(yr)}
                       rx={1}
@@ -229,7 +235,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               const isPinned = yr === pinnedYear;
               return (
                 <g key={yr}>
-                  {(chartStyle === 'area' || (yr === latestYear && !pinnedYear)) && (
+                  {(chartStyle === 'area' || isPinned) && (
                     <path d={buildAreaPath(yr)} fill={`url(#grad-bm-${yr})`}
                       opacity={seriesOpacity(yr) * 0.8} className={leaving ? 'rx-leaving' : ''}/>
                   )}
@@ -285,7 +291,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                 return (
                   <rect key={yr}
                     x={xBar(hoverBm, idx) - barW/2}
-                    y={y(v)} width={barW - 1} height={y(yMin) - y(v)}
+                    y={Math.min(y(0), y(v))} width={barW - 1} height={Math.abs(y(0) - y(v))}
                     fill="none" stroke={yearColor(yr, selectedYears)} strokeWidth={2} rx={1}
                     style={{cursor: 'pointer'}}
                     onClick={() => setPinnedYear(p => p === yr ? null : yr)}
@@ -377,15 +383,18 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 }
 
 // ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
-function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
+function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340 }) {
   const svgRef    = React.useRef(null);
-  const [W, setW] = React.useState(760);
+  const [W, setW] = React.useState(1000);
   const [hovered, setHovered]             = React.useState(null);
   const [pinnedCompany, setPinnedCompany] = React.useState(null);
 
   React.useEffect(() => {
     if (!svgRef.current) return;
-    const obs = new ResizeObserver(([e]) => setW(Math.floor(e.contentRect.width)));
+    const obs = new ResizeObserver(([e]) => {
+      const w = e.contentRect.width;
+      if (w > 0) setW(Math.floor(w));
+    });
     obs.observe(svgRef.current);
     return () => obs.disconnect();
   }, []);
@@ -398,7 +407,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
   }, [bmRows, rangeYears]);
 
   const H = height;
-  const padL = 58, padR = 24, padT = 14, padB = 32;
+  const padL = 58, padR = 48, padT = 16, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -412,7 +421,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
 
   const minV = Math.min(...allVals), maxV = Math.max(...allVals);
   const span = maxV - minV || 1;
-  const yMin = minV - span * 0.08, yMax = maxV + span * 0.08;
+  const yMin = minV - span * 0.1, yMax = maxV + span * 0.15;
 
   const firstOrd = filtered[0].year * 6 + filtered[0].bimonth - 1;
   const lastOrd  = filtered[filtered.length - 1].year * 6 + filtered[filtered.length - 1].bimonth - 1;
@@ -422,6 +431,33 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
   const xOfOrd = ord => padL + ((ord - firstOrd) / totalBms) * chartW;
   const yOf    = v   => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
   const fmt    = v   => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
+
+  const buildPath = (key) => {
+    let path = '', inPath = false;
+    for (const r of filtered) {
+      const v = r[key];
+      if (v != null) {
+        const pt = `${xOf(r).toFixed(1)},${yOf(v).toFixed(1)}`;
+        path += inPath ? `L${pt}` : `M${pt}`; inPath = true;
+      } else { inPath = false; }
+    }
+    return path;
+  };
+
+  const buildAreaPath = (key) => {
+    const pts = [];
+    for (const r of filtered) {
+      const v = r[key];
+      if (v != null) pts.push([xOf(r), yOf(v)]);
+    }
+    if (!pts.length) return '';
+    const d = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const y0 = yOf(0);
+    return d + ` L${pts[pts.length-1][0].toFixed(1)},${y0.toFixed(1)} L${pts[0][0].toFixed(1)},${y0.toFixed(1)} Z`;
+  };
+
+  const lineOpacity = key => pinnedCompany ? (key === pinnedCompany ? 1 : 0.15) : 1;
+  const lineWidth   = key => pinnedCompany === key ? 3.5 : 2.5;
 
   const rangeYrsNum = totalBms / 6;
   const stepBms = rangeYrsNum <= 6 ? 3 : 6;
@@ -443,21 +479,6 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
   for (let v = Math.ceil(yMin / tickStep) * tickStep; v <= yMax + tickStep * 0.01; v += tickStep)
     yTicks.push(parseFloat(v.toPrecision(10)));
 
-  const lineOpacity = key => pinnedCompany ? (key === pinnedCompany ? 1 : 0.15) : 1;
-  const lineWidth   = key => pinnedCompany === key ? 3.5 : 2.5;
-
-  const buildPath = (key) => {
-    let path = '', inPath = false;
-    for (const r of filtered) {
-      const v = r[key];
-      if (v != null) {
-        const pt = `${xOf(r).toFixed(1)},${yOf(v).toFixed(1)}`;
-        path += inPath ? `L${pt}` : `M${pt}`; inPath = true;
-      } else { inPath = false; }
-    }
-    return path;
-  };
-
   const onMouseMove = React.useCallback((e) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
@@ -472,13 +493,19 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
   }, [filtered, firstOrd, totalBms, chartW]);
 
   return (
-    <div style={{position:'relative'}}>
+    <div className="chart-wrap">
       <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
         onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
         <defs>
           <clipPath id="bm-cont-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
+          {fields.map(f => (
+            <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={f.color} stopOpacity="0.25"/>
+              <stop offset="100%" stopColor={f.color} stopOpacity="0"/>
+            </linearGradient>
+          ))}
         </defs>
 
         {/* Grid + Y labels */}
@@ -486,24 +513,13 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
-            <text x={padL - 10} y={yOf(v) + 4} textAnchor="end" fontSize={11} fontWeight={500} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{fmt(v)}</text>
+            <text x={W - padR + 8} y={yOf(v)} className="tick-label" textAnchor="start" dominantBaseline="middle">{fmt(v)}</text>
           </g>
         ))}
 
-        {/* Linha do zero destacada */}
-        {yMin <= 0 && yMax >= 0 && (
-          <line x1={padL} x2={W - padR} y1={yOf(0)} y2={yOf(0)}
-            stroke="var(--fg)" strokeWidth={1} strokeOpacity={0.35}/>
-        )}
-
-        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border)" strokeWidth={1}/>
-
-        {/* X ticks */}
+        {/* Vertical Gridlines */}
         {xTicks.map((t, i) => (
-          <g key={i}>
-            <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 5} stroke="var(--fg-mute)" strokeWidth={1}/>
-            <text x={t.x} y={padT + chartH + 18} textAnchor="middle" fontSize={11} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{t.label}</text>
-          </g>
+          <line key={`vgrid-${i}`} x1={t.x} x2={t.x} y1={padT} y2={padT + chartH} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.15}/>
         ))}
 
         {/* Linhas + hitbox clicável */}
@@ -511,8 +527,13 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
           {fields.map(f => {
             const path = buildPath(f.key);
             if (!path) return null;
+            const isPinned = pinnedCompany === f.key;
             return (
               <g key={f.key}>
+                {(chartStyle === 'area' || isPinned) && (
+                  <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
+                    opacity={lineOpacity(f.key) * 0.7}/>
+                )}
                 <path d={path} fill="none" stroke={f.color}
                   strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
                   opacity={lineOpacity(f.key)}/>
@@ -545,6 +566,8 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
             })}
           </g>
         )}
+
+        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} className="axis-line"/>
       </svg>
 
       {/* Tooltip */}
@@ -592,7 +615,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 420 }) {
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340 }) {
   const [mode, setMode]             = React.useState('seasonal');
   const [range, setRange]           = React.useState('5');
   const [selYears, setSelYears]     = React.useState(null);
@@ -645,48 +668,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
         </div>
 
         <div className="card-controls">
-          {/* Linha 1: Modo (esquerda) + Style (direita) */}
-          <div className="card-ctrl-row" style={{display:'flex', gap:24, alignItems:'center', justifyContent:'flex-end'}}>
-            <div className="seg">
-              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
-              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
-            </div>
-
-            {mode === 'seasonal' && (
-              <div className="seg">
-                {[['line','Linha'],['area','Área'],['bars','Barras']].map(([v, l]) => (
-                  <button key={v} className={`seg-btn ${chartStyle===v?'is-on':''}`} onClick={() => setChartStyle(v)}>{l}</button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Linha 2: Empresa (seasonal) ou Toggles */}
-          <div className="card-ctrl-row">
-            {mode === 'seasonal' && (
-              <div className="ctrl-btn-group" style={{marginRight: 16}}>
-                <button
-                  className={`ctrl-btn ${showStats && chartStyle !== 'bars' ? 'is-on' : ''} ${chartStyle === 'bars' ? 'is-disabled' : ''}`}
-                  onClick={() => chartStyle !== 'bars' && setShowStats(v => !v)}>
-                  MÉDIA + FAIXA
-                </button>
-              </div>
-            )}
-
-            {mode === 'seasonal' && (
-              <div className="seg">
-                {fields.map((f, i) => (
-                  <button key={f.key}
-                    className={`seg-btn ${activeFieldIdx === i ? 'is-on' : ''}`}
-                    onClick={() => setActiveFieldIdx(i)}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Seletor de período */}
+          {/* Row 1: Periods (if seasonal) or Range (if continuous) + Mode */}
           <div className="card-ctrl-row">
             {mode === 'seasonal' ? (
               <div className="year-seg">
@@ -705,6 +687,40 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
                     className={`year-seg-btn ${range === val ? 'is-on' : ''}`}
                     onClick={() => setRange(val)}>
                     {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="seg" style={{marginLeft: 16}}>
+              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
+              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+            </div>
+          </div>
+
+          {/* Row 2: Stats (seasonal) + Style + Fields (seasonal) */}
+          <div className="card-ctrl-row">
+            {mode === 'seasonal' && (
+              <button
+                className={`ctrl-btn ${showStats && chartStyle !== 'bars' ? 'is-on' : ''} ${chartStyle === 'bars' ? 'is-disabled' : ''}`}
+                onClick={() => chartStyle !== 'bars' && setShowStats(v => !v)}>
+                MÉDIA + FAIXA
+              </button>
+            )}
+
+            <div className="seg" style={{marginLeft: 16}}>
+              {[['line','Linha'],['area','Área'], mode === 'seasonal' && ['bars','Barras']].filter(Boolean).map(([v, l]) => (
+                <button key={v} className={`seg-btn ${chartStyle===v?'is-on':''}`} onClick={() => setChartStyle(v)}>{l}</button>
+              ))}
+            </div>
+
+            {mode === 'seasonal' && (
+              <div className="seg" style={{marginLeft: 16}}>
+                {fields.map((f, i) => (
+                  <button key={f.key}
+                    className={`seg-btn ${activeFieldIdx === i ? 'is-on' : ''}`}
+                    onClick={() => setActiveFieldIdx(i)}>
+                    {f.label}
                   </button>
                 ))}
               </div>
@@ -729,6 +745,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           bmRows={bmRows}
           fields={fields}
           rangeYears={rangeNum}
+          chartStyle={chartStyle}
           height={height}
         />
       )}
