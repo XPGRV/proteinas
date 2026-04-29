@@ -88,8 +88,8 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
   const y   = v  => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
   const fmt = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
 
-  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.10) : (yr === latestYear ? 1 : 0.80);
-  const seriesWidth   = yr => pinnedYear ? (yr === pinnedYear ? 2.5 : 1) : (yr === latestYear ? 2 : 1.25);
+  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.15) : (yr === latestYear ? 1 : 0.80);
+  const seriesWidth   = yr => pinnedYear ? (yr === pinnedYear ? 3.5 : 1.2) : (yr === latestYear ? 3 : 1.8);
 
   const range = yMax - yMin;
   const rawStep = range / 5;
@@ -110,6 +110,18 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
     return pts.join(' ');
   };
 
+  const buildAreaPath = (yr) => {
+    const pts = [];
+    for (let bm = 1; bm <= 6; bm++) {
+      const v = seasonal[yr]?.[bm];
+      if (v != null) pts.push([x(bm), y(v)]);
+    }
+    if (!pts.length) return '';
+    const d = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const y0 = y(yMin);
+    return d + ` L${pts[pts.length-1][0].toFixed(1)},${y0.toFixed(1)} L${pts[0][0].toFixed(1)},${y0.toFixed(1)} Z`;
+  };
+
   const onMouseMove = React.useCallback((e) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
@@ -127,14 +139,20 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
           <clipPath id="bm-sea-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
+          {sortedYears.map(yr => (
+            <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.25"/>
+              <stop offset="100%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0"/>
+            </linearGradient>
+          ))}
         </defs>
 
         {/* Grid + Y labels */}
         {yTicks.map((v, i) => (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="var(--grid)" strokeWidth={0.7}
+            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
-            <text x={padL - 6} y={y(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">{fmt(v)}</text>
+            <text x={padL - 10} y={y(v) + 4} textAnchor="end" fontSize={11} fontWeight={500} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{fmt(v)}</text>
           </g>
         ))}
 
@@ -145,11 +163,11 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
         )}
 
         {/* X axis */}
-        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border)" strokeWidth={1}/>
+        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border-strong)" strokeWidth={1}/>
         {[1,2,3,4,5,6].map(bm => (
           <g key={bm}>
-            <line x1={x(bm)} x2={x(bm)} y1={padT + chartH} y2={padT + chartH + 4} stroke="var(--fg-dim)" strokeWidth={0.5}/>
-            <text x={x(bm)} y={padT + chartH + 15} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{BM_LABELS[bm - 1]}</text>
+            <line x1={x(bm)} x2={x(bm)} y1={padT + chartH} y2={padT + chartH + 5} stroke="var(--fg-mute)" strokeWidth={1}/>
+            <text x={x(bm)} y={padT + chartH + 20} textAnchor="middle" fontSize={11} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{BM_LABELS[bm - 1]}</text>
           </g>
         ))}
 
@@ -160,8 +178,12 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
             const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
             if (bmsWithData.length <= 1) return null; // pontos únicos renderizados fora do clip
             const path = buildPath(yr);
+            const isLatest = yr === latestYear && !pinnedYear;
             return (
               <g key={yr}>
+                {isLatest && (
+                  <path d={buildAreaPath(yr)} fill={`url(#grad-bm-${yr})`} opacity={0.6}/>
+                )}
                 <path d={path} fill="none" stroke={color}
                   strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
                   opacity={seriesOpacity(yr)}/>
@@ -185,9 +207,9 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
             <g key={`single-${yr}`} onClick={() => setPinnedYear(p => p === yr ? null : yr)} style={{cursor:'pointer'}}>
               <circle cx={x(bm)} cy={y(v)} r={14} fill="transparent"/>
               <circle cx={x(bm)} cy={y(v)}
-                r={isCurrent ? 5 : 4}
+                r={isCurrent ? 6 : 5}
                 fill="var(--bg)" stroke={color}
-                strokeWidth={isCurrent ? 2 : 1.25}
+                strokeWidth={isCurrent ? 2.5 : 1.5}
                 opacity={seriesOpacity(yr)}/>
             </g>
           );
@@ -231,9 +253,9 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
               const isCurrent = yr === latestYear;
               return (
                 <circle key={yr} cx={x(hoverBm)} cy={y(v)}
-                  r={isPinned ? 5 : isCurrent ? 4 : 3}
+                  r={isPinned ? 6 : isCurrent ? 5 : 4}
                   fill="var(--bg)" stroke={yearColor(yr, selectedYears)}
-                  strokeWidth={isPinned ? 2.5 : isCurrent ? 2 : 1.25}
+                  strokeWidth={isPinned ? 3 : isCurrent ? 2.5 : 1.5}
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
               );
@@ -356,7 +378,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
     yTicks.push(parseFloat(v.toPrecision(10)));
 
   const lineOpacity = key => pinnedCompany ? (key === pinnedCompany ? 1 : 0.15) : 1;
-  const lineWidth   = key => pinnedCompany === key ? 2.5 : 2;
+  const lineWidth   = key => pinnedCompany === key ? 3.5 : 2.5;
 
   const buildPath = (key) => {
     let path = '', inPath = false;
@@ -396,9 +418,9 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
         {/* Grid + Y labels */}
         {yTicks.map((v, i) => (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={0.7}
+            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
-            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">{fmt(v)}</text>
+            <text x={padL - 10} y={yOf(v) + 4} textAnchor="end" fontSize={11} fontWeight={500} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{fmt(v)}</text>
           </g>
         ))}
 
@@ -413,8 +435,8 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
         {/* X ticks */}
         {xTicks.map((t, i) => (
           <g key={i}>
-            <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 4} stroke="var(--fg-dim)" strokeWidth={0.5}/>
-            <text x={t.x} y={padT + chartH + 14} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{t.label}</text>
+            <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 5} stroke="var(--fg-mute)" strokeWidth={1}/>
+            <text x={t.x} y={padT + chartH + 18} textAnchor="middle" fontSize={11} fill="var(--fg-dim)" style={{fontFamily:'var(--font-mono)'}}>{t.label}</text>
           </g>
         ))}
 
@@ -448,9 +470,9 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
               const dimmed   = pinnedCompany && !isPinned;
               return (
                 <circle key={f.key} cx={hovered.x} cy={yOf(v)}
-                  r={isPinned ? 5 : dimmed ? 2.5 : 4}
+                  r={isPinned ? 6 : dimmed ? 3 : 5}
                   fill="var(--bg-panel)" stroke={f.color}
-                  strokeWidth={isPinned ? 2.5 : dimmed ? 1 : 2}
+                  strokeWidth={isPinned ? 3 : dimmed ? 1.2 : 2.5}
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
               );
