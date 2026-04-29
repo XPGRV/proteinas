@@ -259,11 +259,9 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                       style={{
                         transform: `scaleY(1)`,
                         opacity: seriesOpacity(yr) * 0.7,
-                        '--rx-op': seriesOpacity(yr) * 0.7,
-                        pointerEvents: 'none',
-                        transition: 'opacity 0.5s ease-out'
+                        pointerEvents: 'none'
                       }}
-                      className={leaving ? 'rx-leaving' : 'rx-fade-in'}/>
+                      className={`area-path ${leaving ? 'rx-leaving' : ''}`}/>
                   )}
                   <path d={path} fill="none" stroke={color}
                     strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
@@ -583,11 +581,9 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
                   <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
                     style={{
                       opacity: lineOpacity(f.key) * 0.7,
-                      '--rx-op': lineOpacity(f.key) * 0.7,
-                      pointerEvents: 'none',
-                      transition: 'opacity 0.5s ease-out'
+                      pointerEvents: 'none'
                     }}
-                    className="rx-fade-in"/>
+                    className="area-path"/>
                 )}
                 <path d={path} fill="none" stroke={f.color}
                   strokeWidth={lineWidth(f.key)} strokeLinejoin="round"

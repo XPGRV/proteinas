@@ -639,12 +639,9 @@ body {
 .chart-svg area {
   transition: d 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-@keyframes rx-fade-in {
-  from { opacity: 0; }
-  to { opacity: var(--rx-op, 0.7); }
-}
-.rx-fade-in {
-  animation: rx-fade-in 0.5s ease-out forwards;
+.area-path {
+  opacity: 0;
+  transition: opacity 0.5s ease-out !important;
 }
 .tick-label {
   font-family: var(--font-mono);
