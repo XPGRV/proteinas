@@ -37,7 +37,7 @@ function makeYearColor(accent) {
 }
 
 // ── Seasonal (eixo bimestral, 1 empresa, anos sobrepostos) ────────────────────
-function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, height = 380 }) {
+function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, height = 420 }) {
   const svgRef     = React.useRef(null);
   const [W, setW]  = React.useState(760);
   const [hoverBm, setHoverBm] = React.useState(null);
@@ -156,9 +156,26 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
         {/* Linhas por ano */}
         <g clipPath="url(#bm-sea-clip)">
           {displayYears.map(yr => {
-            const path = buildPath(yr);
-            if (!path) return null;
             const color = yearColor(yr, selectedYears);
+            const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
+            if (!bmsWithData.length) return null;
+
+            if (bmsWithData.length === 1) {
+              const bm = bmsWithData[0];
+              const v = seasonal[yr][bm];
+              return (
+                <g key={yr} onClick={() => setPinnedYear(p => p === yr ? null : yr)} style={{cursor:'pointer'}}>
+                  <circle cx={x(bm)} cy={y(v)} r={14} fill="transparent"/>
+                  <circle cx={x(bm)} cy={y(v)}
+                    r={yr === latestYear ? 5 : 4}
+                    fill="var(--bg-panel)" stroke={color}
+                    strokeWidth={yr === latestYear ? 2 : 1.5}
+                    opacity={seriesOpacity(yr)}/>
+                </g>
+              );
+            }
+
+            const path = buildPath(yr);
             return (
               <g key={yr}>
                 <path d={path} fill="none" stroke={color}
@@ -172,6 +189,25 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
             );
           })}
         </g>
+
+        {/* Data labels quando um ano está pinado */}
+        {pinnedYear && (
+          <g>
+            {[1,2,3,4,5,6].map(bm => {
+              const v = seasonal[pinnedYear]?.[bm];
+              if (v == null) return null;
+              const color = yearColor(pinnedYear, selectedYears);
+              const cy = y(v);
+              const above = cy - padT > 20;
+              return (
+                <text key={bm} x={x(bm)} y={above ? cy - 9 : cy + 16}
+                  textAnchor="middle" fontSize={10} fontWeight="600" fill={color}>
+                  {fmt(v)}
+                </text>
+              );
+            })}
+          </g>
+        )}
 
         {/* Hover crosshair + dots */}
         {hoverBm != null && (
@@ -243,7 +279,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
 }
 
 // ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
-function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
+function BimonthlyContChart({ bmRows, fields, rangeYears, height = 420 }) {
   const svgRef    = React.useRef(null);
   const [W, setW] = React.useState(760);
   const [hovered, setHovered]             = React.useState(null);
@@ -458,7 +494,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 380 }) {
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 420 }) {
   const [mode, setMode]             = React.useState('seasonal');
   const [range, setRange]           = React.useState('5');
   const [selYears, setSelYears]     = React.useState(null);
@@ -504,29 +540,24 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
         </div>
 
         <div className="card-controls">
-          {/* Modo */}
-          <div className="card-ctrl-row">
-            <div className="seg">
-              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
-              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
-            </div>
-          </div>
-
-          {/* Seletor de empresa (só no sazonal) */}
-          {mode === 'seasonal' && (
-            <div className="card-ctrl-row">
+          {/* Linha 1: empresa (esquerda, sazonal) + modo (direita) */}
+          <div className="card-ctrl-row" style={{display:'flex', gap:8, alignItems:'center', justifyContent:'flex-end'}}>
+            {mode === 'seasonal' && (
               <div className="seg">
                 {fields.map((f, i) => (
                   <button key={f.key}
                     className={`seg-btn ${activeFieldIdx === i ? 'is-on' : ''}`}
-                    style={activeFieldIdx === i ? {color: f.color, borderColor: f.color} : {}}
                     onClick={() => setActiveFieldIdx(i)}>
                     {f.label}
                   </button>
                 ))}
               </div>
+            )}
+            <div className="seg">
+              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
+              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
             </div>
-          )}
+          </div>
 
           {/* Seletor de período */}
           <div className="card-ctrl-row">
