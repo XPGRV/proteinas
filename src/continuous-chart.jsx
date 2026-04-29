@@ -54,14 +54,17 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
   // Y ticks
   const yTicks = Array.from({length: 5}, (_, i) => yMin + (yMax - yMin) * (i / 4));
 
-  // X ticks — espaço entre labels depende do range
-  const rangeYrs = totalMons / 12;
-  const step = rangeYrs <= 5 ? 1 : rangeYrs <= 12 ? 2 : 5;
+  // X ticks — alvo ~7 labels; intervalo "bonito" em meses
+  const xOf_ord = ord => padL + ((ord - firstOrd) / totalMons) * chartW;
+  const NICE_STEPS = [1, 2, 3, 6, 12, 24, 36, 60, 120];
+  const rawStep = totalMons / 7;
+  const stepMons = NICE_STEPS.find(s => s >= rawStep) || 120;
   const xTicks = [];
-  const firstYear = valid[0].year + (valid[0].month > 1 ? 1 : 0);
-  for (let y = firstYear; y <= valid[valid.length - 1].year; y += step) {
-    const r = valid.find(r => r.year === y && r.month === 1) || valid.find(r => r.year === y);
-    if (r) xTicks.push(r);
+  const tickStart = Math.ceil(firstOrd / stepMons) * stepMons;
+  for (let ord = tickStart; ord <= lastOrd; ord += stepMons) {
+    const yr = Math.floor(ord / 12);
+    const mo = (ord % 12) + 1;
+    xTicks.push({ yr, mo, x: xOf_ord(ord), label: stepMons >= 12 ? String(yr) : `${MONTHS_PT_ABR[mo - 1]}/${String(yr).slice(-2)}` });
   }
 
   // SVG path
@@ -123,10 +126,10 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
         <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border)" strokeWidth={1}/>
 
         {/* X labels */}
-        {xTicks.map((r, i) => (
+        {xTicks.map((t, i) => (
           <g key={i}>
-            <line x1={xOf(r)} x2={xOf(r)} y1={padT + chartH} y2={padT + chartH + 4} stroke="var(--fg-dim)" strokeWidth={0.5}/>
-            <text x={xOf(r)} y={padT + chartH + 14} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{r.year}</text>
+            <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 4} stroke="var(--fg-dim)" strokeWidth={0.5}/>
+            <text x={t.x} y={padT + chartH + 14} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{t.label}</text>
           </g>
         ))}
 
@@ -200,7 +203,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
 // ── ContinuousCard ────────────────────────────────────────────────────────────
 function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit = '', decimals = 1, height = 360, events: eventsProp, footerNote }) {
   const [range, setRange]           = React.useState('5a');
-  const [chartStyle, setChartStyle] = React.useState('line');
+  const [chartStyle, setChartStyle] = React.useState('area');
 
   const eventsData = []; // eventos desativados neste gráfico
   const allRows    = data[dataset] || [];
@@ -233,9 +236,6 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
             <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
               {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
             </span>
-            {lastRow && (
-              <span className="card-date">{window.MONTHS_PT[lastRow.month - 1]}/{String(lastRow.year).slice(-2)}</span>
-            )}
           </div>
         </div>
 
