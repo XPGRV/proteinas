@@ -140,10 +140,24 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
           <clipPath id="bm-sea-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
-          {displayYears.map(yr => (
-            <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.25"/>
-              <stop offset="100%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0"/>
+          {displayYears.map(yr => {
+            const vals = [1,2,3,4,5,6].map(bm => seasonal[yr]?.[bm]).filter(v => v != null);
+            const minV = Math.min(...vals, 0), maxV = Math.max(...vals, 0);
+            const range = maxV - minV || 1;
+            const zeroPct = ((maxV - 0) / range) * 100;
+            return (
+              <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1={y(maxV)} y2={y(minV)} gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.4"/>
+                <stop offset={`${zeroPct}%`} stopColor={yearColor(yr, selectedYears)} stopOpacity="0"/>
+                <stop offset="100%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.4"/>
+              </linearGradient>
+            );
+          })}
+          {/* Gradients for continuous mode (one per company) */}
+          {fields.map(f => (
+            <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`} x1="0" x2="0" y1="0" y2="1" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor={f.color} stopOpacity="0.3"/>
+              <stop offset="100%" stopColor={f.color} stopOpacity="0"/>
             </linearGradient>
           ))}
         </defs>
@@ -247,8 +261,14 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               return (
                 <g key={yr}>
                   {(chartStyle === 'area' || isPinned) && (
-                    <path d={buildAreaPath(yr)} fill={`url(#grad-bm-${yr})`}
-                      opacity={seriesOpacity(yr) * 0.8} className={leaving ? 'rx-leaving' : ''}/>
+                    <path d={buildAreaPath(yr)}
+                      fill={`url(#grad-bm-${yr})`}
+                      style={{
+                        transform: `scaleY(1)`,
+                        opacity: seriesOpacity(yr) * 0.7,
+                        pointerEvents: 'none'
+                      }}
+                      className={leaving ? 'rx-leaving' : ''}/>
                   )}
                   <path d={path} fill="none" stroke={color}
                     strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
@@ -432,7 +452,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
   const minV = Math.min(...allVals), maxV = Math.max(...allVals);
   const span = maxV - minV || 1;
-  const yMin = minV - span * 0.1, yMax = maxV + span * 0.15;
+  const yMin = minV - span * 0.15, yMax = maxV + span * 0.20;
 
   const firstOrd = filtered[0].year * 6 + filtered[0].bimonth - 1;
   const lastOrd  = filtered[filtered.length - 1].year * 6 + filtered[filtered.length - 1].bimonth - 1;
@@ -511,12 +531,20 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
           <clipPath id="bm-cont-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
-          {fields.map(f => (
-            <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={f.color} stopOpacity="0.25"/>
-              <stop offset="100%" stopColor={f.color} stopOpacity="0"/>
-            </linearGradient>
-          ))}
+          {fields.map(f => {
+            const vals = filtered.map(r => r[f.key]).filter(v => v != null);
+            const minV = Math.min(...vals, 0), maxV = Math.max(...vals, 0);
+            const range = maxV - minV || 1;
+            const zeroPct = ((maxV - 0) / range) * 100;
+            return (
+              <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`}
+                x1="0" x2="0" y1={yOf(maxV)} y2={yOf(minV)} gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={f.color} stopOpacity="0.4"/>
+                <stop offset={`${zeroPct}%`} stopColor={f.color} stopOpacity="0"/>
+                <stop offset="100%" stopColor={f.color} stopOpacity="0.4"/>
+              </linearGradient>
+            );
+          })}
         </defs>
 
         {/* Grid + Y labels */}
@@ -558,11 +586,12 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
               <g key={f.key}>
                 {(chartStyle === 'area' || isPinned) && (
                   <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
-                    opacity={lineOpacity(f.key) * 0.7}/>
+                    opacity={lineOpacity(f.key) * 0.7} style={{pointerEvents:'none'}}/>
                 )}
                 <path d={path} fill="none" stroke={f.color}
                   strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
-                  opacity={lineOpacity(f.key)}/>
+                  opacity={lineOpacity(f.key)}
+                  style={{transition: 'd 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease'}}/>
                 <path d={path} fill="none" stroke="transparent" strokeWidth={12}
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
@@ -570,6 +599,31 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
             );
           })}
         </g>
+
+        {/* Data labels for pinned company */}
+        {pinnedCompany && (
+          <g>
+            {(() => {
+              const f = fields.find(ff => ff.key === pinnedCompany);
+              // Show labels for every 2nd or 3rd point if too many, or just last few
+              const step = filtered.length > 20 ? Math.ceil(filtered.length / 8) : 2;
+              return filtered.filter((_, i) => i % step === 0 || i === filtered.length - 1).map((r, i) => {
+                const v = r[f.key];
+                if (v == null) return null;
+                const cx = xOf(r), cy = yOf(v);
+                return (
+                  <g key={i}>
+                    <circle cx={cx} cy={cy} r={3} fill={f.color} opacity={0.8}/>
+                    <text x={cx} y={cy - 8} textAnchor="middle"
+                      style={{fontFamily:'var(--font-mono)', fontSize:10, fill:f.color, fontWeight:500}}>
+                      {fmt(v)}
+                    </text>
+                  </g>
+                );
+              });
+            })()}
+          </g>
+        )}
 
         {/* Hover crosshair + dots */}
         {hovered && (
