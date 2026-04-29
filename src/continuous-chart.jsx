@@ -205,7 +205,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
 
 // ── ContinuousCard ────────────────────────────────────────────────────────────
 function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit = '', decimals = 1, height = 360, events: eventsProp, footerNote }) {
-  const [range, setRange]           = React.useState('5a');
+  const [range, setRange]           = React.useState('5');
   const [chartStyle, setChartStyle] = React.useState('area');
 
   const eventsData = []; // eventos desativados neste gráfico
