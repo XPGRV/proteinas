@@ -451,9 +451,18 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
       if (!r) continue;
       const md = parseMonthTag(r[1]) || parseMonthTag(r[0]);
       if (!md) continue;
-      const v = parseNum(r[15]); // col P
-      if (v == null) continue;
-      processados.push({ year: md.year, month: md.month, ipca_base100: v });
+      const row = {
+        year: md.year, month: md.month,
+        ipca_base100:    parseNum(r[15]), // col P
+        growth_vol_ind:  parseNum(r[17]), // col R — Industry Avg Vol
+        growth_px_ind:   parseNum(r[18]), // col S — Industry Avg Px
+        growth_vol_brf:  parseNum(r[19]), // col T — BRF Vol
+        growth_px_brf:   parseNum(r[20]), // col U — BRF Px
+        growth_vol_seara:parseNum(r[21]), // col V — Seara Vol
+        growth_px_seara: parseNum(r[22]), // col W — Seara Px
+      };
+      if (Object.values(row).every((v, i) => i < 2 || v == null)) continue; // skip all-null
+      processados.push(row);
     }
     if (processados.length) result.processados = processados;
   }

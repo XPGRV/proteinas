@@ -71,6 +71,17 @@ const PoultryProducaoTab = ({ data, accent }) => {
   );
 };
 
+const PROCESSADOS_PX_FIELDS = [
+  { key: 'growth_px_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
+  { key: 'growth_px_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
+  { key: 'growth_px_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
+];
+const PROCESSADOS_VOL_FIELDS = [
+  { key: 'growth_vol_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
+  { key: 'growth_vol_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
+  { key: 'growth_vol_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
+];
+
 // ── Aba IPCA Processados ──────────────────────────────────────────────────────
 const PoultryIpcaTab = ({ data, accent }) => {
   if (!data.processados || !data.processados.length) {
@@ -92,6 +103,22 @@ const PoultryIpcaTab = ({ data, accent }) => {
         sub="Cálculo próprio · Subitens ponderados (Ham = 15,8%, Hot Dog = 7,2%, Sausage = 52,3%, Mortadella = 8,4%, Salami = 1,4%, Margarine = 14,9%)"
         accent={accent} data={data} dataset="processados"
         field="ipca_base100" unit="Base 100" decimals={1} height={400}
+      />
+
+      <window.BimonthlyCard
+        cardId="card-growth-px"
+        title="Growth Like-for-Like Pricing"
+        sub="APINCO · Crescimento bimestral de preço"
+        data={data} dataset="processados"
+        fields={PROCESSADOS_PX_FIELDS} height={380}
+      />
+
+      <window.BimonthlyCard
+        cardId="card-growth-vol"
+        title="Growth Volume"
+        sub="APINCO · Crescimento bimestral de volume"
+        data={data} dataset="processados"
+        fields={PROCESSADOS_VOL_FIELDS} height={380}
       />
     </main>
   );
