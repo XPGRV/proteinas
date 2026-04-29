@@ -259,6 +259,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                       style={{
                         transform: `scaleY(1)`,
                         opacity: seriesOpacity(yr) * 0.7,
+                        '--rx-op': seriesOpacity(yr) * 0.7,
                         pointerEvents: 'none',
                         transition: 'opacity 0.5s ease-out'
                       }}
@@ -582,6 +583,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
                   <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
                     style={{
                       opacity: lineOpacity(f.key) * 0.7,
+                      '--rx-op': lineOpacity(f.key) * 0.7,
                       pointerEvents: 'none',
                       transition: 'opacity 0.5s ease-out'
                     }}

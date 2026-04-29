@@ -641,10 +641,10 @@ body {
 }
 @keyframes rx-fade-in {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to { opacity: var(--rx-op, 0.7); }
 }
 .rx-fade-in {
-  animation: rx-fade-in 0.5s ease-out both;
+  animation: rx-fade-in 0.5s ease-out forwards;
 }
 .tick-label {
   font-family: var(--font-mono);
