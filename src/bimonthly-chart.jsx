@@ -254,14 +254,14 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               const isPinned = yr === pinnedYear;
               return (
                 <g key={yr}>
-                  {(showAreaRender || isPinned) && (
+                  {(showAreaRender || isPinned) && !leaving && (
                     <path d={buildAreaPath(yr)}
                       fill={`url(#grad-bm-${yr})`}
                       style={{
                         '--rx-area-op': seriesOpacity(yr) * 0.7,
                         pointerEvents: 'none'
                       }}
-                      className={`rx-area ${leaving ? 'rx-leaving' : ''} ${areaLeaving && !isPinned ? 'rx-area-leaving' : ''}`}/>
+                      className={`rx-area ${areaLeaving && !isPinned ? 'rx-area-leaving' : ''}`}/>
                   )}
                   <path d={path} fill="none" stroke={color}
                     strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
