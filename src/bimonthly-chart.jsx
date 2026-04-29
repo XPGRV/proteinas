@@ -162,6 +162,12 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
           <line key={`vgrid-${bm}`} x1={x(bm)} x2={x(bm)} y1={padT} y2={padT + chartH} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.25}/>
         ))}
 
+        {/* Evident zero line */}
+        {yMin <= 0 && yMax >= 0 && (
+          <line x1={padL} x2={W - padR} y1={y(0)} y2={y(0)}
+            stroke="var(--fg)" strokeWidth={1.5} strokeOpacity={0.6}/>
+        )}
+
         {/* Historical band */}
         {showStatsRender && stats && chartStyle !== 'bars' && (
           <g clipPath="url(#bm-sea-clip)">
@@ -205,14 +211,19 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                   return (
                     <rect key={bm}
                       x={xBar(bm, idx) - barW/2}
-                      y={y(v)}
-                      width={barW - 1}
-                      height={Math.abs(y(0) - y(v))}
                       y={Math.min(y(0), y(v))}
+                      width={barW - 1}
+                      height={Math.max(1, Math.abs(y(0) - y(v)))}
                       fill={yearColor(yr, selectedYears)}
                       opacity={seriesOpacity(yr)}
                       rx={1}
-                      style={{cursor: 'pointer'}}
+                      className="rx-bar-animated"
+                      style={{
+                        cursor: 'pointer',
+                        transformOrigin: `0px ${y(0)}px`,
+                        transition: 'opacity 0.4s ease, fill 0.4s ease',
+                        animationDelay: `${bm * 0.05}s`
+                      }}
                       onClick={() => setPinnedYear(p => p === yr ? null : yr)}
                     />
                   );
@@ -514,6 +525,21 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
             <text x={W - padR + 8} y={yOf(v)} className="tick-label" textAnchor="start" dominantBaseline="middle">{fmt(v)}</text>
+          </g>
+        ))}
+
+        {/* Evident zero line */}
+        {yMin <= 0 && yMax >= 0 && (
+          <line x1={padL} x2={W - padR} y1={yOf(0)} y2={yOf(0)}
+            stroke="var(--fg)" strokeWidth={2} strokeOpacity={0.8}
+            style={{filter:'drop-shadow(0 0 2px var(--fg))'}}/>
+        )}
+
+        {/* X Ticks + Labels */}
+        {xTicks.map((t, i) => (
+          <g key={`xtick-${i}`}>
+            <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 5} stroke="var(--border-strong)" strokeWidth={1.5}/>
+            <text x={t.x} y={padT + chartH + 20} className="tick-label" textAnchor="middle" style={{fontSize:11, fill:'var(--fg-dim)', fontFamily:'var(--font-mono)'}}>{t.label}</text>
           </g>
         ))}
 
