@@ -88,8 +88,8 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
   const y   = v  => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
   const fmt = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
 
-  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.12) : (yr === latestYear ? 1 : 0.65);
-  const seriesWidth   = yr => yr === latestYear ? 2.5 : 1.5;
+  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.10) : (yr === latestYear ? 1 : 0.80);
+  const seriesWidth   = yr => pinnedYear ? (yr === pinnedYear ? 2.5 : 1) : (yr === latestYear ? 2 : 1.25);
 
   const range = yMax - yMin;
   const rawStep = range / 5;
@@ -149,39 +149,22 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
         {[1,2,3,4,5,6].map(bm => (
           <g key={bm}>
             <line x1={x(bm)} x2={x(bm)} y1={padT + chartH} y2={padT + chartH + 4} stroke="var(--fg-dim)" strokeWidth={0.5}/>
-            <text x={x(bm)} y={padT + chartH + 15} textAnchor="middle" fontSize={9} fill="var(--fg-dim)">{BM_LABELS[bm - 1]}</text>
+            <text x={x(bm)} y={padT + chartH + 15} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{BM_LABELS[bm - 1]}</text>
           </g>
         ))}
 
-        {/* Linhas por ano */}
+        {/* Linhas por ano (multi-ponto, com clip) */}
         <g clipPath="url(#bm-sea-clip)">
           {displayYears.map(yr => {
             const color = yearColor(yr, selectedYears);
             const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
-            if (!bmsWithData.length) return null;
-
-            if (bmsWithData.length === 1) {
-              const bm = bmsWithData[0];
-              const v = seasonal[yr][bm];
-              return (
-                <g key={yr} onClick={() => setPinnedYear(p => p === yr ? null : yr)} style={{cursor:'pointer'}}>
-                  <circle cx={x(bm)} cy={y(v)} r={14} fill="transparent"/>
-                  <circle cx={x(bm)} cy={y(v)}
-                    r={yr === latestYear ? 5 : 4}
-                    fill="var(--bg-panel)" stroke={color}
-                    strokeWidth={yr === latestYear ? 2 : 1.5}
-                    opacity={seriesOpacity(yr)}/>
-                </g>
-              );
-            }
-
+            if (bmsWithData.length <= 1) return null; // pontos únicos renderizados fora do clip
             const path = buildPath(yr);
             return (
               <g key={yr}>
                 <path d={path} fill="none" stroke={color}
                   strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
                   opacity={seriesOpacity(yr)}/>
-                {/* hitbox invisível para clicar */}
                 <path d={path} fill="none" stroke="transparent" strokeWidth={12}
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
@@ -190,20 +173,47 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
           })}
         </g>
 
-        {/* Data labels quando um ano está pinado */}
+        {/* Pontos únicos — fora do clip para não cortar nas bordas */}
+        {displayYears.map(yr => {
+          const color = yearColor(yr, selectedYears);
+          const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
+          if (bmsWithData.length !== 1) return null;
+          const bm = bmsWithData[0];
+          const v = seasonal[yr][bm];
+          const isCurrent = yr === latestYear;
+          return (
+            <g key={`single-${yr}`} onClick={() => setPinnedYear(p => p === yr ? null : yr)} style={{cursor:'pointer'}}>
+              <circle cx={x(bm)} cy={y(v)} r={14} fill="transparent"/>
+              <circle cx={x(bm)} cy={y(v)}
+                r={isCurrent ? 5 : 4}
+                fill="var(--bg)" stroke={color}
+                strokeWidth={isCurrent ? 2 : 1.25}
+                opacity={seriesOpacity(yr)}/>
+            </g>
+          );
+        })}
+
+        {/* Data labels quando um ano está pinado — estilo SeasonalChart */}
         {pinnedYear && (
           <g>
             {[1,2,3,4,5,6].map(bm => {
               const v = seasonal[pinnedYear]?.[bm];
               if (v == null) return null;
               const color = yearColor(pinnedYear, selectedYears);
-              const cy = y(v);
-              const above = cy - padT > 20;
+              const cx = x(bm), cy = y(v);
+              const above = cy - padT > 22;
+              const nearLeft = cx < padL + 28;
+              const anchor = nearLeft ? 'start' : 'middle';
+              const lx = nearLeft ? padL + 4 : cx;
               return (
-                <text key={bm} x={x(bm)} y={above ? cy - 9 : cy + 16}
-                  textAnchor="middle" fontSize={10} fontWeight="600" fill={color}>
-                  {fmt(v)}
-                </text>
+                <g key={bm}>
+                  <circle cx={cx} cy={cy} r={3.5} fill={color} opacity={0.9}/>
+                  <text x={lx} y={above ? cy - 8 : cy + 14}
+                    textAnchor={anchor} dominantBaseline="auto"
+                    style={{fontFamily:'var(--font-mono)', fontSize:10, fill:color, fontWeight:500, letterSpacing:'0.02em'}}>
+                    {fmt(v)}
+                  </text>
+                </g>
               );
             })}
           </g>
@@ -222,7 +232,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, heigh
               return (
                 <circle key={yr} cx={x(hoverBm)} cy={y(v)}
                   r={isPinned ? 5 : isCurrent ? 4 : 3}
-                  fill="var(--bg-panel)" stroke={yearColor(yr, selectedYears)}
+                  fill="var(--bg)" stroke={yearColor(yr, selectedYears)}
                   strokeWidth={isPinned ? 2.5 : isCurrent ? 2 : 1.25}
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
