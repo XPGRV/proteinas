@@ -12,7 +12,7 @@ function filterByRangeYears(rows, field, rangeYears) {
 
 function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height = 360, events = [], showEvents = true, chartStyle = 'line' }) {
   const svgRef = React.useRef(null);
-  const [hovered, setHovered] = React.useState(null);
+  const [hovered, setHovered] = React.useState(null); // { x, y, row, mouseY }
   const [svgW, setSvgW] = React.useState(760);
 
   React.useEffect(() => {
@@ -54,17 +54,18 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
   // Y ticks
   const yTicks = Array.from({length: 5}, (_, i) => yMin + (yMax - yMin) * (i / 4));
 
-  // X ticks — alvo ~7 labels; intervalo "bonito" em meses
+  // X ticks: 3a/5a → a cada 6 meses; 10a/Todos → a cada 12 meses
   const xOf_ord = ord => padL + ((ord - firstOrd) / totalMons) * chartW;
-  const NICE_STEPS = [1, 2, 3, 6, 12, 24, 36, 60, 120];
-  const rawStep = totalMons / 7;
-  const stepMons = NICE_STEPS.find(s => s >= rawStep) || 120;
+  const stepMons = totalMons <= 72 ? 6 : 12;
   const xTicks = [];
   const tickStart = Math.ceil(firstOrd / stepMons) * stepMons;
   for (let ord = tickStart; ord <= lastOrd; ord += stepMons) {
     const yr = Math.floor(ord / 12);
     const mo = (ord % 12) + 1;
-    xTicks.push({ yr, mo, x: xOf_ord(ord), label: stepMons >= 12 ? String(yr) : `${MONTHS_PT_ABR[mo - 1]}/${String(yr).slice(-2)}` });
+    const label = stepMons === 6
+      ? `${MONTHS_PT_ABR[mo - 1]}/${String(yr).slice(-2)}`
+      : String(yr);
+    xTicks.push({ x: xOf_ord(ord), label });
   }
 
   // SVG path
@@ -83,7 +84,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
       const d = Math.abs(r.year * 12 + r.month - 1 - ord);
       if (d < bestD) { bestD = d; best = r; }
     }
-    if (best) setHovered({ x: xOf(best), y: yOf(best[field]), row: best });
+    if (best) setHovered({ x: xOf(best), y: yOf(best[field]), row: best, mouseY: e.clientY - rect.top });
   };
 
   // Visible events
@@ -176,22 +177,24 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
         )}
       </svg>
 
-      {/* Tooltip */}
+      {/* Tooltip — mesmo estilo do SeasonalChart */}
       {hovered && (() => {
         const r = hovered.row;
-        const label = `${MONTHS_PT_ABR[r.month - 1]}/${String(r.year).slice(-2)}`;
-        const tipW = 100;
-        const tipX = hovered.x + 12 + tipW > svgW ? hovered.x - tipW - 8 : hovered.x + 12;
+        const isRight = hovered.x > svgW * 0.75;
+        const style = {
+          left: `${(hovered.x / svgW * 100).toFixed(1)}%`,
+          top: Math.max(10, Math.min(H - 80, hovered.mouseY - 40)),
+          transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+        };
         return (
-          <div style={{
-            position:'absolute', top: Math.max(4, hovered.y - 38), left: tipX,
-            background:'var(--bg-panel)', border:'1px solid var(--border)',
-            borderRadius:6, padding:'4px 8px', fontSize:11,
-            pointerEvents:'none', boxShadow:'var(--shadow)', zIndex:10, whiteSpace:'nowrap',
-          }}>
-            <div style={{color:'var(--fg-dim)', marginBottom:2}}>{label}</div>
-            <div style={{color:accent, fontWeight:600}}>
-              {fmt(r[field])} <span style={{color:'var(--fg-dim)', fontWeight:400}}>{unit}</span>
+          <div className="hover-card" style={style}>
+            <div className="hover-month">{MONTHS_PT_ABR[r.month - 1]}/{r.year}</div>
+            <div className="hover-rows">
+              <div className="hover-row">
+                <span className="hover-val" style={{color: accent}}>
+                  {fmt(r[field])}<span className="hover-unit"> {unit}</span>
+                </span>
+              </div>
             </div>
           </div>
         );
