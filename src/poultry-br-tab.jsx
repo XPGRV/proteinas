@@ -72,14 +72,14 @@ const PoultryProducaoTab = ({ data, accent }) => {
 };
 
 const PROCESSADOS_PX_FIELDS = [
-  { key: 'growth_px_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
-  { key: 'growth_px_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
-  { key: 'growth_px_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
+  { key: 'growth_px_ind',   label: 'Industry Avg.', color: 'oklch(0.82 0.18 155)' },
+  { key: 'growth_px_brf',   label: 'BRF',           color: '#EC6708'               },
+  { key: 'growth_px_seara', label: 'Seara',         color: '#E30613'               },
 ];
 const PROCESSADOS_VOL_FIELDS = [
-  { key: 'growth_vol_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
-  { key: 'growth_vol_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
-  { key: 'growth_vol_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
+  { key: 'growth_vol_ind',   label: 'Industry Avg.', color: 'oklch(0.82 0.18 155)' },
+  { key: 'growth_vol_brf',   label: 'BRF',           color: '#EC6708'               },
+  { key: 'growth_vol_seara', label: 'Seara',         color: '#E30613'               },
 ];
 
 // ── Aba IPCA Processados ──────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ const PoultryIpcaTab = ({ data, accent }) => {
         cardId="card-growth-px"
         title="Growth Like-for-Like Pricing"
         sub="APINCO · Crescimento bimestral de preço"
-        data={data} dataset="processados"
+        accent={accent} data={data} dataset="processados"
         fields={PROCESSADOS_PX_FIELDS} height={380}
       />
 
@@ -117,7 +117,7 @@ const PoultryIpcaTab = ({ data, accent }) => {
         cardId="card-growth-vol"
         title="Growth Volume"
         sub="APINCO · Crescimento bimestral de volume"
-        data={data} dataset="processados"
+        accent={accent} data={data} dataset="processados"
         fields={PROCESSADOS_VOL_FIELDS} height={380}
       />
     </main>

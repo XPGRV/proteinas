@@ -171,8 +171,8 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
           <g>
             <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
               stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
-            <circle cx={hovered.x} cy={hovered.y} r={4} fill={accent}
-              stroke="var(--bg-panel)" strokeWidth={2}/>
+            <circle cx={hovered.x} cy={hovered.y} r={4} fill="var(--bg-panel)"
+              stroke={accent} strokeWidth={2}/>
           </g>
         )}
       </svg>

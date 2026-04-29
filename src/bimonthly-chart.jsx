@@ -1,13 +1,12 @@
-// BimonthlyCard — gráfico bimestral com modo Sazonal e Contínuo
+// BimonthlyCard — Sazonal (empresa + anos) e Contínuo (3 linhas simultâneas)
 
 const BM_LABELS = ['Jan/Fev','Mar/Abr','Mai/Jun','Jul/Ago','Set/Out','Nov/Dez'];
 const BM_SHORT  = ['J/F','M/A','M/J','J/A','S/O','N/D'];
 
-// Deduplica dados mensais → bimestrais (1 ponto por bimestre)
 function toBimonthly(rows, fieldKeys) {
   const map = {};
   for (const r of rows) {
-    const bm  = Math.ceil(r.month / 2); // 1-6
+    const bm  = Math.ceil(r.month / 2);
     const key = `${r.year}-${bm}`;
     if (!map[key] && fieldKeys.some(f => r[f] != null)) {
       const entry = { year: r.year, bimonth: bm };
@@ -20,13 +19,31 @@ function toBimonthly(rows, fieldKeys) {
   );
 }
 
-// ── Seasonal (eixo bimestral, linhas por ano) ─────────────────────────────────
-function BimonthlySeasonalChart({ bmRows, fields, selectedYears, height = 380 }) {
-  const svgRef = React.useRef(null);
-  const [W, setW] = React.useState(760);
+// Mesma paleta do SeasonalChart
+function makeYearColor(accent) {
+  const palette = [
+    'oklch(0.75 0.15 200)','oklch(0.68 0.16 255)','oklch(0.74 0.15 310)',
+    'oklch(0.78 0.17 35)', 'oklch(0.80 0.15 60)', 'oklch(0.72 0.16 0)',
+    'oklch(0.76 0.13 170)',
+  ];
+  return (yr, selectedYears) => {
+    const latest = Math.max(...selectedYears);
+    const age = latest - yr;
+    if (age === 0) return accent;
+    if (age - 1 < palette.length) return palette[age - 1];
+    const t = Math.min(1, (age - palette.length) / 4);
+    return `oklch(${0.48 - t * 0.08} 0.01 260)`;
+  };
+}
+
+// ── Seasonal (eixo bimestral, 1 empresa, anos sobrepostos) ────────────────────
+function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, height = 380 }) {
+  const svgRef     = React.useRef(null);
+  const [W, setW]  = React.useState(760);
   const [hoverBm, setHoverBm] = React.useState(null);
-  const [hoverX, setHoverX] = React.useState(0);
-  const [mouseY, setMouseY] = React.useState(0);
+  const [hoverX, setHoverX]   = React.useState(0);
+  const [mouseY, setMouseY]   = React.useState(0);
+  const [pinnedYear, setPinnedYear] = React.useState(null);
 
   React.useEffect(() => {
     if (!svgRef.current) return;
@@ -43,19 +60,22 @@ function BimonthlySeasonalChart({ bmRows, fields, selectedYears, height = 380 })
   const seasonal = React.useMemo(() => {
     const s = {};
     for (const r of bmRows) {
-      if (!selectedYears.includes(r.year)) continue;
       if (!s[r.year]) s[r.year] = {};
-      s[r.year][r.bimonth] = r;
+      s[r.year][r.bimonth] = r[fieldKey] ?? null;
     }
     return s;
-  }, [bmRows, selectedYears]);
+  }, [bmRows, fieldKey]);
+
+  const yearColor = React.useMemo(() => makeYearColor(accent), [accent]);
+
+  const sortedYears  = [...selectedYears].sort((a, b) => a - b);
+  const latestYear   = sortedYears[sortedYears.length - 1];
+  const displayYears = pinnedYear ? [pinnedYear] : sortedYears;
 
   const allVals = React.useMemo(() =>
-    bmRows.filter(r => selectedYears.includes(r.year))
-      .flatMap(r => fields.map(f => r[f.key]).filter(v => v != null)),
-    [bmRows, selectedYears, fields]
+    bmRows.filter(r => selectedYears.includes(r.year)).map(r => r[fieldKey]).filter(v => v != null),
+    [bmRows, selectedYears, fieldKey]
   );
-
   if (!allVals.length) {
     return <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>Sem dados</div>;
   }
@@ -65,22 +85,37 @@ function BimonthlySeasonalChart({ bmRows, fields, selectedYears, height = 380 })
   const yMin = minV - span * 0.08, yMax = maxV + span * 0.08;
 
   const x   = bm => padL + ((bm - 1) / 5) * chartW;
-  const y    = v  => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
-  const fmt  = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
+  const y   = v  => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+  const fmt = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
 
-  const sortedYears  = [...selectedYears].sort((a, b) => b - a);
-  const latestYear   = sortedYears[0];
-  const yearOpacity  = yr => yr === latestYear ? 1.0 : yr === sortedYears[1] ? 0.55 : 0.33;
-  const yTicks = Array.from({length: 5}, (_, i) => yMin + (yMax - yMin) * (i / 4));
+  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.12) : (yr === latestYear ? 1 : 0.65);
+  const seriesWidth   = yr => yr === latestYear ? 2.5 : 1.5;
+
+  const range = yMax - yMin;
+  const rawStep = range / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
+  const norm = rawStep / mag;
+  const nStep = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  const step = nStep * mag;
+  const yTicks = [];
+  for (let v = Math.ceil(yMin / step) * step; v <= yMax + step * 0.01; v += step)
+    yTicks.push(parseFloat(v.toPrecision(10)));
+
+  const buildPath = (yr) => {
+    const pts = [];
+    for (let bm = 1; bm <= 6; bm++) {
+      const v = seasonal[yr]?.[bm];
+      if (v != null) pts.push(`${pts.length === 0 ? 'M' : 'L'}${x(bm).toFixed(1)},${y(v).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  };
 
   const onMouseMove = React.useCallback((e) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     const bm = Math.round(((e.clientX - rect.left - padL) / chartW) * 5) + 1;
     if (bm >= 1 && bm <= 6) {
-      setHoverBm(bm);
-      setHoverX(x(bm));
-      setMouseY(e.clientY - rect.top);
+      setHoverBm(bm); setHoverX(x(bm)); setMouseY(e.clientY - rect.top);
     }
   }, [chartW]);
 
@@ -103,10 +138,10 @@ function BimonthlySeasonalChart({ bmRows, fields, selectedYears, height = 380 })
           </g>
         ))}
 
-        {/* Zero line */}
+        {/* Linha do zero destacada */}
         {yMin <= 0 && yMax >= 0 && (
           <line x1={padL} x2={W - padR} y1={y(0)} y2={y(0)}
-            stroke="var(--fg-dim)" strokeWidth={0.8} strokeDasharray="4 2" opacity={0.35}/>
+            stroke="var(--fg)" strokeWidth={1} strokeOpacity={0.35}/>
         )}
 
         {/* X axis */}
@@ -118,97 +153,101 @@ function BimonthlySeasonalChart({ bmRows, fields, selectedYears, height = 380 })
           </g>
         ))}
 
-        {/* Lines: por ano × empresa */}
-        {sortedYears.map(yr => {
-          const op = yearOpacity(yr);
-          return fields.map(f => {
-            let path = '', inPath = false;
-            for (let bm = 1; bm <= 6; bm++) {
-              const v = seasonal[yr]?.[bm]?.[f.key];
-              if (v != null) {
-                const pt = `${x(bm).toFixed(1)},${y(v).toFixed(1)}`;
-                path += inPath ? `L${pt}` : `M${pt}`;
-                inPath = true;
-              } else { inPath = false; }
-            }
-            return path ? (
-              <path key={`${yr}-${f.key}`} d={path} fill="none"
-                stroke={f.color} strokeWidth={yr === latestYear ? 2 : 1.5}
-                strokeDasharray={yr === latestYear ? 'none' : '5 3'}
-                opacity={op} clipPath="url(#bm-sea-clip)"/>
-            ) : null;
-          });
-        })}
+        {/* Linhas por ano */}
+        <g clipPath="url(#bm-sea-clip)">
+          {displayYears.map(yr => {
+            const path = buildPath(yr);
+            if (!path) return null;
+            const color = yearColor(yr, selectedYears);
+            return (
+              <g key={yr}>
+                <path d={path} fill="none" stroke={color}
+                  strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
+                  opacity={seriesOpacity(yr)}/>
+                {/* hitbox invisível para clicar */}
+                <path d={path} fill="none" stroke="transparent" strokeWidth={12}
+                  style={{cursor:'pointer'}}
+                  onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+              </g>
+            );
+          })}
+        </g>
 
-        {/* Dots para o ano mais recente */}
-        {fields.map(f => [1,2,3,4,5,6].map(bm => {
-          const v = seasonal[latestYear]?.[bm]?.[f.key];
-          return v != null ? (
-            <circle key={`${f.key}-${bm}`} cx={x(bm)} cy={y(v)} r={3}
-              fill={f.color} stroke="var(--bg-panel)" strokeWidth={1.5}
-              clipPath="url(#bm-sea-clip)"/>
-          ) : null;
-        }))}
-
-        {/* Hover */}
-        {hoverBm && (
-          <line x1={x(hoverBm)} x2={x(hoverBm)} y1={padT} y2={padT + chartH}
-            stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
+        {/* Hover crosshair + dots */}
+        {hoverBm != null && (
+          <g>
+            <line x1={x(hoverBm)} x2={x(hoverBm)} y1={padT} y2={padT + chartH}
+              stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
+            {displayYears.map(yr => {
+              const v = seasonal[yr]?.[hoverBm];
+              if (v == null) return null;
+              const isPinned = yr === pinnedYear;
+              const isCurrent = yr === latestYear;
+              return (
+                <circle key={yr} cx={x(hoverBm)} cy={y(v)}
+                  r={isPinned ? 5 : isCurrent ? 4 : 3}
+                  fill="var(--bg-panel)" stroke={yearColor(yr, selectedYears)}
+                  strokeWidth={isPinned ? 2.5 : isCurrent ? 2 : 1.25}
+                  style={{cursor:'pointer'}}
+                  onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
+              );
+            })}
+          </g>
         )}
       </svg>
 
       {/* Tooltip */}
-      {hoverBm && (() => {
+      {hoverBm != null && (() => {
         const isRight = hoverX > W * 0.75;
+        const visYears = [...displayYears].sort((a, b) => b - a);
         return (
           <div className="hover-card" style={{
             left:`${(hoverX / W * 100).toFixed(1)}%`,
-            top: Math.max(10, Math.min(H - 130, mouseY - 40)),
+            top: Math.max(10, Math.min(H - 110, mouseY - 40)),
             transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
             <div className="hover-month">{BM_LABELS[hoverBm - 1]}</div>
             <div className="hover-rows">
-              {sortedYears.map(yr => (
-                <React.Fragment key={yr}>
-                  {sortedYears.length > 1 && (
-                    <div style={{fontSize:10, color:'var(--fg-dim)', marginTop:4, marginBottom:1}}>{yr}</div>
-                  )}
-                  {fields.map(f => (
-                    <div key={f.key} className="hover-row">
-                      <span className="hover-year" style={{color: f.color}}>{f.label}</span>
-                      <span className="hover-val">{fmt(seasonal[yr]?.[hoverBm]?.[f.key])}</span>
-                    </div>
-                  ))}
-                </React.Fragment>
-              ))}
+              {visYears.map(yr => {
+                const v = seasonal[yr]?.[hoverBm];
+                return (
+                  <div key={yr} className="hover-row">
+                    <span className="hover-year" style={{color: yearColor(yr, selectedYears)}}>{yr}</span>
+                    <span className="hover-val">{fmt(v)}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
       })()}
 
-      {/* Legenda */}
+      {/* Legenda de anos */}
       <div className="ciclo-legend">
-        {fields.map(f => (
-          <span key={f.key} className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
-            <span className="legend-line" style={{background: f.color}}/>
-            {f.label}
+        {[...selectedYears].sort((a, b) => b - a).map(yr => (
+          <span key={yr} className="legend-year"
+            style={{
+              userSelect:'none', padding:'2px 6px', cursor:'pointer',
+              opacity: pinnedYear && pinnedYear !== yr ? 0.3 : 1,
+              outline: pinnedYear === yr ? `1px solid ${yearColor(yr, selectedYears)}` : 'none',
+              borderRadius: 4,
+            }}
+            onClick={() => setPinnedYear(p => p === yr ? null : yr)}>
+            <span className="legend-line" style={{background: yearColor(yr, selectedYears)}}/>
+            {yr}
           </span>
         ))}
-        {sortedYears.length > 1 && (
-          <span className="legend-year" style={{opacity:0.45, userSelect:'none', padding:'2px 6px', fontSize:10}}>
-            · anos anteriores tracejados
-          </span>
-        )}
       </div>
     </div>
   );
 }
 
-// ── Continuous (eixo temporal bimestral) ──────────────────────────────────────
+// ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
 function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
-  const svgRef = React.useRef(null);
+  const svgRef    = React.useRef(null);
   const [W, setW] = React.useState(760);
-  const [hovered, setHovered] = React.useState(null);
+  const [hovered, setHovered]             = React.useState(null);
+  const [pinnedCompany, setPinnedCompany] = React.useState(null);
 
   React.useEffect(() => {
     if (!svgRef.current) return;
@@ -233,7 +272,6 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
     filtered.flatMap(r => fields.map(f => r[f.key]).filter(v => v != null)),
     [filtered, fields]
   );
-
   if (!allVals.length) {
     return <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>Sem dados</div>;
   }
@@ -242,30 +280,49 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
   const span = maxV - minV || 1;
   const yMin = minV - span * 0.08, yMax = maxV + span * 0.08;
 
-  const firstOrd  = filtered[0].year * 6 + filtered[0].bimonth - 1;
-  const lastOrd   = filtered[filtered.length - 1].year * 6 + filtered[filtered.length - 1].bimonth - 1;
-  const totalBms  = lastOrd - firstOrd || 1;
+  const firstOrd = filtered[0].year * 6 + filtered[0].bimonth - 1;
+  const lastOrd  = filtered[filtered.length - 1].year * 6 + filtered[filtered.length - 1].bimonth - 1;
+  const totalBms = lastOrd - firstOrd || 1;
 
   const xOf    = r   => padL + ((r.year * 6 + r.bimonth - 1 - firstOrd) / totalBms) * chartW;
   const xOfOrd = ord => padL + ((ord - firstOrd) / totalBms) * chartW;
   const yOf    = v   => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
   const fmt    = v   => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
 
-  const yTicks = Array.from({length: 5}, (_, i) => yMin + (yMax - yMin) * (i / 4));
-
-  // X ticks: ≤6 anos → step=3 bimestres (semestral); >6 anos → step=6 (anual)
   const rangeYrsNum = totalBms / 6;
-  const stepBms  = rangeYrsNum <= 6 ? 3 : 6;
-  const xTicks   = [];
+  const stepBms = rangeYrsNum <= 6 ? 3 : 6;
+  const xTicks  = [];
   const tickStart = Math.ceil(firstOrd / stepBms) * stepBms;
   for (let ord = tickStart; ord <= lastOrd; ord += stepBms) {
     const yr = Math.floor(ord / 6);
     const bm = (ord % 6) + 1;
-    const label = stepBms === 3
-      ? `${BM_SHORT[bm - 1]}/${String(yr).slice(-2)}`
-      : String(yr);
-    xTicks.push({ x: xOfOrd(ord), label });
+    xTicks.push({ x: xOfOrd(ord), label: stepBms === 3 ? `${BM_SHORT[bm - 1]}/${String(yr).slice(-2)}` : String(yr) });
   }
+
+  const range2 = yMax - yMin;
+  const rawStep = range2 / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
+  const norm = rawStep / mag;
+  const nStep = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  const tickStep = nStep * mag;
+  const yTicks = [];
+  for (let v = Math.ceil(yMin / tickStep) * tickStep; v <= yMax + tickStep * 0.01; v += tickStep)
+    yTicks.push(parseFloat(v.toPrecision(10)));
+
+  const lineOpacity = key => pinnedCompany ? (key === pinnedCompany ? 1 : 0.15) : 1;
+  const lineWidth   = key => pinnedCompany === key ? 2.5 : 2;
+
+  const buildPath = (key) => {
+    let path = '', inPath = false;
+    for (const r of filtered) {
+      const v = r[key];
+      if (v != null) {
+        const pt = `${xOf(r).toFixed(1)},${yOf(v).toFixed(1)}`;
+        path += inPath ? `L${pt}` : `M${pt}`; inPath = true;
+      } else { inPath = false; }
+    }
+    return path;
+  };
 
   const onMouseMove = React.useCallback((e) => {
     if (!svgRef.current) return;
@@ -299,10 +356,10 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
           </g>
         ))}
 
-        {/* Zero line */}
+        {/* Linha do zero destacada */}
         {yMin <= 0 && yMax >= 0 && (
           <line x1={padL} x2={W - padR} y1={yOf(0)} y2={yOf(0)}
-            stroke="var(--fg-dim)" strokeWidth={0.8} strokeDasharray="4 2" opacity={0.35}/>
+            stroke="var(--fg)" strokeWidth={1} strokeOpacity={0.35}/>
         )}
 
         <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border)" strokeWidth={1}/>
@@ -315,34 +372,42 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
           </g>
         ))}
 
-        {/* Lines por empresa */}
-        {fields.map(f => {
-          let path = '', inPath = false;
-          for (const r of filtered) {
-            const v = r[f.key];
-            if (v != null) {
-              const pt = `${xOf(r).toFixed(1)},${yOf(v).toFixed(1)}`;
-              path += inPath ? `L${pt}` : `M${pt}`;
-              inPath = true;
-            } else { inPath = false; }
-          }
-          return path ? (
-            <path key={f.key} d={path} fill="none" stroke={f.color} strokeWidth={2}
-              strokeLinejoin="round" clipPath="url(#bm-cont-clip)"/>
-          ) : null;
-        })}
+        {/* Linhas + hitbox clicável */}
+        <g clipPath="url(#bm-cont-clip)">
+          {fields.map(f => {
+            const path = buildPath(f.key);
+            if (!path) return null;
+            return (
+              <g key={f.key}>
+                <path d={path} fill="none" stroke={f.color}
+                  strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
+                  opacity={lineOpacity(f.key)}/>
+                <path d={path} fill="none" stroke="transparent" strokeWidth={12}
+                  style={{cursor:'pointer'}}
+                  onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
+              </g>
+            );
+          })}
+        </g>
 
         {/* Hover crosshair + dots */}
         {hovered && (
           <g>
             <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
-              stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
+              stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
             {fields.map(f => {
               const v = hovered.row[f.key];
-              return v != null ? (
-                <circle key={f.key} cx={hovered.x} cy={yOf(v)} r={4}
-                  fill={f.color} stroke="var(--bg-panel)" strokeWidth={2}/>
-              ) : null;
+              if (v == null) return null;
+              const isPinned = pinnedCompany === f.key;
+              const dimmed   = pinnedCompany && !isPinned;
+              return (
+                <circle key={f.key} cx={hovered.x} cy={yOf(v)}
+                  r={isPinned ? 5 : dimmed ? 2.5 : 4}
+                  fill="var(--bg-panel)" stroke={f.color}
+                  strokeWidth={isPinned ? 2.5 : dimmed ? 1 : 2}
+                  style={{cursor:'pointer'}}
+                  onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
+              );
             })}
           </g>
         )}
@@ -352,6 +417,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
       {hovered && (() => {
         const r = hovered.row;
         const isRight = hovered.x > W * 0.75;
+        const visFields = pinnedCompany ? fields.filter(f => f.key === pinnedCompany) : fields;
         return (
           <div className="hover-card" style={{
             left:`${(hovered.x / W * 100).toFixed(1)}%`,
@@ -360,7 +426,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
           }}>
             <div className="hover-month">{BM_LABELS[r.bimonth - 1]}/{r.year}</div>
             <div className="hover-rows">
-              {fields.map(f => (
+              {visFields.map(f => (
                 <div key={f.key} className="hover-row">
                   <span className="hover-year" style={{color: f.color}}>{f.label}</span>
                   <span className="hover-val">{fmt(r[f.key])}</span>
@@ -371,10 +437,17 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
         );
       })()}
 
-      {/* Legenda */}
+      {/* Legenda — clicável para pinnar empresa */}
       <div className="ciclo-legend">
         {fields.map(f => (
-          <span key={f.key} className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
+          <span key={f.key} className="legend-year"
+            style={{
+              userSelect:'none', padding:'2px 6px', cursor:'pointer',
+              opacity: pinnedCompany && pinnedCompany !== f.key ? 0.3 : 1,
+              outline: pinnedCompany === f.key ? `1px solid ${f.color}` : 'none',
+              borderRadius: 4,
+            }}
+            onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}>
             <span className="legend-line" style={{background: f.color}}/>
             {f.label}
           </span>
@@ -385,16 +458,17 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, height = 380 }) {
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, height = 380 }) {
-  const [mode, setMode]         = React.useState('seasonal');
-  const [range, setRange]       = React.useState('5');
-  const [selYears, setSelYears] = React.useState(null); // null = usar default
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 380 }) {
+  const [mode, setMode]             = React.useState('seasonal');
+  const [range, setRange]           = React.useState('5');
+  const [selYears, setSelYears]     = React.useState(null);
+  const [activeFieldIdx, setActiveFieldIdx] = React.useState(0);
 
-  const allRows  = data[dataset] || [];
+  const allRows   = data[dataset] || [];
   const fieldKeys = fields.map(f => f.key);
-  const bmRows   = React.useMemo(() => toBimonthly(allRows, fieldKeys), [allRows, fieldKeys.join(',')]);
-  const years    = React.useMemo(() => [...new Set(bmRows.map(r => r.year))].sort((a, b) => a - b), [bmRows]);
-  const latest   = years[years.length - 1];
+  const bmRows    = React.useMemo(() => toBimonthly(allRows, fieldKeys), [allRows, fieldKeys.join(',')]);
+  const years     = React.useMemo(() => [...new Set(bmRows.map(r => r.year))].sort((a, b) => a - b), [bmRows]);
+  const latest    = years[years.length - 1];
 
   const PRESETS = [
     { label:'3a',    yrs: [latest, latest-1, latest-2] },
@@ -402,17 +476,15 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, height = 380
     { label:'10a',   yrs: Array.from({length:10}, (_, i) => latest - i) },
     { label:'Todos', yrs: years },
   ];
-
-  const defaultYears = React.useMemo(
+  const defaultYears  = React.useMemo(
     () => [latest, latest-1, latest-2, latest-3, latest-4].filter(y => years.includes(y)),
     [latest, years.join(',')]
   );
-  const activeYears = selYears ?? defaultYears;
-  const activePreset = PRESETS.find(p => {
-    const valid = p.yrs.filter(y => years.includes(y));
-    return valid.length === activeYears.length && valid.every(y => activeYears.includes(y));
+  const activeYears   = selYears ?? defaultYears;
+  const activePreset  = PRESETS.find(p => {
+    const v = p.yrs.filter(y => years.includes(y));
+    return v.length === activeYears.length && v.every(y => activeYears.includes(y));
   });
-
   const rangeNum = range === 'all' ? 'all' : parseInt(range);
 
   if (!bmRows.length) {
@@ -432,13 +504,31 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, height = 380
         </div>
 
         <div className="card-controls">
+          {/* Modo */}
           <div className="card-ctrl-row">
             <div className="seg">
-              <button className={`seg-btn ${mode === 'seasonal'    ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
-              <button className={`seg-btn ${mode === 'continuous'  ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
+              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
             </div>
           </div>
 
+          {/* Seletor de empresa (só no sazonal) */}
+          {mode === 'seasonal' && (
+            <div className="card-ctrl-row">
+              <div className="seg">
+                {fields.map((f, i) => (
+                  <button key={f.key}
+                    className={`seg-btn ${activeFieldIdx === i ? 'is-on' : ''}`}
+                    style={activeFieldIdx === i ? {color: f.color, borderColor: f.color} : {}}
+                    onClick={() => setActiveFieldIdx(i)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Seletor de período */}
           <div className="card-ctrl-row">
             {mode === 'seasonal' ? (
               <div className="year-seg">
@@ -466,9 +556,20 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, height = 380
       </div>
 
       {mode === 'seasonal' ? (
-        <BimonthlySeasonalChart bmRows={bmRows} fields={fields} selectedYears={activeYears} height={height}/>
+        <BimonthlySeasonalChart
+          bmRows={bmRows}
+          fieldKey={fields[activeFieldIdx].key}
+          accent={accent}
+          selectedYears={activeYears}
+          height={height}
+        />
       ) : (
-        <BimonthlyContChart bmRows={bmRows} fields={fields} rangeYears={rangeNum} height={height}/>
+        <BimonthlyContChart
+          bmRows={bmRows}
+          fields={fields}
+          rangeYears={rangeNum}
+          height={height}
+        />
       )}
     </section>
   );
