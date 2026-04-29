@@ -78,26 +78,27 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
     return <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>Sem dados</div>;
   }
 
-  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
-  const span = maxV - minV || 1;
-  const yMin = minV - span * 0.1, yMax = maxV + span * 0.15;
-
-  const x   = bm => padL + ((bm - 1) / 5) * chartW;
-  const y   = v  => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
-  const fmt = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
-
-  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.1) : (yr === latestYear ? 1 : 0.80);
-  const seriesWidth   = yr => pinnedYear ? (yr === pinnedYear ? 3.5 : 1.2) : (yr === latestYear ? 3 : 1.8);
-
-  const range = yMax - yMin;
-  const rawStep = range / 5;
+  const lo = Math.min(...allVals, 0), hi = Math.max(...allVals, 0);
+  const range = hi - lo || 0.1;
+  const rawStep = (range * 1.25) / 5;
   const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
   const norm = rawStep / mag;
   const nStep = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
   const step = nStep * mag;
+
+  const yMin = Math.floor((lo - range * 0.1) / step) * step;
+  const yMax = Math.ceil((hi + range * 0.15) / step) * step;
+
   const yTicks = [];
-  for (let v = Math.ceil(yMin / step) * step; v <= yMax + step * 0.01; v += step)
-    yTicks.push(parseFloat(v.toPrecision(10)));
+  for (let v = yMin; v <= yMax + step * 0.01; v += step)
+    yTicks.push(Number(v.toPrecision(10)));
+
+  const x   = bm => padL + ((bm - 1) / 5) * chartW;
+  const y   = v  => padT + chartH - ((v - yMin) / (Math.max(0.01, yMax - yMin))) * chartH;
+  const fmt = v  => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
+
+  const seriesOpacity = yr => pinnedYear ? (yr === pinnedYear ? 1 : 0.1) : (yr === latestYear ? 1 : 0.80);
+  const seriesWidth   = yr => pinnedYear ? (yr === pinnedYear ? 3.5 : 1.2) : (yr === latestYear ? 3 : 1.8);
 
   const buildPath = (yr) => {
     const pts = [];
@@ -443,9 +444,16 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
     return <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>Sem dados</div>;
   }
 
-  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
-  const span = maxV - minV || 1;
-  const yMin = minV - span * 0.15, yMax = maxV + span * 0.20;
+  const lo = Math.min(...allVals, 0), hi = Math.max(...allVals, 0);
+  const range = hi - lo || 0.1;
+  const rawStep = (range * 1.35) / 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
+  const norm = rawStep / mag;
+  const nStep = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  const step = nStep * mag;
+
+  const yMin = Math.floor((lo - range * 0.1) / step) * step;
+  const yMax = Math.ceil((hi + range * 0.15) / step) * step;
 
   const firstOrd = filtered[0].year * 6 + filtered[0].bimonth - 1;
   const lastOrd  = filtered[filtered.length - 1].year * 6 + filtered[filtered.length - 1].bimonth - 1;
@@ -453,7 +461,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
   const xOf    = r   => padL + ((r.year * 6 + r.bimonth - 1 - firstOrd) / totalBms) * chartW;
   const xOfOrd = ord => padL + ((ord - firstOrd) / totalBms) * chartW;
-  const yOf    = v   => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+  const yOf    = v   => padT + chartH - ((v - yMin) / (Math.max(0.01, yMax - yMin))) * chartH;
   const fmt    = v   => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(1).replace('.', ',') + '%';
 
   const buildPath = (key) => {
@@ -493,15 +501,9 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
     xTicks.push({ x: xOfOrd(ord), label: stepBms === 3 ? `${BM_SHORT[bm - 1]}/${String(yr).slice(-2)}` : String(yr) });
   }
 
-  const range2 = yMax - yMin;
-  const rawStep = range2 / 5;
-  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
-  const norm = rawStep / mag;
-  const nStep = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
-  const tickStep = nStep * mag;
   const yTicks = [];
-  for (let v = Math.ceil(yMin / tickStep) * tickStep; v <= yMax + tickStep * 0.01; v += tickStep)
-    yTicks.push(parseFloat(v.toPrecision(10)));
+  for (let v = yMin; v <= yMax + step * 0.01; v += step)
+    yTicks.push(Number(v.toPrecision(10)));
 
   const onMouseMove = React.useCallback((e) => {
     if (!svgRef.current) return;
