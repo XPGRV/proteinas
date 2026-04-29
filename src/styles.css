@@ -639,10 +639,6 @@ body {
 .chart-svg area {
   transition: d 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.area-path {
-  opacity: 0;
-  transition: opacity 0.5s ease-out !important;
-}
 .tick-label {
   font-family: var(--font-mono);
   font-size: 11px;
