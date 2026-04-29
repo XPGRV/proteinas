@@ -810,6 +810,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
 
       {mode === 'seasonal' ? (
         <BimonthlySeasonalChart
+          key={fields[activeFieldIdx].key}
           bmRows={bmRows}
           fieldKey={fields[activeFieldIdx].key}
           accent={accent}
@@ -821,6 +822,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
         />
       ) : (
         <BimonthlyContChart
+          key={range}
           bmRows={bmRows}
           fields={fields}
           rangeYears={rangeNum}
