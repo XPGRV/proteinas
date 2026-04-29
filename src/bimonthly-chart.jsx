@@ -141,19 +141,17 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
           <clipPath id="bm-sea-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
-          {displayYears.map(yr => {
-            const vals = [1,2,3,4,5,6].map(bm => seasonal[yr]?.[bm]).filter(v => v != null);
-            const minV = Math.min(...vals, 0), maxV = Math.max(...vals, 0);
-            const range = maxV - minV || 1;
-            const zeroPct = ((maxV - 0) / range) * 100;
-            return (
-              <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1={y(maxV)} y2={y(minV)} gradientUnits="userSpaceOnUse">
+          {(() => {
+            const range = yMax - yMin || 1;
+            const zeroPct = ((yMax - 0) / range) * 100;
+            return displayYears.map(yr => (
+              <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1={y(yMax)} y2={y(yMin)} gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.4"/>
                 <stop offset={`${zeroPct}%`} stopColor={yearColor(yr, selectedYears)} stopOpacity="0"/>
                 <stop offset="100%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.4"/>
               </linearGradient>
-            );
-          })}
+            ));
+          })()}
         </defs>
 
         {/* Grid + Y labels */}
@@ -526,20 +524,18 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
           <clipPath id="bm-cont-clip">
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
-          {fields.map(f => {
-            const vals = filtered.map(r => r[f.key]).filter(v => v != null);
-            const minV = Math.min(...vals, 0), maxV = Math.max(...vals, 0);
-            const range = maxV - minV || 1;
-            const zeroPct = ((maxV - 0) / range) * 100;
-            return (
+          {(() => {
+            const range = yMax - yMin || 1;
+            const zeroPct = ((yMax - 0) / range) * 100;
+            return fields.map(f => (
               <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`}
-                x1="0" x2="0" y1={yOf(maxV)} y2={yOf(minV)} gradientUnits="userSpaceOnUse">
+                x1="0" x2="0" y1={yOf(yMax)} y2={yOf(yMin)} gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor={f.color} stopOpacity="0.4"/>
                 <stop offset={`${zeroPct}%`} stopColor={f.color} stopOpacity="0"/>
                 <stop offset="100%" stopColor={f.color} stopOpacity="0.4"/>
               </linearGradient>
-            );
-          })}
+            ));
+          })()}
         </defs>
 
         {/* Grid + Y labels */}
