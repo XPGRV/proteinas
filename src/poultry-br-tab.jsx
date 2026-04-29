@@ -71,9 +71,37 @@ const PoultryProducaoTab = ({ data, accent }) => {
   );
 };
 
+// ── Aba IPCA Processados ──────────────────────────────────────────────────────
+const PoultryIpcaTab = ({ data, accent }) => {
+  if (!data.processados || !data.processados.length) {
+    return (
+      <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M12 16V4M8 8l4-4 4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+        </svg>
+        <div style={{fontSize:16,fontWeight:500,color:'var(--fg)'}}>Sem dados de IPCA</div>
+        <div style={{fontSize:13,textAlign:'center',maxWidth:320}}>Faça upload da planilha FrangoBR.xlsm para visualizar o gráfico.</div>
+      </main>
+    );
+  }
+  return (
+    <main className="main">
+      <window.ContinuousCard
+        cardId="card-ipca-processados"
+        title="IPCA Processados — Base 100"
+        sub="Cálculo próprio · Subitens ponderados"
+        accent={accent} data={data} dataset="processados"
+        field="ipca_base100" unit="" decimals={1} height={400}
+        events={FRANGO_EVENTS}
+      />
+    </main>
+  );
+};
+
 // ── Aba Preços & Spreads ──────────────────────────────────────────────────────
 const PoultryBRTab = ({ data, accent, tab }) => {
   if (tab === 'abates') return <PoultryProducaoTab data={data} accent={accent}/>;
+  if (tab === 'ipca')   return <PoultryIpcaTab data={data} accent={accent}/>;
 
   if (!data.frango || !data.frango.length) return <EmptyFrango />;
 

@@ -44,10 +44,13 @@ function App({ data: propData, initialData, initialMeta }) {
       const t = e.detail?.target || '';
       const precosCards  = ['card-cattle','card-carne-mi','card-carne-me','card-spread-mi','card-spread-me'];
       const abatesCards  = ['card-abates','card-femeas','card-ciclo'];
-      const poultryCards = ['card-frango-mi','card-frango-me','card-feed-grain','card-spread-mi-frango','card-spread-me-frango','card-abates-frango','card-chick-placed'];
+      const poultryCards = ['card-frango-mi','card-frango-me','card-feed-grain','card-spread-mi-frango','card-spread-me-frango','card-abates-frango','card-chick-placed','card-ipca-processados'];
       if (poultryCards.includes(t)) {
         setActiveDataset('poultry_br');
-        setTab(['card-abates-frango','card-chick-placed'].includes(t) ? 'abates' : 'precos');
+        const newTab = ['card-abates-frango','card-chick-placed'].includes(t) ? 'abates'
+                     : t === 'card-ipca-processados' ? 'ipca'
+                     : 'precos';
+        setTab(newTab);
       } else {
         if (activeDataset !== 'beef_br') setActiveDataset('beef_br');
         if (precosCards.includes(t)) setTab('precos');
@@ -229,6 +232,16 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
             onClick={() => onPick('poultry_br', 'abates')}>
             <span className="sidebar-item-icon">{SIcon.abates}</span>
             <span className="sidebar-item-label">Produção</span>
+          </button>
+          <button
+            className={`sidebar-item ${isPoultry && tab==='ipca' ? 'is-on' : ''}`}
+            onClick={() => onPick('poultry_br', 'ipca')}>
+            <span className="sidebar-item-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+            </span>
+            <span className="sidebar-item-label">IPCA Processados</span>
           </button>
         </div>
       </div>

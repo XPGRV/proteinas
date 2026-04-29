@@ -437,6 +437,27 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     result.frango = trimSifLag(trimEmpty(frango), 'abates_sif');
   }
 
+  // ── Processados (aba Processados · col P = índice 15) ─────────────────────────
+  if (findSheet('Processados')) {
+    const procRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('Processados')], { header: 1, raw: false });
+    let procStart = 2;
+    for (let i = 1; i < Math.min(10, procRaw.length); i++) {
+      const r = procRaw[i];
+      if (r && (parseMonthTag(r[1]) || parseMonthTag(r[0]))) { procStart = i; break; }
+    }
+    const processados = [];
+    for (let i = procStart; i < procRaw.length; i++) {
+      const r = procRaw[i];
+      if (!r) continue;
+      const md = parseMonthTag(r[1]) || parseMonthTag(r[0]);
+      if (!md) continue;
+      const v = parseNum(r[15]); // col P
+      if (v == null) continue;
+      processados.push({ year: md.year, month: md.month, ipca_base100: v });
+    }
+    if (processados.length) result.processados = processados;
+  }
+
   if (Object.keys(result).length === 0) throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${sheets.join(', ')}`);
   return result;
 }
