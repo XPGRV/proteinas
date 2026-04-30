@@ -833,7 +833,11 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           height={height}
         />
       )}
-      {footerNote && <div className="card-footer">{footerNote}</div>}
+      {footerNote && (
+        <div style={{padding:'6px 0 4px', fontSize:11, color:'var(--fg-dim)', lineHeight:1.6}}>
+          {footerNote}
+        </div>
+      )}
     </section>
   );
 }
