@@ -324,6 +324,26 @@
   transition: none !important;
 }
 
+/* === BimonthlyContChart — clip-path draw animations (stand-alone, no .chart-svg needed) === */
+@keyframes bm-line-draw {
+  from { clip-path: inset(-4px 100% -4px 0%); }
+  to   { clip-path: inset(-4px   0% -4px 0%); }
+}
+@keyframes bm-line-draw-back {
+  from { clip-path: inset(-4px 0% -4px 100%); }
+  to   { clip-path: inset(-4px 0% -4px   0%); }
+}
+@keyframes bm-area-in {
+  from { opacity: 0; }
+  to   { opacity: var(--bm-area-op, 0.7); }
+}
+@keyframes bm-area-out {
+  from { opacity: var(--bm-area-op, 0.7); }
+  to   { opacity: 0; }
+}
+.bm-area         { animation: bm-area-in  0.5s ease-out forwards; }
+.bm-area-leaving { animation: bm-area-out 0.4s ease-out forwards !important; }
+
 /* === Theme switcher chips (in TweaksPanel) === */
 .rx-theme-grid {
   display: grid;

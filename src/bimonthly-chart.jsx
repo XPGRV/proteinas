@@ -411,7 +411,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 }
 
 // ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
-function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340 }) {
+function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340, drawBackward = false }) {
   const svgRef    = React.useRef(null);
   const [W, setW] = React.useState(1000);
   const [hovered, setHovered]             = React.useState(null);
@@ -580,20 +580,18 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
             const path = buildPath(f.key);
             if (!path) return null;
             const isPinned = pinnedCompany === f.key;
+            const lineAnim = `${drawBackward ? 'bm-line-draw-back' : 'bm-line-draw'} 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards`;
             return (
               <g key={f.key}>
                 {(showAreaRender || isPinned) && (
                   <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
-                    style={{
-                      '--rx-area-op': lineOpacity(f.key) * 0.7,
-                      pointerEvents: 'none'
-                    }}
-                    className={`rx-area ${areaLeaving && !isPinned ? 'rx-area-leaving' : ''}`}/>
+                    style={{ '--bm-area-op': lineOpacity(f.key) * 0.7, pointerEvents: 'none' }}
+                    className={`bm-area ${areaLeaving && !isPinned ? 'bm-area-leaving' : ''}`}/>
                 )}
                 <path d={path} fill="none" stroke={f.color}
                   strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
                   opacity={lineOpacity(f.key)}
-                  style={{transition: 'd 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease'}}/>
+                  style={{ animation: lineAnim, transition: 'opacity 0.3s ease' }}/>
                 <path d={path} fill="none" stroke="transparent" strokeWidth={12}
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
@@ -700,10 +698,17 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote }) {
   const [mode, setMode]             = React.useState('seasonal');
   const [range, setRange]           = React.useState('5');
+  const [drawBackward, setDrawBackward] = React.useState(false);
   const [selYears, setSelYears]     = React.useState(null);
   const [activeFieldIdx, setActiveFieldIdx] = React.useState(0);
   const [chartStyle, setChartStyle] = React.useState('line');
   const [showStats, setShowStats]   = React.useState(false);
+
+  const toNum = v => v === 'all' ? 999 : parseInt(v);
+  const changeRange = React.useCallback((val) => {
+    setDrawBackward(toNum(val) > toNum(range));
+    setRange(val);
+  }, [range]);
 
   const allRows   = data[dataset] || [];
   const fieldKeys = fields.map(f => f.key);
@@ -767,7 +772,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
                 {[['3a','3'],['5a','5'],['10a','10'],['Todos','all']].map(([label, val]) => (
                   <button key={label}
                     className={`year-seg-btn ${range === val ? 'is-on' : ''}`}
-                    onClick={() => setRange(val)}>
+                    onClick={() => changeRange(val)}>
                     {label}
                   </button>
                 ))}
@@ -830,6 +835,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           fields={fields}
           rangeYears={rangeNum}
           chartStyle={chartStyle}
+          drawBackward={drawBackward}
           height={height}
         />
       )}
