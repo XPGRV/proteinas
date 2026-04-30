@@ -523,11 +523,11 @@ function FrangoUSSimpleControls({
             )}
           </div>
         </div>
-        <div style={{marginLeft:16}}>
-          <div className="ctrl-btn-group">
-            <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
-            <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
-          </div>
+      </div>
+      <div className="card-ctrl-row">
+        <div className="ctrl-btn-group">
+          <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
+          <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
         </div>
         <div style={{marginLeft: 16}}>
           <div className="seg">
