@@ -137,7 +137,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 
   return (
     <div className="chart-wrap">
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="chart-svg" preserveAspectRatio="xMidYMid meet"
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMouseMove} onMouseLeave={() => setHoverBm(null)}>
         <defs>
           <clipPath id="bm-sea-clip">
@@ -436,7 +436,8 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
     return bmRows.filter(r => r.year * 6 + r.bimonth - 1 > cutOrd);
   }, [bmRows, rangeYears]);
 
-  const H = height;
+  // Escala a altura proporcionalmente ao W, igual ao sazonal (viewBox 1000×height)
+  const H = W > 0 ? Math.round(height * W / 1000) : height;
   const padL = 58, padR = 48, padT = 16, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
