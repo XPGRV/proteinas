@@ -82,9 +82,10 @@ function App({ data: propData, initialData, initialMeta }) {
   };
 
   // chartAccent — cor passada aos gráficos (linha do ano mais recente, barras)
-  // Poultry BR usa o mesmo verde/tema dos outros; só o UI fica âmbar
-  const accent = (activeDataset === 'beef_us' || activeDataset === 'poultry_us')
+  const accent = activeDataset === 'beef_us'
     ? 'oklch(0.72 0.18 240)'
+    : activeDataset === 'poultry_us'
+    ? 'oklch(0.76 0.20 45)'
     : tweaks.accent || PALETTES[tweaks.palette].accent;
 
   // uiAccent — CSS var, sidebar highlights, logo box
@@ -93,21 +94,24 @@ function App({ data: propData, initialData, initialMeta }) {
     : activeDataset === 'poultry_br'
     ? 'oklch(0.78 0.18 85)'
     : activeDataset === 'poultry_us'
-    ? 'oklch(0.78 0.18 200)'
+    ? 'oklch(0.76 0.20 45)'
     : accent;
 
   const typeStack = TYPE_STACKS[tweaks.typography];
 
   useEffect(() => {
     document.documentElement.dataset.density = tweaks.density;
-    document.documentElement.dataset.theme = tweaks.theme || 'refined';
+    // Poultry US força o tema Ember; os outros respeitam tweaks.theme
+    document.documentElement.dataset.theme = activeDataset === 'poultry_us'
+      ? 'ember'
+      : tweaks.theme || 'refined';
     const themeAccent = (window.THEMES && window.THEMES[tweaks.theme]?.accent) || uiAccent;
     const finalAccent = activeDataset === 'beef_us'
       ? 'oklch(0.72 0.18 240)'
       : activeDataset === 'poultry_br'
       ? 'oklch(0.78 0.18 85)'
       : activeDataset === 'poultry_us'
-      ? 'oklch(0.78 0.18 200)'
+      ? 'oklch(0.76 0.20 45)'
       : themeAccent;
     document.documentElement.style.setProperty('--accent', finalAccent);
     document.documentElement.style.setProperty('--font-sans', typeStack.sans);
