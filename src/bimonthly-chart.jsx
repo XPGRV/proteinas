@@ -822,35 +822,33 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
             </div>
           </div>
 
-          {/* Row 2: Stats (seasonal) + Style + Fields (seasonal) — sempre no DOM para manter altura */}
+          {/* Row 2: Stats (seasonal) + Style + Fields (seasonal) */}
           <div className="card-ctrl-row">
-            <button
-              className={`ctrl-btn ${showStats && chartStyle !== 'bars' ? 'is-on' : ''} ${chartStyle === 'bars' ? 'is-disabled' : ''}`}
-              onClick={() => chartStyle !== 'bars' && setShowStats(v => !v)}
-              style={{visibility: mode === 'seasonal' ? 'visible' : 'hidden'}}>
-              MÉDIA + FAIXA
-            </button>
+            {mode === 'seasonal' && (
+              <button
+                className={`ctrl-btn ${showStats && chartStyle !== 'bars' ? 'is-on' : ''} ${chartStyle === 'bars' ? 'is-disabled' : ''}`}
+                onClick={() => chartStyle !== 'bars' && setShowStats(v => !v)}>
+                MÉDIA + FAIXA
+              </button>
+            )}
 
             <div className="seg" style={{marginLeft: 16}}>
-              {[['line','Linha'],['area','Área'],['bars','Barras']].map(([v, l]) => (
-                <button key={v}
-                  className={`seg-btn ${chartStyle===v?'is-on':''}`}
-                  onClick={() => setChartStyle(v)}
-                  style={v === 'bars' ? {visibility: mode === 'seasonal' ? 'visible' : 'hidden'} : {}}>
-                  {l}
-                </button>
+              {[['line','Linha'],['area','Área'], mode === 'seasonal' && ['bars','Barras']].filter(Boolean).map(([v, l]) => (
+                <button key={v} className={`seg-btn ${chartStyle===v?'is-on':''}`} onClick={() => setChartStyle(v)}>{l}</button>
               ))}
             </div>
 
-            <div className="seg" style={{marginLeft: 16, visibility: mode === 'seasonal' ? 'visible' : 'hidden'}}>
-              {fields.map((f, i) => (
-                <button key={f.key}
-                  className={`seg-btn ${activeFieldIdx === i ? 'is-on' : ''}`}
-                  onClick={() => setActiveFieldIdx(i)}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            {mode === 'seasonal' && (
+              <div className="seg" style={{marginLeft: 16}}>
+                {fields.map((f, i) => (
+                  <button key={f.key}
+                    className={`seg-btn ${activeFieldIdx === i ? 'is-on' : ''}`}
+                    onClick={() => setActiveFieldIdx(i)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
