@@ -17,6 +17,18 @@ const EVENTS_FRANGO_US = [
   { year: 2024, month: 3,  label: 'HPAI confirmada em bovinos de leite (spillover)' },
 ];
 
+const EVENTS_FEED_GRAIN = [
+  { year: 2012, month: 7,  label: 'Seca severa EUA — alta histórica de grãos' },
+  { year: 2020, month: 4,  label: 'COVID-19 — disrupção de cadeias de suprimento' },
+  { year: 2022, month: 2,  label: 'Invasão Russa — choque de commodities agrícolas' },
+];
+
+const EVENTS_SPREAD = [
+  { year: 2015, month: 3,  label: 'HPAI H5N2 — redução de oferta, spread em alta' },
+  { year: 2020, month: 4,  label: 'COVID-19 — fechamento de plantas processadoras' },
+  { year: 2022, month: 2,  label: 'HPAI H5N1 + guerra na Ucrânia — duplo choque' },
+];
+
 // ── Daily stats (igual ao beef-us-tab) ───────────────────────────────────────
 function buildDailyStatsUS(byYear, histYears) {
   const byDoy = {};
@@ -173,7 +185,7 @@ const FrangoUSChart = ({
           <g key={v}>
             <line x1={padL} x2={W-padR} y1={yFn(v)} y2={yFn(v)} className="grid-line"/>
             <text x={padL-6} y={yFn(v)} className="tick-label" textAnchor="end" dominantBaseline="middle">
-              {v % 1 === 0 ? v.toFixed(2) : v.toFixed(3)}
+              {window.fmt(v, {decimals: v % 1 === 0 ? 2 : 3})}
             </text>
           </g>
         ))}
@@ -290,13 +302,13 @@ const FrangoUSChart = ({
               {rows.map(({yr, pt}) => (
                 <div key={yr} className="hover-row">
                   <span className="hover-year" style={{color: yearColor(yr)}}>{yr}</span>
-                  <span className="hover-val">{pt.value.toFixed(3)}<span className="hover-unit"> {unit}</span></span>
+                  <span className="hover-val">{window.fmt(pt.value, {decimals:3})}<span className="hover-unit"> {unit}</span></span>
                 </div>
               ))}
               {showStats && statEntry && (
                 <div className="hover-row hover-stat">
                   <span className="hover-year">média {statEntry.n}a</span>
-                  <span className="hover-val">{statEntry.mean.toFixed(3)}</span>
+                  <span className="hover-val">{window.fmt(statEntry.mean, {decimals:3})}</span>
                 </div>
               )}
             </div>
@@ -337,7 +349,7 @@ const FrangoUSChart = ({
 
 const CUTS = FRANGO_US_SERIES.filter(s => s.key !== 'proxy');
 
-// ── Controls ─────────────────────────────────────────────────────────────────
+// ── Controls (price card — com dropdown de corte) ─────────────────────────────
 function FrangoUSControls({
   years, selectedYears, setSelectedYears,
   showStats, setShowStats, showEvents, setShowEvents,
@@ -388,7 +400,6 @@ function FrangoUSControls({
 
   return (
     <div className="card-controls">
-      {/* Row 1: year presets */}
       <div className="card-ctrl-row">
         <div className="year-seg">
           {presets.map(p => (
@@ -418,7 +429,6 @@ function FrangoUSControls({
         </div>
       </div>
 
-      {/* Row 2: toggles + corte dropdown + chart style */}
       <div className="card-ctrl-row">
         <div className="ctrl-btn-group">
           <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
@@ -440,6 +450,83 @@ function FrangoUSControls({
                 ))}
               </div>
             )}
+          </div>
+        </div>
+        <div style={{marginLeft: 16}}>
+          <div className="seg">
+            <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
+            <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Controls simples (Feed Grain e Spread — sem dropdown de corte) ────────────
+function FrangoUSSimpleControls({
+  years, selectedYears, setSelectedYears,
+  showStats, setShowStats, showEvents, setShowEvents,
+  chartStyle, setChartStyle,
+}) {
+  const { useState, useEffect, useRef } = React;
+  const [yearDropOpen, setYearDropOpen] = useState(false);
+  const yearDropRef = useRef(null);
+
+  const presets = [
+    { label: '3a',    yrs: years.slice(-3) },
+    { label: '5a',    yrs: years.slice(-5) },
+    { label: '10a',   yrs: years.slice(-10) },
+    { label: 'Todos', yrs: years },
+  ];
+  const activePreset = presets.find(p => {
+    const valid = p.yrs.filter(y => years.includes(y));
+    return valid.length === selectedYears.length && valid.every(y => selectedYears.includes(y));
+  });
+  const toggleYear = yr => setSelectedYears(prev =>
+    prev.includes(yr) ? (prev.length === 1 ? prev : prev.filter(y => y !== yr)) : [...prev, yr].sort((a,b)=>a-b)
+  );
+
+  useEffect(() => {
+    if (!yearDropOpen) return;
+    const h = e => { if (yearDropRef.current && !yearDropRef.current.contains(e.target)) setYearDropOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [yearDropOpen]);
+
+  return (
+    <div className="card-controls">
+      <div className="card-ctrl-row">
+        <div className="year-seg">
+          {presets.map(p => (
+            <button key={p.label}
+              className={`year-seg-btn ${activePreset?.label === p.label ? 'is-on' : ''}`}
+              onClick={() => setSelectedYears(p.yrs.filter(y => years.includes(y)))}>
+              {p.label}
+            </button>
+          ))}
+          <div className="year-drop-wrap" ref={yearDropRef}>
+            <button className={`year-seg-btn ${yearDropOpen ? 'is-active' : ''} ${!activePreset && !yearDropOpen ? 'is-on' : ''}`}
+              onClick={() => setYearDropOpen(o => !o)}>
+              Anos ▾
+            </button>
+            {yearDropOpen && (
+              <div className="year-drop">
+                {years.slice().reverse().map(yr => (
+                  <div key={yr} className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
+                    onClick={() => toggleYear(yr)}>
+                    <span className="year-drop-check">{selectedYears.includes(yr) ? '✓' : ''}</span>
+                    {yr}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{marginLeft:16}}>
+          <div className="ctrl-btn-group">
+            <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
+            <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
           </div>
         </div>
         <div style={{marginLeft: 16}}>
@@ -520,7 +607,7 @@ const FrangoUSPriceCard = ({ data, accent }) => {
           <h3 className="card-title">{seriesMeta.label}</h3>
           <div className="card-price">
             {latestRaw && (<>
-              <span className="card-value">{latestRaw[activeSeries].toFixed(3)}</span>
+              <span className="card-value">{window.fmt(latestRaw[activeSeries], {decimals:3})}</span>
               <span className="card-unit">{seriesMeta.unit}</span>
               <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
                 {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
@@ -554,6 +641,103 @@ const FrangoUSPriceCard = ({ data, accent }) => {
   );
 };
 
+// ── Card genérico para Feed Grain e Spread ────────────────────────────────────
+const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, events, accent, defaultYears }) => {
+  const allPoints = React.useMemo(() => data.frango_us_daily || [], [data]);
+
+  const [chartStyle, setChartStyle] = React.useState('line');
+  const [showStats, setShowStats]   = React.useState(false);
+  const [showEvents, setShowEvents] = React.useState(true);
+  const [pinnedYear, setPinnedYear] = React.useState(null);
+
+  const byYear = React.useMemo(() => {
+    const out = {};
+    for (const r of allPoints) {
+      const v = r[seriesKey];
+      if (v == null) continue;
+      if (!out[r.year]) out[r.year] = [];
+      out[r.year].push({ doy: MONTH_DOY_US[r.month - 1] + r.day, value: v });
+    }
+    for (const yr of Object.keys(out)) out[yr].sort((a, b) => a.doy - b.doy);
+    return out;
+  }, [allPoints, seriesKey]);
+
+  const allYears = React.useMemo(() => Object.keys(byYear).map(Number).sort((a,b)=>a-b), [byYear]);
+
+  const initYears = () => allYears.slice(-(defaultYears || 5));
+  const [selectedYears, setSelectedYears] = React.useState(initYears);
+
+  React.useEffect(() => {
+    if (allYears.length > 0 && selectedYears.filter(y => allYears.includes(y)).length === 0)
+      setSelectedYears(allYears.slice(-(defaultYears || 5)));
+  }, [allYears.join(',')]);
+
+  React.useEffect(() => { setPinnedYear(null); }, [selectedYears.join(',')]);
+
+  const latestRaw = React.useMemo(() => {
+    return [...allPoints].filter(r => r[seriesKey] != null)
+      .sort((a,b) => a.year!==b.year ? a.year-b.year : a.month!==b.month ? a.month-b.month : a.day-b.day)
+      .slice(-1)[0] || null;
+  }, [allPoints, seriesKey]);
+
+  const yoyRaw = React.useMemo(() => {
+    if (!latestRaw) return null;
+    const candidates = allPoints.filter(r =>
+      r.year === latestRaw.year - 1 && r.month === latestRaw.month && r[seriesKey] != null
+    );
+    let best = null, bestD = Infinity;
+    for (const r of candidates) { const d = Math.abs(r.day - latestRaw.day); if (d < bestD) { bestD = d; best = r; } }
+    return best;
+  }, [allPoints, latestRaw, seriesKey]);
+
+  const yoy = latestRaw && yoyRaw
+    ? (latestRaw[seriesKey] - yoyRaw[seriesKey]) / Math.abs(yoyRaw[seriesKey])
+    : null;
+  const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+
+  if (!allYears.length) return null;
+
+  return (
+    <section className="card card-full" data-card-id={cardId}>
+      <div className="card-head">
+        <div>
+          <div className="card-eyebrow">{eyebrow}</div>
+          <h3 className="card-title">{title}</h3>
+          <div className="card-price">
+            {latestRaw && (<>
+              <span className="card-value">{window.fmt(latestRaw[seriesKey], {decimals:3})}</span>
+              <span className="card-unit">{unit}</span>
+              <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
+                {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
+              </span>
+              <span className="card-date">
+                {window.MONTHS_PT[latestRaw.month - 1]}/{String(latestRaw.year).slice(-2)}
+              </span>
+            </>)}
+          </div>
+        </div>
+        <FrangoUSSimpleControls
+          years={allYears}
+          selectedYears={selectedYears} setSelectedYears={setSelectedYears}
+          showStats={showStats} setShowStats={setShowStats}
+          showEvents={showEvents} setShowEvents={setShowEvents}
+          chartStyle={chartStyle} setChartStyle={setChartStyle}
+        />
+      </div>
+      <FrangoUSChart
+        byYear={byYear} allYears={allYears}
+        selectedYears={selectedYears}
+        pinnedYear={pinnedYear} setPinnedYear={setPinnedYear}
+        chartStyle={chartStyle}
+        showStats={showStats} showEvents={showEvents}
+        events={events}
+        accent={accent}
+        unit={unit}
+      />
+    </section>
+  );
+};
+
 // ── Tab principal ─────────────────────────────────────────────────────────────
 const PoultryUSTab = ({ data, accent }) => {
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
@@ -572,6 +756,28 @@ const PoultryUSTab = ({ data, accent }) => {
   return (
     <main className="main">
       <FrangoUSPriceCard data={data} accent={accent}/>
+      <FrangoUSSimpleCard
+        data={data}
+        seriesKey="feed_grain"
+        cardId="us-feed-grain"
+        title="Feed Grain"
+        eyebrow="Bloomberg · Milho + Soja · Custo de Ração EUA"
+        unit="USD/Kg"
+        events={EVENTS_FEED_GRAIN}
+        accent={accent}
+        defaultYears={10}
+      />
+      <FrangoUSSimpleCard
+        data={data}
+        seriesKey="spread"
+        cardId="us-spread"
+        title="Spread Frango–Ração"
+        eyebrow="Bloomberg · Proxy XPG − Feed Grain · Margem EUA"
+        unit="USD/Kg"
+        events={EVENTS_SPREAD}
+        accent={accent}
+        defaultYears={5}
+      />
     </main>
   );
 };

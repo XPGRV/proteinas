@@ -396,11 +396,21 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
       const tn = parseNum(r[5]);
       const lq = parseNum(r[6]);
       const wi = parseNum(r[7]);
-      if (bb == null && tn == null && lq == null && wi == null) continue;
+      const n  = parseNum(r[13]); // Corn USDc/bu
+      const p  = parseNum(r[15]); // Soy  USDc/bu
+      if (bb == null && tn == null && lq == null && wi == null && n == null && p == null) continue;
       const year = curDate.getUTCFullYear(), month = curDate.getUTCMonth()+1, day = curDate.getUTCDate();
       const proxy = (bb != null && lq != null && wi != null)
         ? +((bb * 0.41 + lq * 0.48 + wi * 0.11) / 100 * 2.20462).toFixed(4)
         : null;
+      // Feed Grain: (65% Corn + 35% Soy) × FCR 1.9, USD/kg
+      // USc/bu → USD/kg: × 2.20462 / (100 × bush_lbs)
+      const corn_kg    = n != null ? n * 2.20462 / (100 * 56) : null;
+      const soy_kg     = p != null ? p * 2.20462 / (100 * 60) : null;
+      const feed_grain = (corn_kg != null && soy_kg != null)
+        ? +((0.65 * corn_kg + 0.35 * soy_kg) * 1.9).toFixed(4)
+        : null;
+      const spread = (proxy != null && feed_grain != null) ? +(proxy - feed_grain).toFixed(4) : null;
       frango_us_daily.push({
         year, month, day,
         proxy,
@@ -408,6 +418,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         chic_tn: tn != null ? +(tn * W).toFixed(4) : null,
         chic_lq: lq != null ? +(lq * W).toFixed(4) : null,
         chic_wi: wi != null ? +(wi * W).toFixed(4) : null,
+        feed_grain,
+        spread,
       });
     }
     result.frango_us_daily = frango_us_daily;
