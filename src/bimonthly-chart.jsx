@@ -451,14 +451,14 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
   const lo = Math.min(...allVals, 0), hi = Math.max(...allVals, 0);
   const range = hi - lo || 0.1;
-  const rawStep = (range * 1.35) / 5;
+  const rawStep = (range * 1.1) / 5;
   const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(rawStep) || 1)));
   const norm = rawStep / mag;
   const nStep = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
   const step = nStep * mag;
 
-  const yMin = Math.floor((lo - range * 0.1) / step) * step;
-  const yMax = Math.ceil((hi + range * 0.15) / step) * step;
+  const yMin = Math.floor((lo - range * 0.05) / step) * step;
+  const yMax = Math.ceil((hi + range * 0.08) / step) * step;
 
   const firstOrd = filtered[0].year * 6 + filtered[0].bimonth - 1;
   const lastOrd  = filtered[filtered.length - 1].year * 6 + filtered[filtered.length - 1].bimonth - 1;
@@ -614,22 +614,29 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
           })()}
         </g>
 
-        {/* Data labels for pinned company */}
+        {/* Data labels for pinned company — todos os pontos com espaçamento mínimo */}
         {pinnedCompany && (
           <g>
             {(() => {
               const f = fields.find(ff => ff.key === pinnedCompany);
-              // Show labels for every 2nd or 3rd point if too many, or just last few
-              const step = filtered.length > 20 ? Math.ceil(filtered.length / 8) : 2;
-              return filtered.filter((_, i) => i % step === 0 || i === filtered.length - 1).map((r, i) => {
+              const MIN_GAP = 30; // px mínimo entre labels para não sobrepor
+              let lastX = -Infinity;
+              return filtered.map((r, i) => {
                 const v = r[f.key];
                 if (v == null) return null;
                 const cx = xOf(r), cy = yOf(v);
+                const isLast = i === filtered.length - 1;
+                if (!isLast && cx - lastX < MIN_GAP) return null;
+                lastX = cx;
+                const above = cy - padT > 22;
+                const nearLeft  = cx < padL + 20;
+                const anchor = nearLeft ? 'start' : 'middle';
+                const lx = nearLeft ? padL + 2 : cx;
                 return (
                   <g key={i}>
-                    <circle cx={cx} cy={cy} r={3} fill={f.color} opacity={0.8}/>
-                    <text x={cx} y={cy - 8} textAnchor="middle"
-                      style={{fontFamily:'var(--font-mono)', fontSize:10, fill:f.color, fontWeight:500}}>
+                    <circle cx={cx} cy={cy} r={3.5} fill={f.color} opacity={0.9}/>
+                    <text x={lx} y={above ? cy - 8 : cy + 14} textAnchor={anchor}
+                      style={{fontFamily:'var(--font-mono)', fontSize:10, fill:f.color, fontWeight:500, letterSpacing:'0.02em'}}>
                       {fmt(v)}
                     </text>
                   </g>
