@@ -251,7 +251,17 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
               const color = yearColor(yr, selectedYears);
               const values = [1,2,3,4,5,6].map(bm => seasonal[yr]?.[bm]);
               const bmsWithData = [1,2,3,4,5,6].filter(bm => seasonal[yr]?.[bm] != null);
-              if (bmsWithData.length <= 1) return null;
+              if (bmsWithData.length === 0) return null;
+              if (bmsWithData.length === 1) {
+                const bm = bmsWithData[0];
+                const v = seasonal[yr]?.[bm];
+                const color = yearColor(yr, selectedYears);
+                return (
+                  <circle key={yr} cx={x(bm)} cy={y(v)} r={4}
+                    fill={color} opacity={seriesOpacity(yr)}
+                    clipPath="url(#bm-sea-clip)"/>
+                );
+              }
               const path = buildPath(yr);
               const leaving = isLeaving(yr);
               const isPinned = yr === pinnedYear;
