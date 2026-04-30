@@ -137,7 +137,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 
   return (
     <div className="chart-wrap">
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMouseMove} onMouseLeave={() => setHoverBm(null)}>
         <defs>
           <clipPath id="bm-sea-clip">
@@ -550,11 +550,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
-            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end"
-              fontSize={11} fill="var(--fg-dim)" fontFamily="var(--font-mono)"
-              letterSpacing="0.02em" style={{userSelect:'none'}}>
-              {fmt(v)}
-            </text>
+            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" className="tick-label">{fmt(v)}</text>
           </g>
         ))}
 
@@ -569,9 +565,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
         {xTicks.map((t, i) => (
           <g key={`xtick-${i}`}>
             <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 5} stroke="var(--border-strong)" strokeWidth={1.5}/>
-            <text x={t.x} y={padT + chartH + 20} textAnchor="middle"
-              fontSize={11} fill="var(--fg-dim)" fontFamily="var(--font-mono)"
-              letterSpacing="0.02em" style={{userSelect:'none'}}>{t.label}</text>
+            <text x={t.x} y={padT + chartH + 20} textAnchor="middle" className="tick-label">{t.label}</text>
           </g>
         ))}
 
