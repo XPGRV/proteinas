@@ -56,7 +56,7 @@ function trimSifLag(arr, field, lagMonths = 2) {
   });
 }
 
-async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {}) {
+async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, parsePoultryUS = false } = {}) {
   if (!window.XLSX) {
     await new Promise((res, rej) => {
       const s = document.createElement('script');
@@ -375,6 +375,44 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true } = {
     }
   }
 
+  // ── FrangoUS (BBG_Dados da FrangoUS.xlsm) ────────────────────────────────────
+  // cols: D=3(data), E=4(CHICNEBB bb), F=5(CHICNETN tn), G=6(CHICNELQ lq), H=7(CHICNEWI wi)
+  // Proxy XPG = (bb*41% + tn*0% + lq*48% + wi*11%) / 100 * 2.20462  → USD/Kg
+  if (parsePoultryUS && findSheet('BBG_Dados')) {
+    const bbgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: true });
+    const W = 0.022046; // USd/lb → USD/Kg
+    const frango_us_daily = [];
+    let curDate = null;
+    for (let i = 3; i < bbgRaw.length; i++) {
+      const r = bbgRaw[i];
+      if (!r) continue;
+      const pd = parseDate(r[3]);
+      if (pd) {
+        curDate = new Date(Date.UTC(pd.year, pd.month - 1, pd.day));
+      } else if (curDate) {
+        curDate = new Date(curDate.getTime() + 86400000);
+      } else continue;
+      const bb = parseNum(r[4]);
+      const tn = parseNum(r[5]);
+      const lq = parseNum(r[6]);
+      const wi = parseNum(r[7]);
+      if (bb == null && tn == null && lq == null && wi == null) continue;
+      const year = curDate.getUTCFullYear(), month = curDate.getUTCMonth()+1, day = curDate.getUTCDate();
+      const proxy = (bb != null && lq != null && wi != null)
+        ? +((bb * 0.41 + lq * 0.48 + wi * 0.11) / 100 * 2.20462).toFixed(4)
+        : null;
+      frango_us_daily.push({
+        year, month, day,
+        proxy,
+        chic_bb: bb != null ? +(bb * W).toFixed(4) : null,
+        chic_tn: tn != null ? +(tn * W).toFixed(4) : null,
+        chic_lq: lq != null ? +(lq * W).toFixed(4) : null,
+        chic_wi: wi != null ? +(wi * W).toFixed(4) : null,
+      });
+    }
+    result.frango_us_daily = frango_us_daily;
+  }
+
   // ── FrangoBR ─────────────────────────────────────────────────────────────────
   if (findSheet('FrangoBR')) {
     const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
@@ -489,7 +527,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       const forcePoultryBR = nameLC.includes('frango') && !nameLC.includes('us');
       const forcePoultryUS = nameLC.includes('frangous') || (nameLC.includes('frango') && nameLC.includes('us'));
       const forcePoultry = forcePoultryBR || forcePoultryUS;
-      const parsed = await parseWorkbook(ab, { parseBR: !forceUS && !forcePoultry, parseUS: forceUS });
+      const parsed = await parseWorkbook(ab, { parseBR: !forceUS && !forcePoultry, parseUS: forceUS, parsePoultryUS: forcePoultryUS });
 
       // Mescla com dados existentes para preservar beef_us / edgebeef_daily
       const fullData = { ...(window.__dashboardData || {}), ...parsed };
@@ -540,6 +578,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       if (parsed.edgebeef_daily) parts.push(`${parsed.edgebeef_daily.length} Edgebeef diário`);
       if (parsed.beef_us)        parts.push(`${parsed.beef_us.length}L BeefUS`);
       if (parsed.production)     parts.push(`${parsed.production.snapshots.length} snapshots Produção`);
+      if (parsed.frango_us_daily) parts.push(`${parsed.frango_us_daily.length} FrangoUS diário`);
       if (parsed.frango)         parts.push(`${parsed.frango.length}L FrangoBR`);
       const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
       setStatus({ kind: 'ok', msg: `✓ ${parts.join(' · ')}${cloudBadge}` });
