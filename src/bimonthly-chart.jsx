@@ -422,8 +422,9 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   React.useEffect(() => {
     if (!svgRef.current) return;
     const obs = new ResizeObserver(([e]) => {
-      const w = e.contentRect.width;
-      if (w > 0) setW(Math.floor(w));
+      const w = Math.floor(e.contentRect.width);
+      // threshold: só atualiza se mudou mais de 2px (evita re-renders que quebram animações)
+      if (w > 0) setW(prev => Math.abs(w - prev) > 2 ? w : prev);
     });
     obs.observe(svgRef.current);
     return () => obs.disconnect();
@@ -436,10 +437,9 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
     return bmRows.filter(r => r.year * 6 + r.bimonth - 1 > cutOrd);
   }, [bmRows, rangeYears]);
 
-  // Escala altura e padding proporcionalmente ao W, igual ao sazonal (viewBox 1000×height)
-  const scale = W / 1000;
-  const H    = W > 0 ? Math.round(height * scale) : height;
-  const padL = Math.round(58 * scale), padR = Math.round(48 * scale), padT = 16, padB = Math.round(40 * scale);
+  // Altura proporcional ao W (igual ao sazonal com viewBox 1000×height)
+  const H    = W > 0 ? Math.round(height * W / 1000) : height;
+  const padL = 58, padR = 48, padT = 16, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -526,7 +526,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   }, [filtered, firstOrd, totalBms, chartW]);
 
   return (
-    <div className="chart-wrap">
+    <div className="chart-wrap" style={{animation:'rx-fade-in 0.5s ease-out'}}>
       <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
         onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
         <defs>
@@ -550,8 +550,8 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
         {/* Grid + Y labels */}
         {yTicks.map((v, i) => (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
-              style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
+            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
+              stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}/>
             <text x={W - padR + 8} y={yOf(v)} textAnchor="start" dominantBaseline="middle"
               fontSize={10 * W / 1000} fill="var(--fg-dim)"
               fontFamily="var(--font-mono)" letterSpacing="0.02em"
