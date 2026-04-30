@@ -333,6 +333,11 @@
   from { clip-path: inset(-4px 0% -4px 100%); }
   to   { clip-path: inset(-4px 0% -4px   0%); }
 }
+/* Expansão parcial: dados existentes aparecem imediatamente, só a porção nova anima */
+@keyframes bm-line-draw-partial {
+  from { clip-path: inset(-4px 0% -4px var(--bm-clip-left, 100%)); }
+  to   { clip-path: inset(-4px 0% -4px 0%); }
+}
 @keyframes bm-area-in {
   from { opacity: 0; }
   to   { opacity: var(--bm-area-op, 0.7); }

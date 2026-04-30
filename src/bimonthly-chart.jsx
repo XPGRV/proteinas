@@ -411,7 +411,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 }
 
 // ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
-function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340, drawBackward = false }) {
+function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340, prevFirstOrd = null }) {
   const svgRef    = React.useRef(null);
   const [W, setW] = React.useState(1000);
   const [hovered, setHovered]             = React.useState(null);
@@ -576,28 +576,42 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
         {/* Linhas + hitbox clicável */}
         <g clipPath="url(#bm-cont-clip)">
-          {fields.map(f => {
-            const path = buildPath(f.key);
-            if (!path) return null;
-            const isPinned = pinnedCompany === f.key;
-            const lineAnim = `${drawBackward ? 'bm-line-draw-back' : 'bm-line-draw'} 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards`;
-            return (
-              <g key={f.key}>
-                {(showAreaRender || isPinned) && (
-                  <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
-                    style={{ '--bm-area-op': lineOpacity(f.key) * 0.7, pointerEvents: 'none' }}
-                    className={`bm-area ${areaLeaving && !isPinned ? 'bm-area-leaving' : ''}`}/>
-                )}
-                <path d={path} fill="none" stroke={f.color}
-                  strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
-                  opacity={lineOpacity(f.key)}
-                  style={{ animation: lineAnim, transition: 'opacity 0.3s ease' }}/>
-                <path d={path} fill="none" stroke="transparent" strokeWidth={12}
-                  style={{cursor:'pointer'}}
-                  onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
-              </g>
-            );
-          })}
+          {(() => {
+            // Quando expandindo: só a porção nova (à esquerda) anima; o restante já aparece visível
+            const hasPartial = prevFirstOrd != null && prevFirstOrd > firstOrd;
+            const clipStartPct = hasPartial
+              ? ((padL + ((prevFirstOrd - firstOrd) / totalBms) * chartW) / W * 100).toFixed(1) + '%'
+              : null;
+            const lineAnim = hasPartial
+              ? 'bm-line-draw-partial 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards'
+              : 'bm-line-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards';
+
+            return fields.map(f => {
+              const path = buildPath(f.key);
+              if (!path) return null;
+              const isPinned = pinnedCompany === f.key;
+              return (
+                <g key={f.key}>
+                  {(showAreaRender || isPinned) && (
+                    <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
+                      style={{ '--bm-area-op': lineOpacity(f.key) * 0.7, pointerEvents: 'none' }}
+                      className={`bm-area ${areaLeaving && !isPinned ? 'bm-area-leaving' : ''}`}/>
+                  )}
+                  <path d={path} fill="none" stroke={f.color}
+                    strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
+                    opacity={lineOpacity(f.key)}
+                    style={{
+                      '--bm-clip-left': clipStartPct ?? '100%',
+                      animation: lineAnim,
+                      transition: 'opacity 0.3s ease',
+                    }}/>
+                  <path d={path} fill="none" stroke="transparent" strokeWidth={12}
+                    style={{cursor:'pointer'}}
+                    onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
+                </g>
+              );
+            });
+          })()}
         </g>
 
         {/* Data labels for pinned company */}
@@ -698,22 +712,32 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote }) {
   const [mode, setMode]             = React.useState('seasonal');
   const [range, setRange]           = React.useState('5');
-  const [drawBackward, setDrawBackward] = React.useState(false);
+  const [prevFirstOrd, setPrevFirstOrd] = React.useState(null);
   const [selYears, setSelYears]     = React.useState(null);
   const [activeFieldIdx, setActiveFieldIdx] = React.useState(0);
   const [chartStyle, setChartStyle] = React.useState('line');
   const [showStats, setShowStats]   = React.useState(false);
 
-  const toNum = v => v === 'all' ? 999 : parseInt(v);
-  const changeRange = React.useCallback((val) => {
-    setDrawBackward(toNum(val) > toNum(range));
-    setRange(val);
-  }, [range]);
-
   const allRows   = data[dataset] || [];
   const fieldKeys = fields.map(f => f.key);
   const bmRows    = React.useMemo(() => toBimonthly(allRows, fieldKeys), [allRows, fieldKeys.join(',')]);
   const years     = React.useMemo(() => [...new Set(bmRows.map(r => r.year))].sort((a, b) => a - b), [bmRows]);
+
+  const toNum = v => v === 'all' ? 999 : parseInt(v);
+  const changeRange = React.useCallback((val) => {
+    const oldNum = toNum(range);
+    const newNum = toNum(val);
+    if (newNum > oldNum && bmRows.length) {
+      // Expanding — guarda o firstOrd atual para animar só a porção nova
+      const last  = bmRows[bmRows.length - 1];
+      const cutOrd = oldNum === 999 ? -Infinity : last.year * 6 + last.bimonth - 1 - oldNum * 6;
+      const cur   = bmRows.filter(r => r.year * 6 + r.bimonth - 1 > cutOrd);
+      setPrevFirstOrd(cur.length ? cur[0].year * 6 + cur[0].bimonth - 1 : null);
+    } else {
+      setPrevFirstOrd(null); // shrinking → redesenha tudo normalmente
+    }
+    setRange(val);
+  }, [range, bmRows]);
   const latest    = years[years.length - 1];
 
   const PRESETS = [
@@ -835,7 +859,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           fields={fields}
           rangeYears={rangeNum}
           chartStyle={chartStyle}
-          drawBackward={drawBackward}
+          prevFirstOrd={prevFirstOrd}
           height={height}
         />
       )}
