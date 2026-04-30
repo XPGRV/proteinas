@@ -437,7 +437,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   }, [bmRows, rangeYears]);
 
   const H = height;
-  const padL = 58, padR = 20, padT = 16, padB = 40;
+  const padL = 58, padR = 48, padT = 16, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -524,7 +524,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   }, [filtered, firstOrd, totalBms, chartW]);
 
   return (
-    <div className="chart-wrap">
+    <div className="chart-wrap" style={{animation:'rx-fade-in 0.35s ease-out'}}>
       <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
         onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
         <defs>
@@ -550,7 +550,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
               style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
-            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end"
+            <text x={W - padR + 8} y={yOf(v)} textAnchor="start" dominantBaseline="middle"
               fontSize={10 * W / 1000} fill="var(--fg-dim)"
               fontFamily="var(--font-mono)" letterSpacing="0.02em"
               style={{userSelect:'none'}}>{fmt(v)}</text>
