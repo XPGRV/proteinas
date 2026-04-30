@@ -436,9 +436,10 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
     return bmRows.filter(r => r.year * 6 + r.bimonth - 1 > cutOrd);
   }, [bmRows, rangeYears]);
 
-  // Escala a altura proporcionalmente ao W, igual ao sazonal (viewBox 1000×height)
-  const H = W > 0 ? Math.round(height * W / 1000) : height;
-  const padL = 58, padR = 48, padT = 16, padB = 40;
+  // Escala altura e padding proporcionalmente ao W, igual ao sazonal (viewBox 1000×height)
+  const scale = W / 1000;
+  const H    = W > 0 ? Math.round(height * scale) : height;
+  const padL = Math.round(58 * scale), padR = Math.round(48 * scale), padT = 16, padB = Math.round(40 * scale);
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -525,7 +526,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   }, [filtered, firstOrd, totalBms, chartW]);
 
   return (
-    <div className="chart-wrap" style={{animation:'rx-fade-in 0.35s ease-out'}}>
+    <div className="chart-wrap">
       <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
         onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
         <defs>
