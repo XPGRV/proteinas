@@ -88,6 +88,7 @@ window.THEMES = {
   neon:      { name: 'Neon HUD',     sub: 'Cyber · Glow',            accent: 'oklch(0.85 0.20 195)' },
   brutalist: { name: 'Brutalist',    sub: 'Hard edge',               accent: 'oklch(0.88 0.22 95)'  },
   editorial: { name: 'Editorial',    sub: 'Display · Hierarchy',     accent: 'oklch(0.78 0.17 30)'  },
+  ember:     { name: 'Ember',        sub: 'Laranja · Quente',        accent: 'oklch(0.76 0.20 45)'  },
 };
 
 // Mini SVG preview for each theme card
@@ -118,6 +119,10 @@ window.ThemePreview = function ThemePreview({ theme }) {
     },
     editorial: {
       background: 'oklch(0.15 0.004 280)',
+      accent: t.accent
+    },
+    ember: {
+      background: 'radial-gradient(ellipse 80% 80% at 15% 0%, oklch(0.55 0.22 45 / 0.55), transparent), radial-gradient(ellipse 70% 60% at 85% 100%, oklch(0.50 0.18 30 / 0.40), transparent), oklch(0.13 0.018 45)',
       accent: t.accent
     }
   }[theme];

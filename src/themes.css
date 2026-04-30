@@ -352,6 +352,62 @@
 :root[data-theme="editorial"] .topbar { padding: 32px 0 24px; }
 :root[data-theme="editorial"] .brand-title { font-size: 22px; }
 
+/* ---------- 7. EMBER  (laranja quente, gradientes densos) ---------- */
+:root[data-theme="ember"] {
+  --bg:           oklch(0.13 0.018 45);
+  --bg-panel:    oklch(0.17 0.022 45);
+  --bg-inset:    oklch(0.21 0.026 45);
+  --border:      oklch(0.30 0.032 50);
+  --border-strong: oklch(0.44 0.048 50);
+  --fg:          oklch(0.97 0.008 60);
+  --fg-dim:      oklch(0.74 0.022 55);
+  --fg-mute:     oklch(0.54 0.018 55);
+  --accent:      oklch(0.76 0.20 45);
+  --shadow:      0 1px 0 oklch(1 0 0 / 0.07) inset, 0 16px 40px oklch(0 0 0 / 0.45);
+  --glow-strength: 0.4;
+}
+:root[data-theme="ember"] body {
+  background:
+    radial-gradient(ellipse 65% 50% at 10% 0%,  color-mix(in oklch, var(--accent) 50%, transparent), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 90% 15%, color-mix(in oklch, var(--accent) 30%, oklch(0.50 0.18 30)), transparent 65%),
+    radial-gradient(ellipse 50% 45% at 60% 100%, color-mix(in oklch, var(--accent) 22%, oklch(0.45 0.14 20)), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+:root[data-theme="ember"] .card {
+  background: linear-gradient(135deg,
+    color-mix(in oklch, var(--bg-panel) 82%, transparent) 0%,
+    color-mix(in oklch, var(--bg-panel) 62%, transparent) 100%);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  border: 1px solid color-mix(in oklch, var(--fg) 10%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+:root[data-theme="ember"] .card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 14%, transparent), transparent 40%);
+  pointer-events: none;
+  opacity: 0.55;
+}
+:root[data-theme="ember"] .card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--accent) 55%, transparent), transparent);
+}
+:root[data-theme="ember"] .card-value {
+  background: linear-gradient(135deg, var(--fg) 20%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 14px color-mix(in oklch, var(--accent) 28%, transparent));
+}
+:root[data-theme="ember"] .topbar { border-bottom-color: color-mix(in oklch, var(--fg) 10%, transparent); }
+
 /* =========================================================================
    GLOBAL OVERLAYS — apenas para temas que precisam (controlado por var)
    ========================================================================= */
