@@ -612,7 +612,7 @@ const FrangoUSPriceCard = ({ data, accent }) => {
               <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
                 {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
               </span>
-              <span className="card-date">
+              <span className="card-date" style={{marginLeft:0}}>
                 {window.MONTHS_PT[latestRaw.month - 1]}/{String(latestRaw.year).slice(-2)}
               </span>
             </>)}
@@ -710,7 +710,7 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
               <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
                 {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
               </span>
-              <span className="card-date">
+              <span className="card-date" style={{marginLeft:0}}>
                 {window.MONTHS_PT[latestRaw.month - 1]}/{String(latestRaw.year).slice(-2)}
               </span>
             </>)}
