@@ -484,9 +484,11 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       const ab = await file.arrayBuffer();
       // Detecção pelo nome do arquivo para evitar ler abas erradas
       // (BeefBR.xlsm também tem BBG_Dados mas não deve atualizar o BeefUS)
-      const nameLC      = file.name.toLowerCase();
-      const forceUS     = nameLC.includes('beefus');
-      const forcePoultry = nameLC.includes('frango');
+      const nameLC       = file.name.toLowerCase();
+      const forceUS      = nameLC.includes('beefus');
+      const forcePoultryBR = nameLC.includes('frango') && !nameLC.includes('us');
+      const forcePoultryUS = nameLC.includes('frangous') || (nameLC.includes('frango') && nameLC.includes('us'));
+      const forcePoultry = forcePoultryBR || forcePoultryUS;
       const parsed = await parseWorkbook(ab, { parseBR: !forceUS && !forcePoultry, parseUS: forceUS });
 
       // Mescla com dados existentes para preservar beef_us / edgebeef_daily
@@ -495,7 +497,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
 
       // Meta separado por planilha — não sobrescreve o log da outra aba
       const metaEntry = { source: file.name, updated: new Date().toISOString() };
-      const metaKey   = forceUS ? 'us' : forcePoultry ? 'poultry_br' : 'br';
+      const metaKey   = forceUS ? 'us' : forcePoultryUS ? 'poultry_us' : forcePoultryBR ? 'poultry_br' : 'br';
       const prevMeta  = window.__dashboardMeta || {};
       const fullMeta  = { ...prevMeta, [metaKey]: metaEntry };
       window.__dashboardMeta = fullMeta;

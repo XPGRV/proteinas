@@ -83,7 +83,7 @@ function App({ data: propData, initialData, initialMeta }) {
 
   // chartAccent — cor passada aos gráficos (linha do ano mais recente, barras)
   // Poultry BR usa o mesmo verde/tema dos outros; só o UI fica âmbar
-  const accent = activeDataset === 'beef_us'
+  const accent = (activeDataset === 'beef_us' || activeDataset === 'poultry_us')
     ? 'oklch(0.72 0.18 240)'
     : tweaks.accent || PALETTES[tweaks.palette].accent;
 
@@ -92,6 +92,8 @@ function App({ data: propData, initialData, initialMeta }) {
     ? 'oklch(0.72 0.18 240)'
     : activeDataset === 'poultry_br'
     ? 'oklch(0.78 0.18 85)'
+    : activeDataset === 'poultry_us'
+    ? 'oklch(0.78 0.18 200)'
     : accent;
 
   const typeStack = TYPE_STACKS[tweaks.typography];
@@ -104,6 +106,8 @@ function App({ data: propData, initialData, initialMeta }) {
       ? 'oklch(0.72 0.18 240)'
       : activeDataset === 'poultry_br'
       ? 'oklch(0.78 0.18 85)'
+      : activeDataset === 'poultry_us'
+      ? 'oklch(0.78 0.18 200)'
       : themeAccent;
     document.documentElement.style.setProperty('--accent', finalAccent);
     document.documentElement.style.setProperty('--font-sans', typeStack.sans);
@@ -145,6 +149,8 @@ function App({ data: propData, initialData, initialMeta }) {
           <window.BeefUSTab data={data} accent={accent}/>
         ) : activeDataset === 'poultry_br' ? (
           <window.PoultryBRTab data={data} accent={accent} tab={tab}/>
+        ) : activeDataset === 'poultry_us' ? (
+          <window.PoultryUSTab data={data} accent={accent}/>
         ) : tab === 'precos' ? (
           <PrecosTab data={data} accent={accent}/>
         ) : (
@@ -170,9 +176,10 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
     setActiveDataset(ds);
     if (sub) setTab(sub);
   };
-  const isBR      = activeDataset === 'beef_br';
-  const isUS      = activeDataset === 'beef_us';
-  const isPoultry = activeDataset === 'poultry_br';
+  const isBR         = activeDataset === 'beef_br';
+  const isUS         = activeDataset === 'beef_us';
+  const isPoultry    = activeDataset === 'poultry_br';
+  const isPoultryUS  = activeDataset === 'poultry_us';
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -244,6 +251,14 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
             <span className="sidebar-item-label">Processados</span>
           </button>
         </div>
+
+        <button
+          className={`sidebar-item ${isPoultryUS ? 'is-on' : ''}`}
+          onClick={() => onPick('poultry_us')}
+          style={{marginTop:6}}>
+          <span className="sidebar-item-icon">{SIcon.chicken}</span>
+          <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>Poultry US</span>
+        </button>
       </div>
 
       <div className="sidebar-spacer"/>
@@ -261,12 +276,14 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
 }
 
 function TopBar({ meta, onUpload, activeDataset }) {
-  const title  = activeDataset === 'poultry_br' ? 'POULTRY' : 'BEEF';
-  const suffix = activeDataset === 'beef_us' ? 'US' : 'BR';
+  const title  = (activeDataset === 'poultry_br' || activeDataset === 'poultry_us') ? 'POULTRY' : 'BEEF';
+  const suffix = (activeDataset === 'beef_us' || activeDataset === 'poultry_us') ? 'US' : 'BR';
   const currentMeta = activeDataset === 'beef_us'
     ? (meta?.us ?? null)
     : activeDataset === 'poultry_br'
     ? (meta?.poultry_br ?? null)
+    : activeDataset === 'poultry_us'
+    ? (meta?.poultry_us ?? null)
     : (meta?.br ?? (meta?.updated ? meta : null));
   return (
     <header className="topbar topbar-slim">
