@@ -1,113 +1,124 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Dashboard - Setorial</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Setorial</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
 
-<link rel="stylesheet" href="src/styles.css"/>
-<link rel="stylesheet" href="src/themes.css"/>
-<link rel="stylesheet" href="src/reactive.css"/>
+  <link rel="stylesheet" href="src/styles.css" />
+  <link rel="stylesheet" href="src/themes.css" />
+  <link rel="stylesheet" href="src/reactive.css" />
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+    crossorigin="anonymous"></script>
 </head>
+
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script src="src/reactive.js"></script>
-<script type="text/babel" src="src/data-utils.jsx"></script>
-<script type="text/babel" src="src/upload.jsx"></script>
-<script type="text/babel" src="src/seasonal-chart.jsx"></script>
-<script type="text/babel" src="src/ciclo-boi.jsx"></script>
-<script type="text/babel" src="src/beef-us-tab.jsx"></script>
-<script type="text/babel" src="src/production-chart.jsx"></script>
-<script type="text/babel" src="src/bimonthly-chart.jsx"></script>
-<script type="text/babel" src="src/continuous-chart.jsx"></script>
-<script type="text/babel" src="src/poultry-br-tab.jsx"></script>
-<script type="text/babel" src="src/app.jsx"></script>
+  <script src="src/reactive.js"></script>
+  <script type="text/babel" src="src/data-utils.jsx"></script>
+  <script type="text/babel" src="src/upload.jsx"></script>
+  <script type="text/babel" src="src/seasonal-chart.jsx"></script>
+  <script type="text/babel" src="src/ciclo-boi.jsx"></script>
+  <script type="text/babel" src="src/beef-us-tab.jsx"></script>
+  <script type="text/babel" src="src/production-chart.jsx"></script>
+  <script type="text/babel" src="src/bimonthly-chart.jsx"></script>
+  <script type="text/babel" src="src/continuous-chart.jsx"></script>
+  <script type="text/babel" src="src/poultry-br-tab.jsx"></script>
+  <script type="text/babel" src="src/app.jsx"></script>
 
-<script type="text/babel">
-(async () => {
-  const DATA_VERSION = '5';
+  <script type="text/babel">
+    (async () => {
+      const DATA_VERSION = '5';
 
-  // ── Supabase Storage ─────────────────────────────────────────────────────────
-  // A URL pública permite leitura sem autenticação; a key é a anon (segura no client).
-  const SB_URL = 'https://wmxjdveucxbousoquwmc.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndteGpkdmV1Y3hib3Vzb3F1d21jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NDAwMDMsImV4cCI6MjA5MjUxNjAwM30.tCSFE_aRcjrVRziuyqINPuxBYFEbG8AQjTdX2vHiwfw';
-  window.__SB_URL = SB_URL;
-  window.__SB_KEY = SB_KEY;
+      // ── Supabase Storage ─────────────────────────────────────────────────────────
+      // A URL pública permite leitura sem autenticação; a key é a anon (segura no client).
+      const SB_URL = 'https://wmxjdveucxbousoquwmc.supabase.co';
+      const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndteGpkdmV1Y3hib3Vzb3F1d21jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NDAwMDMsImV4cCI6MjA5MjUxNjAwM30.tCSFE_aRcjrVRziuyqINPuxBYFEbG8AQjTdX2vHiwfw';
+      window.__SB_URL = SB_URL;
+      window.__SB_KEY = SB_KEY;
 
-  let data = null, meta = null;
+      let data = null, meta = null;
 
-  // 1. Supabase — sempre a versão mais recente do último upload
-  try {
-    const resp = await fetch(
-      `${SB_URL}/storage/v1/object/public/dashboard/data.json?t=${Date.now()}`,
-      { cache: 'no-store' }
-    );
-    if (resp.ok) {
-      const json = await resp.json();
-      if (json && json.data) { data = json.data; meta = json.meta || null; }
-    }
-  } catch {}
+      // 1. Supabase — sempre a versão mais recente do último upload
+      try {
+        const resp = await fetch(
+          `${SB_URL}/storage/v1/object/public/dashboard/data.json?t=${Date.now()}`,
+          { cache: 'no-store' }
+        );
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json && json.data) { data = json.data; meta = json.meta || null; }
+        }
+      } catch { }
 
-  // 2. localStorage — cache local do browser
-  if (!data) {
-    try {
-      const cached        = localStorage.getItem('dashboard_data');
-      const cachedMeta    = localStorage.getItem('dashboard_meta');
-      const cachedVersion = localStorage.getItem('dashboard_version');
-      if (cached && cachedVersion === DATA_VERSION) {
-        data = JSON.parse(cached);
-        meta = cachedMeta ? JSON.parse(cachedMeta) : null;
-      } else {
-        localStorage.removeItem('dashboard_data');
-        localStorage.removeItem('dashboard_meta');
-        localStorage.removeItem('dashboard_version');
+      // 2. localStorage — cache local do browser
+      if (!data) {
+        try {
+          const cached = localStorage.getItem('dashboard_data');
+          const cachedMeta = localStorage.getItem('dashboard_meta');
+          const cachedVersion = localStorage.getItem('dashboard_version');
+          if (cached && cachedVersion === DATA_VERSION) {
+            data = JSON.parse(cached);
+            meta = cachedMeta ? JSON.parse(cachedMeta) : null;
+          } else {
+            localStorage.removeItem('dashboard_data');
+            localStorage.removeItem('dashboard_meta');
+            localStorage.removeItem('dashboard_version');
+          }
+        } catch { }
       }
-    } catch {}
-  }
 
-  // 3. Fallback — data.json embutido no repositório (opcional)
-  if (!data) {
-    try {
-      const resp = await fetch('public/data.json');
-      if (resp.ok) {
-        const json = await resp.json();
-        if (json) { data = json; meta = { source: 'planilha inicial', updated: null }; }
+      // 3. Fallback — data.json embutido no repositório (opcional)
+      if (!data) {
+        try {
+          const resp = await fetch('public/data.json');
+          if (resp.ok) {
+            const json = await resp.json();
+            if (json) { data = json; meta = { source: 'planilha inicial', updated: null }; }
+          }
+        } catch { }
       }
-    } catch {}
-  }
 
-  // Normaliza pct_femeas: dados antigos foram salvos como 3925 em vez de 39.25
-  // pct_femeas válido é sempre < 100; se > 100, divide por 100 para corrigir
-  if (data) {
-    const fixPct = rows => rows?.map(r =>
-      r.pct_femeas != null && r.pct_femeas > 100
-        ? { ...r, pct_femeas: Math.round(r.pct_femeas * 10) / 1000 }
-        : r
-    );
-    if (data.beef)    data.beef    = fixPct(data.beef);
-    if (data.beef_us) data.beef_us = fixPct(data.beef_us);
-  }
+      // Normaliza pct_femeas: dados antigos foram salvos como 3925 em vez de 39.25
+      // pct_femeas válido é sempre < 100; se > 100, divide por 100 para corrigir
+      if (data) {
+        const fixPct = rows => rows?.map(r =>
+          r.pct_femeas != null && r.pct_femeas > 100
+            ? { ...r, pct_femeas: Math.round(r.pct_femeas * 10) / 1000 }
+            : r
+        );
+        if (data.beef) data.beef = fixPct(data.beef);
+        if (data.beef_us) data.beef_us = fixPct(data.beef_us);
+      }
 
-  // Migra meta antigo (plano) para novo formato { br, us }
-  if (meta && !meta.br && !meta.us && meta.updated) meta = { br: meta };
+      // Migra meta antigo (plano) para novo formato { br, us }
+      if (meta && !meta.br && !meta.us && meta.updated) meta = { br: meta };
 
-  // Expõe globals para upload.jsx
-  window.__dashboardData = data;
-  window.__dashboardMeta = meta || {};
+      // Expõe globals para upload.jsx
+      window.__dashboardData = data;
+      window.__dashboardMeta = meta || {};
 
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(<window.App initialData={data} initialMeta={meta}/>);
-})();
-</script>
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<window.App initialData={data} initialMeta={meta} />);
+    })();
+  </script>
 </body>
+
 </html>
