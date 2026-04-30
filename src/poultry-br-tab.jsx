@@ -95,6 +95,17 @@ const PoultryIpcaTab = ({ data, accent }) => {
       </main>
     );
   }
+  const footerNote = (
+    <span>
+      <strong style={{color:'var(--fg)'}}>OBS:</strong> Gráficos não atualizam automaticamente, pedir com sellside:{' '}
+      <a href="https://wa.me/5511993131978" target="_blank" rel="noopener noreferrer"
+         style={{color:'var(--accent)',textDecoration:'none',borderBottom:'1px solid color-mix(in oklch,var(--accent) 40%,transparent)'}}>Pedro XPI</a>
+      {' / '}
+      <a href="https://wa.me/554196717107" target="_blank" rel="noopener noreferrer"
+         style={{color:'var(--accent)',textDecoration:'none',borderBottom:'1px solid color-mix(in oklch,var(--accent) 40%,transparent)'}}>Henrique BBI</a>
+    </span>
+  );
+
   return (
     <main className="main">
       <window.ContinuousCard
@@ -108,17 +119,19 @@ const PoultryIpcaTab = ({ data, accent }) => {
       <window.BimonthlyCard
         cardId="card-growth-px"
         title="Growth Like-for-Like Pricing"
-        sub="APINCO · Crescimento bimestral de preço"
+        sub="NIELSEN · Crescimento bimestral, YoY%, de preço."
         accent={accent} data={data} dataset="processados"
         fields={PROCESSADOS_PX_FIELDS}
+        footerNote={footerNote}
       />
 
       <window.BimonthlyCard
         cardId="card-growth-vol"
         title="Growth Volume"
-        sub="APINCO · Crescimento bimestral de volume"
+        sub="NIELSEN · Crescimento bimestral, YoY%, de volume."
         accent={accent} data={data} dataset="processados"
         fields={PROCESSADOS_VOL_FIELDS}
+        footerNote={footerNote}
       />
     </main>
   );

@@ -697,7 +697,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340 }) {
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote }) {
   const [mode, setMode]             = React.useState('seasonal');
   const [range, setRange]           = React.useState('5');
   const [selYears, setSelYears]     = React.useState(null);
@@ -833,6 +833,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           height={height}
         />
       )}
+      {footerNote && <div className="card-footer">{footerNote}</div>}
     </section>
   );
 }
