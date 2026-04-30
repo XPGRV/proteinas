@@ -154,7 +154,7 @@ function App({ data: propData, initialData, initialMeta }) {
         ) : activeDataset === 'poultry_br' ? (
           <window.PoultryBRTab data={data} accent={accent} tab={tab}/>
         ) : activeDataset === 'poultry_us' ? (
-          <window.PoultryUSTab data={data} accent={accent}/>
+          <window.PoultryUSTab data={data} accent={accent} tab={tab}/>
         ) : tab === 'precos' ? (
           <PrecosTab data={data} accent={accent}/>
         ) : (
@@ -256,13 +256,18 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
           </button>
         </div>
 
-        <button
-          className={`sidebar-item ${isPoultryUS ? 'is-on' : ''}`}
-          onClick={() => onPick('poultry_us')}
-          style={{marginTop:6}}>
-          <span className="sidebar-item-icon">{SIcon.chicken}</span>
-          <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>Poultry US</span>
-        </button>
+        <div className="sidebar-group" style={{marginTop:6}}>
+          <div className="sidebar-group-header">
+            <span className="sidebar-item-icon" style={isPoultryUS ? undefined : {color:'var(--fg-dim)', opacity:0.6}}>{SIcon.chicken}</span>
+            <span style={{textTransform:'uppercase', letterSpacing:'0.08em', fontSize:11}}>Poultry US</span>
+          </div>
+          <button
+            className={`sidebar-item ${isPoultryUS && tab==='precos' ? 'is-on' : ''}`}
+            onClick={() => onPick('poultry_us', 'precos')}>
+            <span className="sidebar-item-icon">{SIcon.bar}</span>
+            <span className="sidebar-item-label">Preços & Spreads</span>
+          </button>
+        </div>
       </div>
 
       <div className="sidebar-spacer"/>

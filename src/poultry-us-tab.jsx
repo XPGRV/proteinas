@@ -739,7 +739,7 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
 };
 
 // ── Tab principal ─────────────────────────────────────────────────────────────
-const PoultryUSTab = ({ data, accent }) => {
+const PoultryUSTab = ({ data, accent, tab }) => {
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
     return (
       <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
@@ -753,33 +753,36 @@ const PoultryUSTab = ({ data, accent }) => {
       </main>
     );
   }
-  return (
-    <main className="main">
-      <FrangoUSPriceCard data={data} accent={accent}/>
-      <FrangoUSSimpleCard
-        data={data}
-        seriesKey="feed_grain"
-        cardId="us-feed-grain"
-        title="Feed Grain"
-        eyebrow="Bloomberg · Milho + Soja · Custo de Ração EUA"
-        unit="USD/Kg"
-        events={EVENTS_FEED_GRAIN}
-        accent={accent}
-        defaultYears={10}
-      />
-      <FrangoUSSimpleCard
-        data={data}
-        seriesKey="spread"
-        cardId="us-spread"
-        title="Spread Frango–Ração"
-        eyebrow="Bloomberg · Proxy XPG − Feed Grain · Margem EUA"
-        unit="USD/Kg"
-        events={EVENTS_SPREAD}
-        accent={accent}
-        defaultYears={5}
-      />
-    </main>
-  );
+  if (tab === 'precos') {
+    return (
+      <main className="main">
+        <FrangoUSPriceCard data={data} accent={accent}/>
+        <FrangoUSSimpleCard
+          data={data}
+          seriesKey="feed_grain"
+          cardId="us-feed-grain"
+          title="Feed Grain"
+          eyebrow="Bloomberg · Milho + Soja · Custo de Ração EUA"
+          unit="USD/Kg"
+          events={EVENTS_FEED_GRAIN}
+          accent={accent}
+          defaultYears={10}
+        />
+        <FrangoUSSimpleCard
+          data={data}
+          seriesKey="spread"
+          cardId="us-spread"
+          title="Spread Frango–Ração"
+          eyebrow="Bloomberg · Proxy XPG − Feed Grain · Margem EUA"
+          unit="USD/Kg"
+          events={EVENTS_SPREAD}
+          accent={accent}
+          defaultYears={5}
+        />
+      </main>
+    );
+  }
+  return null;
 };
 
 window.PoultryUSTab = PoultryUSTab;
