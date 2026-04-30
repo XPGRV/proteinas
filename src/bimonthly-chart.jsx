@@ -419,11 +419,14 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
   const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 450);
 
-  React.useEffect(() => {
+  // useLayoutEffect: mede a largura real antes do primeiro paint (elimina o flash inicial)
+  React.useLayoutEffect(() => {
     if (!svgRef.current) return;
+    const initial = Math.floor(svgRef.current.getBoundingClientRect().width);
+    if (initial > 0) setW(initial);
+
     const obs = new ResizeObserver(([e]) => {
       const w = Math.floor(e.contentRect.width);
-      // threshold: só atualiza se mudou mais de 2px (evita re-renders que quebram animações)
       if (w > 0) setW(prev => Math.abs(w - prev) > 2 ? w : prev);
     });
     obs.observe(svgRef.current);
