@@ -114,7 +114,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
         {yTicks.map((v, i) => (
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
-              stroke="var(--grid)" strokeWidth={0.7} opacity={i === 0 ? 0 : 0.55}
+              className="grid-line" style={{opacity: i === 0 ? 0 : 0.6}}
             />
             <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">
               {fmt(v)}

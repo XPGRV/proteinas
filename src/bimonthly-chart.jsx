@@ -159,14 +159,14 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
         {/* Grid + Y labels */}
         {yTicks.map((v, i) => (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}/>
+            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} className="grid-line"/>
             <text x={W - padR + 8} y={y(v)} className="tick-label" textAnchor="start" dominantBaseline="middle">{fmt(v)}</text>
           </g>
         ))}
 
         {/* Vertical Gridlines */}
         {[1,2,3,4,5,6].map(bm => (
-          <line key={`vgrid-${bm}`} x1={x(bm)} x2={x(bm)} y1={padT} y2={padT + chartH} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.25}/>
+          <line key={`vgrid-${bm}`} x1={x(bm)} x2={x(bm)} y1={padT} y2={padT + chartH} className="grid-line" style={{opacity:0.25}}/>
         ))}
 
         {/* Evident zero line */}
@@ -554,8 +554,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
         {/* Grid + Y labels */}
         {yTicks.map((v, i) => (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
-              stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}/>
+            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} className="grid-line"/>
             <text x={W - padR + 8} y={yOf(v)} textAnchor="start" dominantBaseline="middle"
               fontSize={10 * W / 1000} fill="var(--fg-dim)"
               fontFamily="var(--font-mono)" letterSpacing="0.02em"
@@ -583,7 +582,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
         {/* Vertical Gridlines */}
         {xTicks.map((t, i) => (
-          <line key={`vgrid-${i}`} x1={t.x} x2={t.x} y1={padT} y2={padT + chartH} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.15}/>
+          <line key={`vgrid-${i}`} x1={t.x} x2={t.x} y1={padT} y2={padT + chartH} className="grid-line" style={{opacity:0.15}}/>
         ))}
 
         {/* Linhas + hitbox clicável */}
