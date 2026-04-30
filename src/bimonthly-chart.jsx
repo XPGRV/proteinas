@@ -136,7 +136,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
   };
 
   return (
-    <div className="chart-wrap">
+    <div className="chart-wrap" style={{animation:'rx-fade-in 0.5s ease-out'}}>
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMouseMove} onMouseLeave={() => setHoverBm(null)}>
         <defs>
@@ -159,8 +159,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
         {/* Grid + Y labels */}
         {yTicks.map((v, i) => (
           <g key={i}>
-            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}
-              style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}/>
+            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke="var(--grid)" strokeWidth={1} strokeOpacity={0.6}/>
             <text x={W - padR + 8} y={y(v)} className="tick-label" textAnchor="start" dominantBaseline="middle">{fmt(v)}</text>
           </g>
         ))}
@@ -440,9 +439,11 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
     return bmRows.filter(r => r.year * 6 + r.bimonth - 1 > cutOrd);
   }, [bmRows, rangeYears]);
 
-  // Altura proporcional ao W (igual ao sazonal com viewBox 1000×height)
-  const H    = W > 0 ? Math.round(height * W / 1000) : height;
-  const padL = 58, padR = 48, padT = 16, padB = 40;
+  // Dimensões e padding proporcionais ao W (igual ao sazonal com viewBox 1000×height)
+  const sc   = W / 1000;
+  const H    = Math.round(height * sc);
+  const padL = Math.round(58 * sc), padR = Math.round(48 * sc);
+  const padT = Math.round(16 * sc), padB = Math.round(40 * sc);
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 

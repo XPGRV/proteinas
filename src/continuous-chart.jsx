@@ -97,7 +97,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
   const gradId = `cc-grad-${field}`;
 
   return (
-    <div style={{position:'relative'}}>
+    <div style={{position:'relative', animation:'rx-fade-in 0.5s ease-out'}}>
       <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
         onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
         <defs>
@@ -115,7 +115,6 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
               stroke="var(--grid)" strokeWidth={0.7} opacity={i === 0 ? 0 : 0.55}
-              style={{opacity:0, animation:`rx-grid-fade 0.5s ease-out ${i * 0.06}s forwards`}}
             />
             <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">
               {fmt(v)}
