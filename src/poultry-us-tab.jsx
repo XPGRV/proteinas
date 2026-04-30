@@ -93,10 +93,11 @@ const FrangoUSChart = ({
   const xFn = doy => padL + ((doy - 1) / 364) * chartW;
   const yFn = v   => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
 
+  const LATEST_COLOR = 'oklch(0.82 0.18 155)'; // verde fixo, igual aos demais gráficos
   const yearColor = yr => {
     const palette = ['oklch(0.75 0.15 200)','oklch(0.68 0.16 255)','oklch(0.74 0.15 310)','oklch(0.78 0.17 35)','oklch(0.80 0.15 60)','oklch(0.72 0.16 0)','oklch(0.76 0.13 170)'];
     const age = latestYear - yr;
-    if (age === 0) return accent;
+    if (age === 0) return LATEST_COLOR;
     return age - 1 < palette.length ? palette[age - 1] : 'oklch(0.48 0.01 260)';
   };
   const seriesOpacity = yr => (!pinnedYear ? (yr === latestYear ? 1 : 0.7) : (yr === pinnedYear ? 1 : 0.1));
@@ -334,6 +335,8 @@ const FrangoUSChart = ({
   );
 };
 
+const CUTS = FRANGO_US_SERIES.filter(s => s.key !== 'proxy');
+
 // ── Controls ─────────────────────────────────────────────────────────────────
 function FrangoUSControls({
   years, selectedYears, setSelectedYears,
@@ -342,8 +345,10 @@ function FrangoUSControls({
   activeSeries, setActiveSeries,
 }) {
   const { useState, useEffect, useRef } = React;
-  const [dropOpen, setDropOpen] = useState(false);
-  const dropRef = useRef(null);
+  const [yearDropOpen, setYearDropOpen] = useState(false);
+  const [cutDropOpen,  setCutDropOpen]  = useState(false);
+  const yearDropRef = useRef(null);
+  const cutDropRef  = useRef(null);
 
   const presets = [
     { label: '3a',    yrs: years.slice(-3) },
@@ -360,14 +365,30 @@ function FrangoUSControls({
   );
 
   useEffect(() => {
-    if (!dropOpen) return;
-    const h = e => { if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false); };
+    if (!yearDropOpen) return;
+    const h = e => { if (yearDropRef.current && !yearDropRef.current.contains(e.target)) setYearDropOpen(false); };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
-  }, [dropOpen]);
+  }, [yearDropOpen]);
+
+  useEffect(() => {
+    if (!cutDropOpen) return;
+    const h = e => { if (cutDropRef.current && !cutDropRef.current.contains(e.target)) setCutDropOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [cutDropOpen]);
+
+  const activeCut  = CUTS.find(s => s.key === activeSeries);
+  const cutLabel   = activeCut ? activeCut.label : 'Corte';
+
+  const selectCut = key => {
+    setActiveSeries(key === activeSeries ? 'proxy' : key);
+    setCutDropOpen(false);
+  };
 
   return (
     <div className="card-controls">
+      {/* Row 1: year presets */}
       <div className="card-ctrl-row">
         <div className="year-seg">
           {presets.map(p => (
@@ -377,12 +398,12 @@ function FrangoUSControls({
               {p.label}
             </button>
           ))}
-          <div className="year-drop-wrap" ref={dropRef}>
-            <button className={`year-seg-btn ${dropOpen ? 'is-active' : ''} ${!activePreset && !dropOpen ? 'is-on' : ''}`}
-              onClick={() => setDropOpen(o => !o)}>
+          <div className="year-drop-wrap" ref={yearDropRef}>
+            <button className={`year-seg-btn ${yearDropOpen ? 'is-active' : ''} ${!activePreset && !yearDropOpen ? 'is-on' : ''}`}
+              onClick={() => setYearDropOpen(o => !o)}>
               Anos ▾
             </button>
-            {dropOpen && (
+            {yearDropOpen && (
               <div className="year-drop">
                 {years.slice().reverse().map(yr => (
                   <div key={yr} className={`year-drop-item ${selectedYears.includes(yr) ? 'is-on' : ''}`}
@@ -397,29 +418,35 @@ function FrangoUSControls({
         </div>
       </div>
 
+      {/* Row 2: toggles + corte dropdown + chart style */}
       <div className="card-ctrl-row">
         <div className="ctrl-btn-group">
           <button className={`ctrl-btn ${showStats ? 'is-on' : ''}`} onClick={() => setShowStats(s => !s)}>MÉDIA + FAIXA</button>
           <button className={`ctrl-btn ${showEvents ? 'is-on' : ''}`} onClick={() => setShowEvents(s => !s)}>EVENTOS</button>
+          <div className="year-drop-wrap" ref={cutDropRef}>
+            <button className={`ctrl-btn ${activeCut ? 'is-on' : ''} ${cutDropOpen ? 'is-active' : ''}`}
+              onClick={() => setCutDropOpen(o => !o)}>
+              {cutLabel} ▾
+            </button>
+            {cutDropOpen && (
+              <div className="year-drop">
+                {CUTS.map(s => (
+                  <div key={s.key} className={`year-drop-item ${activeSeries === s.key ? 'is-on' : ''}`}
+                    onClick={() => selectCut(s.key)}>
+                    <span className="year-drop-check">{activeSeries === s.key ? '✓' : ''}</span>
+                    {s.label}
+                    {s.ticker && <span style={{marginLeft:6,opacity:0.5,fontSize:10}}>{s.ticker}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div style={{marginLeft: 16}}>
           <div className="seg">
             <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
             <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
           </div>
-        </div>
-      </div>
-
-      <div className="card-ctrl-row">
-        <div className="seg">
-          {FRANGO_US_SERIES.map(s => (
-            <button key={s.key}
-              className={`seg-btn ${activeSeries === s.key ? 'is-on' : ''}`}
-              onClick={() => setActiveSeries(s.key)}
-              title={s.ticker || s.note}>
-              {s.label}
-            </button>
-          ))}
         </div>
       </div>
     </div>
