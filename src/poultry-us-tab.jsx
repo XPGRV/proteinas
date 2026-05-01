@@ -762,6 +762,8 @@ const PoultryUSTab = ({ data, accent, tab }) => {
       </main>
     );
   }
+  const hasUsda = data.frango_us_monthly && data.frango_us_monthly.length > 0;
+
   if (tab === 'precos') {
     return (
       <main className="main">
@@ -788,6 +790,47 @@ const PoultryUSTab = ({ data, accent, tab }) => {
           accent={accent}
           defaultYears={5}
         />
+        {hasUsda && <>
+          <window.PriceCard
+            cardId="us-usda-price"
+            title="Broilers · Preço Atacado"
+            sub="USDA · Broilers Composite Wholesale Price"
+            accent={accent}
+            data={data}
+            dataset="frango_us_monthly"
+            field="usda_wholesale_price"
+            unit="USD/lb"
+            decimals={4}
+            fullWidth
+            events={EVENTS_FRANGO_US}
+          />
+          <window.PriceCard
+            cardId="us-usda-feed"
+            title="Broilers · Custo de Ração"
+            sub="USDA · Broilers Feed Costs per Lb"
+            accent={accent}
+            data={data}
+            dataset="frango_us_monthly"
+            field="usda_feed_cost"
+            unit="USD/lb"
+            decimals={4}
+            fullWidth
+            events={EVENTS_FEED_GRAIN}
+          />
+          <window.PriceCard
+            cardId="us-usda-spread"
+            title="Broilers · Spread Preço–Ração"
+            sub="USDA · Composite Wholesale Price − Feed Costs"
+            accent={accent}
+            data={data}
+            dataset="frango_us_monthly"
+            field="usda_spread"
+            unit="USD/lb"
+            decimals={4}
+            fullWidth
+            events={EVENTS_SPREAD}
+          />
+        </>}
       </main>
     );
   }

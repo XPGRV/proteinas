@@ -425,6 +425,30 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
     result.frango_us_daily = frango_us_daily;
   }
 
+  // ── FrangoUS mensal — dados USDA (aba FrangoUS) ──────────────────────────────
+  // col Q (16) = Feed Costs per Lb · col R (17) = Composite Wholesale Price · col S (18) = Spread
+  if (parsePoultryUS && findSheet('FrangoUS')) {
+    const usdaRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoUS')], { header: 1, raw: false });
+    let dataStart = 4;
+    for (let i = 2; i < Math.min(10, usdaRaw.length); i++) {
+      if (usdaRaw[i] && usdaRaw[i][1] && parseMonthTag(usdaRaw[i][1])) { dataStart = i; break; }
+    }
+    const frango_us_monthly = [];
+    for (let i = dataStart; i < usdaRaw.length; i++) {
+      const r = usdaRaw[i];
+      if (!r || !r[1]) continue;
+      const md = parseMonthTag(r[1]);
+      if (!md) continue;
+      frango_us_monthly.push({
+        year: md.year, month: md.month,
+        usda_feed_cost:       parseNum(r[16]),
+        usda_wholesale_price: parseNum(r[17]),
+        usda_spread:          parseNum(r[18]),
+      });
+    }
+    result.frango_us_monthly = trimEmpty(frango_us_monthly);
+  }
+
   // ── FrangoBR ─────────────────────────────────────────────────────────────────
   if (findSheet('FrangoBR')) {
     const frangoRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoBR')], { header: 1, raw: false });
@@ -590,7 +614,8 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       if (parsed.edgebeef_daily) parts.push(`${parsed.edgebeef_daily.length} Edgebeef diário`);
       if (parsed.beef_us)        parts.push(`${parsed.beef_us.length}L BeefUS`);
       if (parsed.production)     parts.push(`${parsed.production.snapshots.length} snapshots Produção`);
-      if (parsed.frango_us_daily) parts.push(`${parsed.frango_us_daily.length} FrangoUS diário`);
+      if (parsed.frango_us_daily)   parts.push(`${parsed.frango_us_daily.length} FrangoUS diário`);
+      if (parsed.frango_us_monthly) parts.push(`${parsed.frango_us_monthly.length}L FrangoUS USDA`);
       if (parsed.frango)         parts.push(`${parsed.frango.length}L FrangoBR`);
       const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
       setStatus({ kind: 'ok', msg: `✓ ${parts.join(' · ')}${cloudBadge}` });
