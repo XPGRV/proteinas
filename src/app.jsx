@@ -712,13 +712,12 @@ function TickerBar({ data, activeDataset }) {
         ]
       : activeDataset === 'poultry_us'
       ? [
-          ['PROXY·XPG',   'proxy',                'USD/kg',  'us-frango-price'],
-          ['BB·BREAST',   'chic_bb',              'USD/kg',  'us-frango-price'],
-          ['TENDER',      'chic_tn',              'USD/kg',  'us-frango-price'],
-          ['LEGS',        'chic_lq',              'USD/kg',  'us-frango-price'],
-          ['WINGS',       'chic_wi',              'USD/kg',  'us-frango-price'],
-          ['FEED·GRAIN',  'feed_grain',           'USD/kg',  'us-feed-grain'],
-          ['SPREAD',      'spread',               'USD/kg',  'us-spread'],
+          ['BBG·PROXY',    'proxy',                 'USD/kg',  'us-frango-price'],
+          ['BBG·FEED',     'feed_grain',            'USD/kg',  'us-feed-grain'],
+          ['BBG·SPREAD',   'spread',                'USD/kg',  'us-spread'],
+          ['USDA·PRICE',   'usda_wholesale_price',  'USD/lb',  'us-usda-price',  'frango_us_monthly'],
+          ['USDA·FEED',    'usda_feed_cost',        'USD/lb',  'us-usda-feed',   'frango_us_monthly'],
+          ['USDA·SPREAD',  'usda_spread',           'USD/lb',  'us-usda-spread', 'frango_us_monthly'],
         ]
       : activeDataset === 'poultry_br'
       ? [

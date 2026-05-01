@@ -795,12 +795,12 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             cardId="us-usda-price"
             title="Broilers · Preço Atacado"
             sub="USDA · Broilers Composite Wholesale Price"
-            accent={accent}
+            accent="oklch(0.82 0.18 155)"
             data={data}
             dataset="frango_us_monthly"
             field="usda_wholesale_price"
             unit="USD/lb"
-            decimals={4}
+            decimals={2}
             fullWidth
             events={EVENTS_FRANGO_US}
           />
@@ -808,12 +808,12 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             cardId="us-usda-feed"
             title="Broilers · Custo de Ração"
             sub="USDA · Broilers Feed Costs per Lb"
-            accent={accent}
+            accent="oklch(0.82 0.18 155)"
             data={data}
             dataset="frango_us_monthly"
             field="usda_feed_cost"
             unit="USD/lb"
-            decimals={4}
+            decimals={2}
             fullWidth
             events={EVENTS_FEED_GRAIN}
           />
@@ -821,12 +821,12 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             cardId="us-usda-spread"
             title="Broilers · Spread Preço–Ração"
             sub="USDA · Composite Wholesale Price − Feed Costs"
-            accent={accent}
+            accent="oklch(0.82 0.18 155)"
             data={data}
             dataset="frango_us_monthly"
             field="usda_spread"
             unit="USD/lb"
-            decimals={4}
+            decimals={2}
             fullWidth
             events={EVENTS_SPREAD}
           />
