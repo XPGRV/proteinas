@@ -101,10 +101,7 @@ function App({ data: propData, initialData, initialMeta }) {
 
   useEffect(() => {
     document.documentElement.dataset.density = tweaks.density;
-    // Poultry US força o tema Ember; os outros respeitam tweaks.theme
-    document.documentElement.dataset.theme = activeDataset === 'poultry_us'
-      ? 'ember'
-      : tweaks.theme || 'refined';
+    document.documentElement.dataset.theme = tweaks.theme || 'refined';
     const themeAccent = (window.THEMES && window.THEMES[tweaks.theme]?.accent) || uiAccent;
     const finalAccent = activeDataset === 'beef_us'
       ? 'oklch(0.72 0.18 240)'
@@ -734,15 +731,19 @@ function TickerBar({ data, activeDataset }) {
         ];
     return fields.map(([sym, f, u, target, dsOverride]) => {
       const rows = data[dsOverride || ds] || [];
-      let last = null, prev = null;
+      let last = null;
       for (let i = rows.length - 1; i >= 0; i--) {
-        if (rows[i][f] != null) {
-          if (last == null) last = rows[i];
-          else { prev = rows[i]; break; }
-        }
+        if (rows[i][f] != null) { last = rows[i]; break; }
       }
       if (!last) return null;
-      const v = last[f], p = prev?.[f];
+      const v = last[f];
+      let prev = null;
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if (rows[i][f] != null && rows[i].year === last.year - 1 && rows[i].month === last.month) {
+          prev = rows[i]; break;
+        }
+      }
+      const p = prev?.[f];
       const delta = (p == null || p === 0) ? null : (v - p) / Math.abs(p);
       return { sym, value: v, unit: u, delta, field: f, target };
     }).filter(Boolean);
