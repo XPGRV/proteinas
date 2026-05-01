@@ -758,7 +758,7 @@ function filterRatioByRange(rows, rangeYears) {
   return rows.filter(r => r.year * 12 + r.month > cutOrd);
 }
 
-const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
+const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle, prevFirstT = null }) => {
   const W = 1000, H = 340;
   const padL = 64, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
@@ -785,6 +785,15 @@ const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
   const xOf    = r => padL + ((tOf(r) - tFirst) / span) * chartW;
   const yOf    = v => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
   const meanY  = yOf(mean);
+
+  // Draw animation: when expanding range, only animate the newly revealed (left) portion
+  const hasPartial   = prevFirstT != null && prevFirstT > tFirst;
+  const clipStartPct = hasPartial
+    ? ((padL + ((prevFirstT - tFirst) / span) * chartW) / W * 100).toFixed(1) + '%'
+    : null;
+  const lineAnim = hasPartial
+    ? 'bm-line-draw-partial 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards'
+    : 'bm-line-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) backwards';
 
   // Y ticks
   const vRange   = vMax - vMin;
@@ -822,14 +831,12 @@ const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
     + ` L${xOf(rows[rows.length - 1]).toFixed(1)},${meanY.toFixed(1)}`
     + ` L${xOf(rows[0]).toFixed(1)},${meanY.toFixed(1)} Z`;
 
-  // Gradient: opaque at extreme (furthest from mean), transparent at mean
-  const extremeY = vals.reduce((best, v) => {
-    const py = yOf(v);
-    return Math.abs(py - meanY) > Math.abs(best - meanY) ? py : best;
-  }, yOf(vals[0]));
-
-  const gradId = 'pbr-grad';
-  const clipId = 'pbr-clip';
+  const gradId  = 'pbr-grad';
+  const clipId  = 'pbr-clip';
+  // 3-stop gradient: opaque at top, transparent at mean, opaque at bottom
+  const topPx   = padT;
+  const botPx   = padT + chartH;
+  const meanPct = ((meanY - topPx) / (botPx - topPx) * 100).toFixed(1);
 
   const onMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -848,9 +855,10 @@ const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
         onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
         <defs>
           <linearGradient id={gradId} x1="0" x2="0"
-            y1={extremeY.toFixed(1)} y2={meanY.toFixed(1)} gradientUnits="userSpaceOnUse">
-            <stop offset="0%"   stopColor={RATIO_ACCENT} stopOpacity="0.28"/>
-            <stop offset="100%" stopColor={RATIO_ACCENT} stopOpacity="0"/>
+            y1={topPx} y2={botPx} gradientUnits="userSpaceOnUse">
+            <stop offset="0%"            stopColor={RATIO_ACCENT} stopOpacity="0.28"/>
+            <stop offset={`${meanPct}%`} stopColor={RATIO_ACCENT} stopOpacity="0"/>
+            <stop offset="100%"          stopColor={RATIO_ACCENT} stopOpacity="0.28"/>
           </linearGradient>
           <clipPath id={clipId}>
             <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
@@ -879,11 +887,12 @@ const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
         )}
 
         <path d={linePath} fill="none" stroke={RATIO_ACCENT} strokeWidth={1.5}
-          strokeLinejoin="round" strokeLinecap="round" clipPath={`url(#${clipId})`}/>
+          strokeLinejoin="round" strokeLinecap="round" clipPath={`url(#${clipId})`}
+          style={{'--bm-clip-left': clipStartPct ?? '100%', animation: lineAnim}}/>
 
         {/* Média histórica — linha pontilhada */}
         <line x1={padL} x2={W - padR} y1={meanY} y2={meanY}
-          stroke={RATIO_ACCENT} strokeOpacity="0.55" strokeWidth={1} strokeDasharray="4 3"/>
+          stroke="var(--fg)" strokeOpacity="0.45" strokeWidth={1} strokeDasharray="4 3"/>
 
         {hover && (
           <g>
@@ -928,7 +937,7 @@ const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
           Poultry / Beef
         </span>
         <span className="legend-year" style={{opacity: 0.6, userSelect: 'none', padding: '2px 6px'}}>
-          <span style={{display:'inline-block',width:16,height:2,borderTop:`2px dashed ${RATIO_ACCENT}`,opacity:0.5,verticalAlign:'middle',marginRight:2}}/>
+          <span style={{display:'inline-block',width:16,height:2,borderTop:'2px dashed var(--fg)',opacity:0.5,verticalAlign:'middle',marginRight:2}}/>
           Média histórica
         </span>
       </div>
@@ -943,6 +952,7 @@ const PoultryBeefCard = ({ data }) => {
   );
   const [range, setRange]           = React.useState('5');
   const [chartStyle, setChartStyle] = React.useState('line');
+  const [prevFirstT, setPrevFirstT] = React.useState(null);
 
   const mean = React.useMemo(() => {
     if (!allRows.length) return 0;
@@ -951,6 +961,18 @@ const PoultryBeefCard = ({ data }) => {
 
   const rangeNum     = range === 'all' ? 'all' : parseInt(range);
   const filteredRows = React.useMemo(() => filterRatioByRange(allRows, rangeNum), [allRows, rangeNum]);
+
+  const tOf = r => r.year + (r.month - 1) / 12 + (r.day - 0.5) / 365.25;
+  const changeRange = React.useCallback((val) => {
+    const oldN = range === 'all' ? Infinity : parseInt(range);
+    const newN = val   === 'all' ? Infinity : parseInt(val);
+    if (newN > oldN && filteredRows.length) {
+      setPrevFirstT(tOf(filteredRows[0]));
+    } else {
+      setPrevFirstT(null);
+    }
+    setRange(val);
+  }, [range, filteredRows]);
 
   if (!allRows.length) return null;
 
@@ -983,7 +1005,7 @@ const PoultryBeefCard = ({ data }) => {
               {[['3a','3'],['5a','5'],['10a','10'],['Todos','all']].map(([label, val]) => (
                 <button key={label}
                   className={`year-seg-btn ${range === val ? 'is-on' : ''}`}
-                  onClick={() => setRange(val)}>
+                  onClick={() => changeRange(val)}>
                   {label}
                 </button>
               ))}
@@ -1002,6 +1024,7 @@ const PoultryBeefCard = ({ data }) => {
         filteredRows={filteredRows}
         mean={mean}
         chartStyle={chartStyle}
+        prevFirstT={prevFirstT}
       />
     </section>
   );
