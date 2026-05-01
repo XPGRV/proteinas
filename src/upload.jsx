@@ -392,13 +392,14 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
       } else if (curDate) {
         curDate = new Date(curDate.getTime() + 86400000);
       } else continue;
-      const bb = parseNum(r[4]);
-      const tn = parseNum(r[5]);
-      const lq = parseNum(r[6]);
-      const wi = parseNum(r[7]);
-      const n  = parseNum(r[13]); // Corn USDc/bu
-      const p  = parseNum(r[15]); // Soy  USDc/bu
-      if (bb == null && tn == null && lq == null && wi == null && n == null && p == null) continue;
+      const bb    = parseNum(r[4]);
+      const tn    = parseNum(r[5]);
+      const lq    = parseNum(r[6]);
+      const wi    = parseNum(r[7]);
+      const ratio = parseNum(r[11]); // col L — Poultry/Beef ratio
+      const n     = parseNum(r[13]); // Corn USDc/bu
+      const p     = parseNum(r[15]); // Soy  USDc/bu
+      if (bb == null && tn == null && lq == null && wi == null && ratio == null && n == null && p == null) continue;
       const year = curDate.getUTCFullYear(), month = curDate.getUTCMonth()+1, day = curDate.getUTCDate();
       const proxy = (bb != null && lq != null && wi != null)
         ? +((bb * 0.41 + lq * 0.48 + wi * 0.11) / 100 * 2.20462).toFixed(4)
@@ -420,6 +421,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         chic_wi: wi != null ? +(wi * W).toFixed(4) : null,
         feed_grain,
         spread,
+        poultry_beef_ratio: ratio,
       });
     }
     result.frango_us_daily = frango_us_daily;

@@ -747,6 +747,266 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
   );
 };
 
+// ── Poultry / Beef Ratio ─────────────────────────────────────────────────────
+
+const RATIO_ACCENT = 'oklch(0.82 0.18 155)';
+
+function filterRatioByRange(rows, rangeYears) {
+  if (!rows.length || rangeYears === 'all') return rows;
+  const last = rows[rows.length - 1];
+  const cutOrd = last.year * 12 + last.month - rangeYears * 12;
+  return rows.filter(r => r.year * 12 + r.month > cutOrd);
+}
+
+const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle }) => {
+  const W = 1000, H = 340;
+  const padL = 64, padR = 24, padT = 20, padB = 32;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const rows = filteredRows;
+  const [hover, setHover] = React.useState(null);
+  const [mouseY, setMouseY] = React.useState(0);
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 400);
+
+  if (!rows.length) return null;
+
+  const vals   = rows.map(r => r.poultry_beef_ratio);
+  const rawMin = Math.min(...vals);
+  const rawMax = Math.max(...vals);
+  const pad    = (rawMax - rawMin) * 0.1 || 0.05;
+  const vMin   = Math.min(rawMin - pad, mean - pad * 2);
+  const vMax   = Math.max(rawMax + pad, mean + pad * 2);
+
+  const tOf    = r => r.year + (r.month - 1) / 12 + (r.day - 0.5) / 365.25;
+  const tFirst = tOf(rows[0]);
+  const tLast  = tOf(rows[rows.length - 1]);
+  const span   = tLast - tFirst || 1;
+  const xOf    = r => padL + ((tOf(r) - tFirst) / span) * chartW;
+  const yOf    = v => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
+  const meanY  = yOf(mean);
+
+  // Y ticks
+  const vRange   = vMax - vMin;
+  const rawStep  = vRange / 5;
+  const mag      = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const niceStep = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => vRange / s <= 8) || mag * 10;
+  const yTicks   = [];
+  for (let v = Math.ceil(vMin / niceStep) * niceStep; v <= vMax + niceStep * 0.01; v = Math.round((v + niceStep) * 1e6) / 1e6)
+    yTicks.push(v);
+
+  // X ticks
+  const spanYears  = tLast - tFirst;
+  const stepMons   = spanYears <= 3.5 ? 6 : spanYears <= 6 ? 12 : 24;
+  const firstOrd   = rows[0].year * 12 + rows[0].month - 1;
+  const lastOrd    = rows[rows.length - 1].year * 12 + rows[rows.length - 1].month - 1;
+  const tickStart  = Math.ceil(firstOrd / stepMons) * stepMons;
+  const xTicks     = [];
+  for (let ord = tickStart; ord <= lastOrd; ord += stepMons) {
+    const yr    = Math.floor(ord / 12);
+    const mo    = (ord % 12) + 1;
+    const t     = yr + (mo - 1) / 12;
+    const xx    = padL + ((t - tFirst) / span) * chartW;
+    const label = stepMons === 6
+      ? `${window.MONTHS_PT[mo - 1]}/${String(yr).slice(-2)}`
+      : String(yr);
+    xTicks.push({ x: xx, label });
+  }
+
+  const linePath = rows.map((r, i) =>
+    `${i === 0 ? 'M' : 'L'}${xOf(r).toFixed(1)},${yOf(r.poultry_beef_ratio).toFixed(1)}`
+  ).join(' ');
+
+  // Area closes at the mean line
+  const areaPath = linePath
+    + ` L${xOf(rows[rows.length - 1]).toFixed(1)},${meanY.toFixed(1)}`
+    + ` L${xOf(rows[0]).toFixed(1)},${meanY.toFixed(1)} Z`;
+
+  // Gradient: opaque at extreme (furthest from mean), transparent at mean
+  const extremeY = vals.reduce((best, v) => {
+    const py = yOf(v);
+    return Math.abs(py - meanY) > Math.abs(best - meanY) ? py : best;
+  }, yOf(vals[0]));
+
+  const gradId = 'pbr-grad';
+  const clipId = 'pbr-clip';
+
+  const onMove = e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px   = (e.clientX - rect.left) * (W / rect.width);
+    const py   = (e.clientY - rect.top)  * (H / rect.height);
+    const t    = tFirst + ((px - padL) / chartW) * span;
+    let best = null, bestD = Infinity;
+    for (const r of rows) { const d = Math.abs(tOf(r) - t); if (d < bestD) { bestD = d; best = r; } }
+    setHover(best || null);
+    setMouseY(py);
+  };
+
+  return (
+    <div className="chart-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
+        onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        <defs>
+          <linearGradient id={gradId} x1="0" x2="0"
+            y1={extremeY.toFixed(1)} y2={meanY.toFixed(1)} gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor={RATIO_ACCENT} stopOpacity="0.28"/>
+            <stop offset="100%" stopColor={RATIO_ACCENT} stopOpacity="0"/>
+          </linearGradient>
+          <clipPath id={clipId}>
+            <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
+          </clipPath>
+        </defs>
+
+        {yTicks.map(v => (
+          <g key={v}>
+            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} className="grid-line"/>
+            <text x={padL - 6} y={yOf(v)} className="tick-label" textAnchor="end" dominantBaseline="middle">
+              {window.fmt(v, {decimals: 2})}
+            </text>
+          </g>
+        ))}
+        {xTicks.map((t, i) => (
+          <g key={i}>
+            <line x1={t.x} x2={t.x} y1={padT} y2={H - padB} className="grid-line" opacity="0.3"/>
+            <text x={t.x} y={H - padB + 16} className="tick-label" textAnchor="middle">{t.label}</text>
+          </g>
+        ))}
+
+        {showAreaRender && (
+          <path d={areaPath} fill={`url(#${gradId})`} clipPath={`url(#${clipId})`}
+            style={{'--rx-area-op': 1}}
+            className={`rx-area${areaLeaving ? ' rx-area-leaving' : ''}`}/>
+        )}
+
+        <path d={linePath} fill="none" stroke={RATIO_ACCENT} strokeWidth={1.5}
+          strokeLinejoin="round" strokeLinecap="round" clipPath={`url(#${clipId})`}/>
+
+        {/* Média histórica — linha pontilhada */}
+        <line x1={padL} x2={W - padR} y1={meanY} y2={meanY}
+          stroke={RATIO_ACCENT} strokeOpacity="0.55" strokeWidth={1} strokeDasharray="4 3"/>
+
+        {hover && (
+          <g>
+            <line x1={xOf(hover)} x2={xOf(hover)} y1={padT} y2={H - padB}
+              stroke="var(--fg)" strokeOpacity="0.2" strokeWidth="1"/>
+            <circle cx={xOf(hover)} cy={yOf(hover.poultry_beef_ratio)} r={4}
+              fill="var(--bg)" stroke={RATIO_ACCENT} strokeWidth={2}/>
+          </g>
+        )}
+
+        <line x1={padL} x2={W - padR} y1={H - padB} y2={H - padB} className="axis-line"/>
+        <line x1={padL} x2={padL}     y1={padT}     y2={H - padB} className="axis-line"/>
+      </svg>
+
+      {hover && (() => {
+        const xPos    = xOf(hover);
+        const isRight = xPos > W * 0.75;
+        return (
+          <div className="hover-card" style={{
+            left: `${(xPos / W * 100).toFixed(1)}%`,
+            top: Math.max(10, Math.min(H - 100, mouseY - 40)),
+            transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+          }}>
+            <div className="hover-month">{window.MONTHS_PT[hover.month - 1]}/{hover.year}</div>
+            <div className="hover-rows">
+              <div className="hover-row">
+                <span className="hover-year" style={{color: RATIO_ACCENT}}>Ratio</span>
+                <span className="hover-val">{window.fmt(hover.poultry_beef_ratio, {decimals: 3})}</span>
+              </div>
+              <div className="hover-row hover-stat">
+                <span className="hover-year">Média hist.</span>
+                <span className="hover-val">{window.fmt(mean, {decimals: 3})}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <div className="ciclo-legend">
+        <span className="legend-year" style={{userSelect: 'none', padding: '2px 6px'}}>
+          <span className="legend-line" style={{background: RATIO_ACCENT}}/>
+          Poultry / Beef
+        </span>
+        <span className="legend-year" style={{opacity: 0.6, userSelect: 'none', padding: '2px 6px'}}>
+          <span style={{display:'inline-block',width:16,height:2,borderTop:`2px dashed ${RATIO_ACCENT}`,opacity:0.5,verticalAlign:'middle',marginRight:2}}/>
+          Média histórica
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const PoultryBeefCard = ({ data }) => {
+  const allRows = React.useMemo(
+    () => (data.frango_us_daily || []).filter(r => r.poultry_beef_ratio != null),
+    [data]
+  );
+  const [range, setRange]           = React.useState('5');
+  const [chartStyle, setChartStyle] = React.useState('line');
+
+  const mean = React.useMemo(() => {
+    if (!allRows.length) return 0;
+    return allRows.reduce((s, r) => s + r.poultry_beef_ratio, 0) / allRows.length;
+  }, [allRows]);
+
+  const rangeNum     = range === 'all' ? 'all' : parseInt(range);
+  const filteredRows = React.useMemo(() => filterRatioByRange(allRows, rangeNum), [allRows, rangeNum]);
+
+  if (!allRows.length) return null;
+
+  const last   = allRows[allRows.length - 1];
+  const yoyRow = [...allRows].reverse().find(r => r.year === last.year - 1 && r.month === last.month);
+  const yoy    = yoyRow
+    ? (last.poultry_beef_ratio - yoyRow.poultry_beef_ratio) / Math.abs(yoyRow.poultry_beef_ratio)
+    : null;
+  const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+
+  return (
+    <section className="card card-full" data-card-id="us-poultry-beef">
+      <div className="card-head">
+        <div>
+          <div className="card-eyebrow">Bloomberg · Relação de Preços Diária</div>
+          <h3 className="card-title">Poultry / Beef Ratio</h3>
+          <div className="card-price">
+            <span className="card-value">{window.fmt(last.poultry_beef_ratio, {decimals: 3})}</span>
+            <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
+              {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
+            </span>
+            <span className="card-date">
+              {window.MONTHS_PT[last.month - 1]}/{String(last.year).slice(-2)}
+            </span>
+          </div>
+        </div>
+        <div className="card-controls">
+          <div className="card-ctrl-row">
+            <div className="year-seg">
+              {[['3a','3'],['5a','5'],['10a','10'],['Todos','all']].map(([label, val]) => (
+                <button key={label}
+                  className={`year-seg-btn ${range === val ? 'is-on' : ''}`}
+                  onClick={() => setRange(val)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card-ctrl-row">
+            <div className="seg">
+              <button className={`seg-btn ${chartStyle === 'line' ? 'is-on' : ''}`} onClick={() => setChartStyle('line')}>Linha</button>
+              <button className={`seg-btn ${chartStyle === 'area' ? 'is-on' : ''}`} onClick={() => setChartStyle('area')}>Área</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <PoultryBeefChart
+        allRows={allRows}
+        filteredRows={filteredRows}
+        mean={mean}
+        chartStyle={chartStyle}
+      />
+    </section>
+  );
+};
+
 // ── Tab principal ─────────────────────────────────────────────────────────────
 const PoultryUSTab = ({ data, accent, tab }) => {
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
@@ -790,6 +1050,7 @@ const PoultryUSTab = ({ data, accent, tab }) => {
           accent={accent}
           defaultYears={5}
         />
+        <PoultryBeefCard data={data}/>
         {hasUsda && <>
           <window.PriceCard
             cardId="us-usda-price"
