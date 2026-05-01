@@ -121,7 +121,7 @@ const FrangoUSChart = ({
   const buildArea = pts => {
     if (!pts.length) return '';
     const top = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${xFn(p.doy).toFixed(1)},${yFn(p.value).toFixed(1)}`).join(' ');
-    return top + ` L${xFn(pts[pts.length-1].doy).toFixed(1)},${yFn(vMin).toFixed(1)} L${xFn(pts[0].doy).toFixed(1)},${yFn(vMin).toFixed(1)} Z`;
+    return top + ` L${xFn(pts[pts.length-1].doy).toFixed(1)},${yFn(0).toFixed(1)} L${xFn(pts[0].doy).toFixed(1)},${yFn(0).toFixed(1)} Z`;
   };
 
   const yTicks = [];
@@ -170,12 +170,21 @@ const FrangoUSChart = ({
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
         <defs>
-          {sortedAsc.map(yr => (
-            <linearGradient key={yr} id={`${gradId}-${yr}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={yearColor(yr)} stopOpacity="0.28"/>
-              <stop offset="100%" stopColor={yearColor(yr)} stopOpacity="0"/>
-            </linearGradient>
-          ))}
+          {sortedAsc.map(yr => {
+            const pts = byYear[yr] || [];
+            const zeroY = yFn(0);
+            const extremeY = pts.length ? pts.reduce((best, p) => {
+              const py = yFn(p.value);
+              return Math.abs(py - zeroY) > Math.abs(best - zeroY) ? py : best;
+            }, yFn(pts[0].value)) : zeroY - 50;
+            return (
+              <linearGradient key={yr} id={`${gradId}-${yr}`} x1="0" x2="0"
+                y1={extremeY.toFixed(1)} y2={zeroY.toFixed(1)} gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={yearColor(yr)} stopOpacity="0.28"/>
+                <stop offset="100%" stopColor={yearColor(yr)} stopOpacity="0"/>
+              </linearGradient>
+            );
+          })}
           <clipPath id={`clip-${gradId}`}>
             <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
           </clipPath>

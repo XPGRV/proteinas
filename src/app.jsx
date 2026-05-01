@@ -686,8 +686,9 @@ function TickerBar({ data, activeDataset }) {
   const requestRef = useRef();
 
   const items = useMemo(() => {
-    const ds = activeDataset === 'beef_us' ? 'beef_us'
-             : activeDataset === 'poultry_br' ? 'frango'
+    const ds = activeDataset === 'beef_us'    ? 'beef_us'
+             : activeDataset === 'poultry_br'  ? 'frango'
+             : activeDataset === 'poultry_us'  ? 'frango_us_daily'
              : 'beef';
     if (!data[ds] || !data[ds].length) return [];
     // [sym, field, unit, cardTarget, dsOverride?]
@@ -699,6 +700,16 @@ function TickerBar({ data, activeDataset }) {
           ['ABATES',      'abates_total',         'cab',     'us-production'],
           ['BOI',         'preco_boi',            '¢/lb',    'us-ciclo'],
           ['BEZERRO',     'preco_bezerro',        '¢/lb',    'us-ciclo'],
+        ]
+      : activeDataset === 'poultry_us'
+      ? [
+          ['PROXY·XPG',   'proxy',                'USD/kg',  'us-frango-price'],
+          ['BB·BREAST',   'chic_bb',              'USD/kg',  'us-frango-price'],
+          ['TENDER',      'chic_tn',              'USD/kg',  'us-frango-price'],
+          ['LEGS',        'chic_lq',              'USD/kg',  'us-frango-price'],
+          ['WINGS',       'chic_wi',              'USD/kg',  'us-frango-price'],
+          ['FEED·GRAIN',  'feed_grain',           'USD/kg',  'us-feed-grain'],
+          ['SPREAD',      'spread',               'USD/kg',  'us-spread'],
         ]
       : activeDataset === 'poultry_br'
       ? [
