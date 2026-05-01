@@ -173,14 +173,43 @@ const SIcon = {
 };
 
 function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
+  const [openGroup, setOpenGroup] = useState(activeDataset);
+
+  useEffect(() => { setOpenGroup(activeDataset); }, [activeDataset]);
+
   const onPick = (ds, sub) => {
     setActiveDataset(ds);
     if (sub) setTab(sub);
   };
-  const isBR         = activeDataset === 'beef_br';
-  const isUS         = activeDataset === 'beef_us';
-  const isPoultry    = activeDataset === 'poultry_br';
-  const isPoultryUS  = activeDataset === 'poultry_us';
+
+  const toggleGroup = (groupId) => {
+    setOpenGroup(prev => prev === groupId ? null : groupId);
+  };
+
+  const isBR        = activeDataset === 'beef_br';
+  const isUS        = activeDataset === 'beef_us';
+  const isPoultry   = activeDataset === 'poultry_br';
+  const isPoultryUS = activeDataset === 'poultry_us';
+
+  const Chevron = ({ open }) => (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ opacity: 0.45, flexShrink: 0, transition: 'transform 0.18s ease', transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+      <path d="M4 2l4 4-4 4"/>
+    </svg>
+  );
+
+  const GroupHeader = ({ groupId, icon, label, labelStyle, isActive }) => (
+    <div className="sidebar-group-header" onClick={() => toggleGroup(groupId)}
+      style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span className="sidebar-item-icon" style={isActive ? undefined : { color: 'var(--fg-dim)', opacity: 0.6 }}>{icon}</span>
+        <span style={labelStyle}>{label}</span>
+      </div>
+      <Chevron open={openGroup === groupId}/>
+    </div>
+  );
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -198,72 +227,55 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
         <div className="sidebar-section-label">Mercados</div>
 
         <div className="sidebar-group">
-          <div className="sidebar-group-header">
-            <span className="sidebar-item-icon" style={isBR ? undefined : {color:'var(--fg-dim)', opacity:0.6}}>{SIcon.cow}</span>
-            <span>Beef BR</span>
-          </div>
-          <button
-            className={`sidebar-item ${isBR && tab==='precos' ? 'is-on' : ''}`}
-            onClick={() => onPick('beef_br', 'precos')}>
-            <span className="sidebar-item-icon">{SIcon.bar}</span>
-            <span className="sidebar-item-label">Preços & Spreads</span>
-          </button>
-          <button
-            className={`sidebar-item ${isBR && tab==='abates' ? 'is-on' : ''}`}
-            onClick={() => onPick('beef_br', 'abates')}>
-            <span className="sidebar-item-icon">{SIcon.abates}</span>
-            <span className="sidebar-item-label">Produção</span>
-          </button>
+          <GroupHeader groupId="beef_br" icon={SIcon.cow} label="Beef BR" isActive={isBR}/>
+          {openGroup === 'beef_br' && (<>
+            <button className={`sidebar-item ${isBR && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('beef_br', 'precos')}>
+              <span className="sidebar-item-icon">{SIcon.bar}</span>
+              <span className="sidebar-item-label">Preços & Spreads</span>
+            </button>
+            <button className={`sidebar-item ${isBR && tab==='abates' ? 'is-on' : ''}`} onClick={() => onPick('beef_br', 'abates')}>
+              <span className="sidebar-item-icon">{SIcon.abates}</span>
+              <span className="sidebar-item-label">Produção</span>
+            </button>
+          </>)}
         </div>
 
-        <button
-          className={`sidebar-item ${isUS ? 'is-on' : ''}`}
-          onClick={() => onPick('beef_us')}
-          style={{marginTop:6}}>
+        <button className={`sidebar-item ${isUS ? 'is-on' : ''}`} onClick={() => onPick('beef_us')} style={{marginTop:6}}>
           <span className="sidebar-item-icon">{SIcon.cow}</span>
           <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>Beef US</span>
         </button>
 
         <div className="sidebar-group" style={{marginTop:6}}>
-          <div className="sidebar-group-header">
-            <span className="sidebar-item-icon" style={isPoultry ? undefined : {color:'var(--fg-dim)', opacity:0.6}}>{SIcon.chicken}</span>
-            <span>Poultry BR</span>
-          </div>
-          <button
-            className={`sidebar-item ${isPoultry && tab==='precos' ? 'is-on' : ''}`}
-            onClick={() => onPick('poultry_br', 'precos')}>
-            <span className="sidebar-item-icon">{SIcon.bar}</span>
-            <span className="sidebar-item-label">Preços & Spreads</span>
-          </button>
-          <button
-            className={`sidebar-item ${isPoultry && tab==='abates' ? 'is-on' : ''}`}
-            onClick={() => onPick('poultry_br', 'abates')}>
-            <span className="sidebar-item-icon">{SIcon.abates}</span>
-            <span className="sidebar-item-label">Produção</span>
-          </button>
-          <button
-            className={`sidebar-item ${isPoultry && tab==='ipca' ? 'is-on' : ''}`}
-            onClick={() => onPick('poultry_br', 'ipca')}>
-            <span className="sidebar-item-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-              </svg>
-            </span>
-            <span className="sidebar-item-label">Processados</span>
-          </button>
+          <GroupHeader groupId="poultry_br" icon={SIcon.chicken} label="Poultry BR" isActive={isPoultry}/>
+          {openGroup === 'poultry_br' && (<>
+            <button className={`sidebar-item ${isPoultry && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('poultry_br', 'precos')}>
+              <span className="sidebar-item-icon">{SIcon.bar}</span>
+              <span className="sidebar-item-label">Preços & Spreads</span>
+            </button>
+            <button className={`sidebar-item ${isPoultry && tab==='abates' ? 'is-on' : ''}`} onClick={() => onPick('poultry_br', 'abates')}>
+              <span className="sidebar-item-icon">{SIcon.abates}</span>
+              <span className="sidebar-item-label">Produção</span>
+            </button>
+            <button className={`sidebar-item ${isPoultry && tab==='ipca' ? 'is-on' : ''}`} onClick={() => onPick('poultry_br', 'ipca')}>
+              <span className="sidebar-item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+              </span>
+              <span className="sidebar-item-label">Processados</span>
+            </button>
+          </>)}
         </div>
 
         <div className="sidebar-group" style={{marginTop:6}}>
-          <div className="sidebar-group-header">
-            <span className="sidebar-item-icon" style={isPoultryUS ? undefined : {color:'var(--fg-dim)', opacity:0.6}}>{SIcon.chicken}</span>
-            <span style={{textTransform:'uppercase', letterSpacing:'0.08em', fontSize:11}}>Poultry US</span>
-          </div>
-          <button
-            className={`sidebar-item ${isPoultryUS && tab==='precos' ? 'is-on' : ''}`}
-            onClick={() => onPick('poultry_us', 'precos')}>
-            <span className="sidebar-item-icon">{SIcon.bar}</span>
-            <span className="sidebar-item-label">Preços & Spreads</span>
-          </button>
+          <GroupHeader groupId="poultry_us" icon={SIcon.chicken} isActive={isPoultryUS}
+            label="Poultry US" labelStyle={{textTransform:'uppercase', letterSpacing:'0.08em', fontSize:11}}/>
+          {openGroup === 'poultry_us' && (
+            <button className={`sidebar-item ${isPoultryUS && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('poultry_us', 'precos')}>
+              <span className="sidebar-item-icon">{SIcon.bar}</span>
+              <span className="sidebar-item-label">Preços & Spreads</span>
+            </button>
+          )}
         </div>
       </div>
 
