@@ -715,6 +715,7 @@ function TickerBar({ data, activeDataset }) {
           ['BBG·PROXY',    'proxy',                 'USD/kg',  'us-frango-price'],
           ['BBG·FEED',     'feed_grain',            'USD/kg',  'us-feed-grain'],
           ['BBG·SPREAD',   'spread',                'USD/kg',  'us-spread'],
+          ['BBG·PTY/BEEF', 'poultry_beef_ratio',    'x',       'us-poultry-beef'],
           ['USDA·PRICE',   'usda_wholesale_price',  'USD/lb',  'us-usda-price',  'frango_us_monthly'],
           ['USDA·FEED',    'usda_feed_cost',        'USD/lb',  'us-usda-feed',   'frango_us_monthly'],
           ['USDA·SPREAD',  'usda_spread',           'USD/lb',  'us-usda-spread', 'frango_us_monthly'],
