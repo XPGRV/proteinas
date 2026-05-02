@@ -11,22 +11,34 @@ const FRANGO_US_SERIES = [
 ];
 
 const EVENTS_FRANGO_US = [
-  { year: 2015, month: 3,  label: 'HPAI H5N2 — maior surto da história dos EUA (~50M aves)' },
-  { year: 2020, month: 4,  label: 'COVID-19 — fechamento de plantas, choques de oferta' },
-  { year: 2022, month: 2,  label: 'HPAI H5N1 reemergência — surto em aves comerciais EUA' },
-  { year: 2024, month: 3,  label: 'HPAI confirmada em bovinos de leite (spillover)' },
+  { year: 2003, month: 12, label: 'BSE nos EUA — demanda migra para frango como substituto de bovina' },
+  { year: 2008, month: 7,  label: 'Crise financeira global — maior queda no consumo de carnes desde 1982' },
+  { year: 2014, month: 8,  label: 'Embargo russo — EUA perde ~$153M em exportações de frango' },
+  { year: 2015, month: 3,  label: 'HPAI H5N2 — ~50M aves; 17 países fecham mercado; -$869M em exportações' },
+  { year: 2018, month: 7,  label: 'Guerra comercial EUA-China — tarifas retaliatórias de 15%+ sobre frango' },
+  { year: 2019, month: 6,  label: 'Gripe suína africana (ASF) na China — rebanho suíno -40%; demanda global de proteínas sobe' },
+  { year: 2020, month: 4,  label: 'COVID-19 — fechamento de plantas processadoras; -15% capacidade de abate' },
+  { year: 2022, month: 2,  label: 'HPAI H5N1 reemergência — 168M aves afetadas; maior surto histórico' },
+  { year: 2023, month: 8,  label: 'Tyson fecha 4 plantas de frango nos EUA — 3.000+ demissões' },
+  { year: 2024, month: 3,  label: 'HPAI confirmada em bovinos leiteiros (spillover para mamíferos)' },
 ];
 
 const EVENTS_FEED_GRAIN = [
-  { year: 2012, month: 7,  label: 'Seca severa EUA — alta histórica de grãos' },
+  { year: 2005, month: 8,  label: 'RFS (Renewable Fuel Standard) — mandato federal de etanol pressiona demanda estrutural de milho' },
+  { year: 2007, month: 12, label: 'Expansão do RFS — obrigação de etanol dobra; milho +30% estrutural' },
+  { year: 2008, month: 6,  label: 'Crise alimentar global — milho a $7,50/bu (+119% a/a); custo de ração dobra' },
+  { year: 2012, month: 7,  label: 'Seca severa EUA — 78% da safra de milho afetada; alta histórica de grãos' },
   { year: 2020, month: 4,  label: 'COVID-19 — disrupção de cadeias de suprimento' },
-  { year: 2022, month: 2,  label: 'Invasão Russa — choque de commodities agrícolas' },
+  { year: 2022, month: 2,  label: 'Invasão da Ucrânia — choque em commodities agrícolas; milho e soja disparam' },
 ];
 
 const EVENTS_SPREAD = [
-  { year: 2015, month: 3,  label: 'HPAI H5N2 — redução de oferta, spread em alta' },
-  { year: 2020, month: 4,  label: 'COVID-19 — fechamento de plantas processadoras' },
-  { year: 2022, month: 2,  label: 'HPAI H5N1 + guerra na Ucrânia — duplo choque' },
+  { year: 2008, month: 6,  label: 'Crise alimentar — custo de ração dobra + recessão; spread espremido ao mínimo' },
+  { year: 2015, month: 3,  label: 'HPAI H5N2 — redução de oferta eleva preços; spread em alta' },
+  { year: 2019, month: 6,  label: 'ASF na China — preços de frango EUA sobem; grãos em baixa; spread favorável' },
+  { year: 2020, month: 4,  label: 'COVID-19 — fechamento de plantas comprime spread' },
+  { year: 2022, month: 2,  label: 'HPAI H5N1 + guerra na Ucrânia — duplo choque de oferta e custo' },
+  { year: 2024, month: 12, label: 'Pico HPAI invernal — 41M aves em 2 meses; ovos +60% a/a' },
 ];
 
 // ── Daily stats (igual ao beef-us-tab) ───────────────────────────────────────
