@@ -1126,6 +1126,19 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             fullWidth
             events={EVENTS_SPREAD}
           />
+          <window.PriceCard
+            cardId="us-national-composite"
+            title="National Composite"
+            sub="USDA · National Composite Price"
+            accent="oklch(0.82 0.18 155)"
+            data={data}
+            dataset="frango_us_monthly"
+            field="national_composite"
+            unit="USD/lb"
+            decimals={2}
+            fullWidth
+            events={EVENTS_FRANGO_US}
+          />
         </>}
       </main>
     );
