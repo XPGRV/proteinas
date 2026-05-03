@@ -179,11 +179,11 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
       {/* Tooltip — mesmo estilo do SeasonalChart */}
       {hovered && (() => {
         const r = hovered.row;
-        const isRight = hovered.x > svgW * 0.75;
+        const TW = 170;
+        const rawLeft = hovered.x > svgW * 0.65 ? hovered.x - TW - 16 : hovered.x + 16;
         const style = {
-          left: `${(hovered.x / svgW * 100).toFixed(1)}%`,
+          left: Math.max(4, Math.min(svgW - TW - 4, rawLeft)),
           top: Math.max(10, Math.min(H - 80, hovered.mouseY - 40)),
-          transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
         };
         return (
           <div className="hover-card" style={style}>
@@ -501,12 +501,12 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
 
       {hovered && (() => {
         const r = hovered.row;
-        const isRight = hovered.x > svgW * 0.75;
+        const TW = 200;
+        const rawLeft = hovered.x > svgW * 0.65 ? hovered.x - TW - 16 : hovered.x + 16;
         return (
           <div className="hover-card" style={{
-            left: `${(hovered.x / svgW * 100).toFixed(1)}%`,
+            left: Math.max(4, Math.min(svgW - TW - 4, rawLeft)),
             top: Math.max(10, Math.min(H - 110, hovered.mouseY - 40)),
-            transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
             <div className="hover-month">{MONTHS_PT_ABR[r.month - 1]}/{r.year}</div>
             <div className="hover-rows">
