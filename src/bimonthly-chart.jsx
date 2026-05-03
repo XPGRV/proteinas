@@ -427,7 +427,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
   const [pinnedCompany, setPinnedCompany] = React.useState(null);
 
   const { shouldRender: showAreaRender,  isLeaving: areaLeaving   } = window.useFadeOut(chartStyle === 'area', 450);
-  const { shouldRender: showLabels,      isLeaving: labelsLeaving  } = window.useFadeOut(!!pinnedCompany, 300);
+  const { shouldRender: showLabels,      isLeaving: labelsLeaving  } = window.useFadeOut(!!pinnedCompany, 150);
   const lastPinnedRef = React.useRef(pinnedCompany);
   if (pinnedCompany) lastPinnedRef.current = pinnedCompany;
 
@@ -640,7 +640,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 
         {/* Data labels for pinned company — todos os pontos com espaçamento mínimo */}
         {showLabels && (
-          <g style={{animation: labelsLeaving ? 'rx-fade-in 0.25s ease-out reverse forwards' : 'rx-fade-in 0.3s ease-out'}}>
+          <g style={{animation: labelsLeaving ? 'rx-fade-in 0.15s ease-out reverse forwards' : 'rx-fade-in 0.15s ease-out'}}>
             {(() => {
               const f = fields.find(ff => ff.key === lastPinnedRef.current);
               const MIN_GAP = 30; // px mínimo entre labels para não sobrepor
