@@ -117,11 +117,10 @@ const FrangoUSChart = ({
   const xFn = doy => padL + ((doy - 1) / 364) * chartW;
   const yFn = v   => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
 
-  const LATEST_COLOR = 'oklch(0.82 0.18 155)'; // verde fixo, igual aos demais gráficos
   const yearColor = yr => {
     const palette = ['oklch(0.75 0.15 200)','oklch(0.68 0.16 255)','oklch(0.74 0.15 310)','oklch(0.78 0.17 35)','oklch(0.80 0.15 60)','oklch(0.72 0.16 0)','oklch(0.76 0.13 170)'];
     const age = latestYear - yr;
-    if (age === 0) return LATEST_COLOR;
+    if (age === 0) return accent;
     return age - 1 < palette.length ? palette[age - 1] : 'oklch(0.48 0.01 260)';
   };
   const seriesOpacity = yr => (!pinnedYear ? (yr === latestYear ? 1 : 0.7) : (yr === pinnedYear ? 1 : 0.1));
@@ -241,7 +240,9 @@ const FrangoUSChart = ({
             const leaving = isLeaving(yr);
             return (
               <g key={yr}>
-                <path d={buildPath(pts)} fill="none" stroke={yearColor(yr)}
+                <path
+                  ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
+                  d={buildPath(pts)} fill="none" stroke={yearColor(yr)}
                   strokeWidth={seriesWidth(yr)} strokeLinejoin="round" strokeLinecap="round"
                   opacity={seriesOpacity(yr)}
                   className={leaving ? 'rx-leaving' : ''}/>

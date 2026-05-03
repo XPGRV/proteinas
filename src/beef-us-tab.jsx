@@ -689,15 +689,19 @@ const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
         ))}
 
         {/* %Fêmeas — fino, muted (igual rawPath do CicloDoBoi) */}
-        <path d={femPath} fill="none" stroke={rawColor} strokeWidth="1" strokeOpacity="0.5" strokeLinejoin="round"/>
+        <path
+          ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
+          d={femPath} fill="none" stroke={rawColor} strokeWidth="1" strokeOpacity="0.5" strokeLinejoin="round"/>
         {/* Boi/Bezerro MM12M — grosso, accent (igual mmPath do CicloDoBoi) */}
-        <path d={boiPath} fill="none" stroke={accent} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
+        <path
+          ref={el => { if (el) { try { el.style.setProperty('--len', el.getTotalLength()); } catch(_){} } }}
+          d={boiPath} fill="none" stroke={accent} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
 
         {hover && (
           <g>
             <line x1={xs(hover.t)} x2={xs(hover.t)} y1={padT} y2={H-padB} stroke="var(--fg)" strokeOpacity="0.15" strokeWidth="1"/>
-            <circle cx={xs(hover.t)} cy={ysLeft(hover.v)} r={4} fill="var(--bg)" stroke={rawColor} strokeWidth="1.5"/>
-            {hoverBoi && <circle cx={xs(hoverBoi.t)} cy={ysRight(hoverBoi.v)} r={4} fill="var(--bg)" stroke={accent} strokeWidth="2"/>}
+            <circle cx={xs(hover.t)} cy={ysLeft(hover.v)} r={4} fill="var(--bg)" stroke={rawColor} strokeWidth="1.5" className="rx-no-anim"/>
+            {hoverBoi && <circle cx={xs(hoverBoi.t)} cy={ysRight(hoverBoi.v)} r={4} fill="var(--bg)" stroke={accent} strokeWidth="2" className="rx-no-anim"/>}
           </g>
         )}
 

@@ -115,6 +115,9 @@ const SeasonalChart = ({
   const [hover, setHover] = React.useState(null);
   const [pinnedYear, setPinnedYear] = React.useState(null);
   const [dotHoverYear, setDotHoverYear] = React.useState(null);
+  const { shouldRender: showLabels, isLeaving: labelsLeaving } = window.useFadeOut(!!pinnedYear, 150);
+  const lastPinnedRef = React.useRef(pinnedYear);
+  if (pinnedYear) lastPinnedRef.current = pinnedYear;
 
   React.useEffect(() => { setPinnedYear(null); }, [selectedYears]);
 
@@ -358,13 +361,18 @@ const SeasonalChart = ({
         })}
 
         {/* Data labels for pinned year */}
-        {pinnedYear && seasonal[pinnedYear] && seasonal[pinnedYear].map((v, mi) => {
+        {showLabels && (() => {
+          const yr = lastPinnedRef.current;
+          if (!yr || !seasonal[yr]) return null;
+          return (
+            <g style={{animation: labelsLeaving ? 'rx-fade-in 0.15s ease-out reverse forwards' : 'rx-fade-in 0.15s ease-out'}}>
+            {seasonal[yr].map((v, mi) => {
           if (v == null) return null;
           const label = window.fmtCompact(v, fmtOpts);
-          const color = yearColor(pinnedYear);
+          const color = yearColor(yr);
 
           if (chartStyle === 'bars') {
-            const pinnedIdx = sortedAsc.indexOf(pinnedYear);
+            const pinnedIdx = sortedAsc.indexOf(yr);
             const bx = xBar(mi) - (selectedYears.length * barW) / 2 + pinnedIdx * barW + (barW - 1) / 2;
             const by = y(v);
             const nearRight = bx > W - padR - 36;
@@ -396,6 +404,9 @@ const SeasonalChart = ({
             </g>
           );
         })}
+            </g>
+          );
+        })()}
 
         {/* Hover crosshair */}
         {hover != null && (

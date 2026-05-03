@@ -27,8 +27,10 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
     return () => obs.disconnect();
   }, []);
 
+  const { shouldRender: showAreaRender, isLeaving: areaLeaving } = window.useFadeOut(chartStyle === 'area', 450);
+
   const W = svgW, H = height;
-  const padL = 58, padR = 20, padT = 14, padB = 32;
+  const padL = 58, padR = 48, padT = 14, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -121,7 +123,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
               className="grid-line" style={{opacity: i === 0 ? 0 : 0.6}}
             />
-            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">
+            <text x={W - padR + 8} y={yOf(v)} textAnchor="start" fontSize={10} fill="var(--fg-dim)">
               {fmt(v)}
             </text>
           </g>
@@ -149,8 +151,9 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
         })}
 
         {/* Area */}
-        {chartStyle === 'area' && (
-          <path d={areaPath} fill={`url(#${gradId})`} clipPath={`url(#${clipId})`}/>
+        {showAreaRender && (
+          <path d={areaPath} fill={`url(#${gradId})`} clipPath={`url(#${clipId})`}
+            className={`rx-area${areaLeaving ? ' rx-area-leaving' : ''}`}/>
         )}
 
         {/* Line */}
@@ -174,7 +177,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
         {hovered && (
           <g>
             <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
-              stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
+              stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
             <circle cx={hovered.x} cy={hovered.y} r={4} fill="var(--bg-panel)"
               stroke={accent} strokeWidth={2} className="rx-no-anim"/>
           </g>
@@ -310,7 +313,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
   }, []);
 
   const W = svgW, H = height;
-  const padL = 58, padR = 20, padT = 14, padB = 32;
+  const padL = 58, padR = 48, padT = 14, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -423,7 +426,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
               className="grid-line" style={{opacity: i === 0 ? 0 : 0.6}}/>
-            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">
+            <text x={W - padR + 8} y={yOf(v)} textAnchor="start" fontSize={10} fill="var(--fg-dim)">
               {fmt(v)}
             </text>
           </g>
@@ -500,7 +503,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
         {hovered && (
           <g>
             <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
-              stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
+              stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
             {fields.map(f => {
               const v = hovered.row[f.key];
               if (v == null) return null;
