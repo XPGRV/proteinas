@@ -288,6 +288,9 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
   const svgRef = React.useRef(null);
   const [hovered, setHovered] = React.useState(null);
   const [svgW, setSvgW] = React.useState(760);
+  const { shouldRender: showLabels, isLeaving: labelsLeaving } = window.useFadeOut(!!pinnedSeries, 300);
+  const lastPinnedRef = React.useRef(pinnedSeries);
+  if (pinnedSeries) lastPinnedRef.current = pinnedSeries;
 
   React.useEffect(() => {
     if (!svgRef.current) return;
@@ -451,13 +454,13 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
         })}
 
         {/* Data labels for pinned series */}
-        {pinnedSeries && (() => {
-          const f = fields.find(ff => ff.key === pinnedSeries);
+        {showLabels && (() => {
+          const f = fields.find(ff => ff.key === lastPinnedRef.current);
           if (!f) return null;
           const MIN_GAP = 32;
           let lastLabelX = -Infinity;
           return (
-            <g>
+            <g style={{animation: labelsLeaving ? 'rx-fade-in 0.25s ease-out reverse forwards' : 'rx-fade-in 0.3s ease-out'}}>
               {valid.map((r, i) => {
                 const v = r[f.key];
                 if (v == null) return null;
