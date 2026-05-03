@@ -284,7 +284,7 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
 window.ContinuousCard = ContinuousCard;
 
 // ── MultiContinuousChart ──────────────────────────────────────────────────────
-function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 360, chartId = 'mc' }) {
+function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 360, chartId = 'mc', chartStyle = 'line' }) {
   const svgRef = React.useRef(null);
   const [hovered, setHovered] = React.useState(null);
   const [svgW, setSvgW] = React.useState(760);
@@ -358,6 +358,15 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
     return path;
   };
 
+  const buildAreaPath = key => {
+    const pts = valid.filter(r => r[key] != null);
+    if (!pts.length) return '';
+    const line = pts.map(r => `${xOf(r).toFixed(1)},${yOf(r[key]).toFixed(1)}`).join('L');
+    const x0 = xOf(pts[0]).toFixed(1), x1 = xOf(pts[pts.length - 1]).toFixed(1);
+    const base = (padT + chartH).toFixed(1);
+    return `M${line}L${x1},${base}L${x0},${base}Z`;
+  };
+
   const onMouseMove = e => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
@@ -402,6 +411,14 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
             <text x={t.x} y={padT + chartH + 14} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{t.label}</text>
           </g>
         ))}
+
+        {chartStyle === 'area' && fields.map(f => {
+          const d = buildAreaPath(f.key);
+          return d ? (
+            <path key={`area-${f.key}`} d={d} fill={f.color} opacity={0.10}
+              clipPath={`url(#${clipId})`}/>
+          ) : null;
+        })}
 
         {fields.map(f => {
           const d = buildPath(f.key);
@@ -453,7 +470,8 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
 
 // ── MultiContinuousCard ───────────────────────────────────────────────────────
 function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', decimals = 2, height = 360 }) {
-  const [range, setRange] = React.useState('5');
+  const [range, setRange]           = React.useState('5');
+  const [chartStyle, setChartStyle] = React.useState('area');
   const rangeNum = range === 'all' ? 'all' : parseInt(range);
 
   const filteredRows = React.useMemo(() => {
@@ -497,6 +515,14 @@ function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', deci
               ))}
             </div>
           </div>
+          <div className="card-ctrl-row">
+            <div className="seg">
+              {[['line','Linha'],['area','Área']].map(([v, l]) => (
+                <button key={v} className={`seg-btn ${chartStyle === v ? 'is-on' : ''}`}
+                  onClick={() => setChartStyle(v)}>{l}</button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -507,6 +533,7 @@ function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', deci
         decimals={decimals}
         height={height}
         chartId={cardId}
+        chartStyle={chartStyle}
       />
 
       <div className="ciclo-legend" style={{marginTop: 8}}>
