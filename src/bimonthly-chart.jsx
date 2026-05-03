@@ -705,7 +705,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
         return (
           <div className="hover-card" style={{
             left:`${(hovered.x / W * 100).toFixed(1)}%`,
-            top: Math.max(10, Math.min(H - 110, hovered.mouseY - 40)),
+            top: Math.max(10, Math.min(H - 120, hovered.mouseY - 40)),
             transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
             <div className="hover-month">{BM_LABELS[r.bimonth - 1]}/{r.year}</div>

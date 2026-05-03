@@ -191,7 +191,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
         const rawLeft = hovered.x > svgW * 0.65 ? hovered.x - TW - 16 : hovered.x + 16;
         const style = {
           left: Math.max(4, Math.min(svgW - TW - 4, rawLeft)),
-          top: Math.max(10, Math.min(H - 80, hovered.mouseY - 40)),
+          top: Math.max(10, Math.min(H - 120, hovered.mouseY - 40)),
         };
         return (
           <div className="hover-card" style={style}>
@@ -530,7 +530,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
         return (
           <div className="hover-card" style={{
             left: Math.max(4, Math.min(svgW - TW - 4, rawLeft)),
-            top: Math.max(10, Math.min(H - 110, hovered.mouseY - 40)),
+            top: Math.max(10, Math.min(H - 120, hovered.mouseY - 40)),
           }}>
             <div className="hover-month">{MONTHS_PT_ABR[r.month - 1]}/{r.year}</div>
             <div className="hover-rows">
