@@ -429,11 +429,12 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
           const linePath = buildPath(f.key);
           if (!linePath) return null;
           const isPinned = pinnedSeries === f.key;
-          const areaOp   = pinnedSeries ? (isPinned ? 0.15 : 0.03) : 0.10;
           return (
             <g key={f.key}>
               {chartStyle === 'area' && (
                 <path d={buildAreaPath(f.key)} fill={`url(#mcc-grad-${chartId}-${f.key})`}
+                  opacity={pinnedSeries && !isPinned ? 0 : 1}
+                  style={{transition:'opacity 0.25s ease'}}
                   clipPath={`url(#${clipId})`}/>
               )}
               <path d={linePath} fill="none" stroke={f.color}
