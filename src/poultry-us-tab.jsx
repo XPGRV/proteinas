@@ -1042,6 +1042,8 @@ const PoultryBeefCard = ({ data }) => {
   );
 };
 
+const USDC_LB_TO_USD_KG = 0.0220462; // ÷100 (USDc→USD) × 2.20462 (lb→kg)
+
 // ── Tab principal ─────────────────────────────────────────────────────────────
 const PoultryUSTab = ({ data, accent, tab }) => {
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
@@ -1058,6 +1060,30 @@ const PoultryUSTab = ({ data, accent, tab }) => {
     );
   }
   const hasUsda = data.frango_us_monthly && data.frango_us_monthly.length > 0;
+
+  const combinedPriceRows = React.useMemo(() => {
+    if (!hasUsda) return [];
+    const daily   = data.frango_us_daily   || [];
+    const monthly = data.frango_us_monthly || [];
+    const proxyAcc = {};
+    for (const r of daily) {
+      if (r.proxy == null) continue;
+      const k = `${r.year}-${r.month}`;
+      if (!proxyAcc[k]) proxyAcc[k] = { sum: 0, n: 0 };
+      proxyAcc[k].sum += r.proxy;
+      proxyAcc[k].n++;
+    }
+    return monthly.map(r => {
+      const acc = proxyAcc[`${r.year}-${r.month}`];
+      return {
+        year:      r.year,
+        month:     r.month,
+        proxy_xpg: acc ? acc.sum / acc.n : null,
+        wholesale: r.usda_broiler_composite != null ? r.usda_broiler_composite * USDC_LB_TO_USD_KG : null,
+        national:  r.national_composite     != null ? r.national_composite     * USDC_LB_TO_USD_KG : null,
+      };
+    });
+  }, [data.frango_us_daily, data.frango_us_monthly, hasUsda]);
 
   if (tab === 'precos') {
     return (
@@ -1139,6 +1165,22 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             fullWidth
             events={EVENTS_FRANGO_US}
           />
+          {combinedPriceRows.length > 0 && (
+            <window.MultiContinuousCard
+              cardId="us-price-comparison"
+              title="Preços · Comparativo"
+              sub="Bloomberg · USDA · Proxy XPG · Wholesale · National Composite · USD/Kg"
+              rows={combinedPriceRows}
+              fields={[
+                { key: 'proxy_xpg', label: 'Proxy XPG',          color: 'oklch(0.76 0.20 45)'  },
+                { key: 'wholesale', label: 'Wholesale Composite', color: 'oklch(0.72 0.18 155)' },
+                { key: 'national',  label: 'National Composite',  color: 'oklch(0.65 0.18 280)' },
+              ]}
+              unit="USD/Kg"
+              decimals={3}
+              height={380}
+            />
+          )}
         </>}
       </main>
     );

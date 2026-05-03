@@ -428,7 +428,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
   }
 
   // ── FrangoUS mensal — dados USDA (aba FrangoUS) ──────────────────────────────
-  // col Q (16) = Feed Costs per Lb · col R (17) = Composite Wholesale Price · col S (18) = Spread
+  // col Q (16) = Feed Costs per Lb · col R (17) = Composite Wholesale Price · col S (18) = Spread · col T (19) = Broiler Composite · col U (20) = National Composite
   if (parsePoultryUS && findSheet('FrangoUS')) {
     const usdaRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('FrangoUS')], { header: 1, raw: false });
     let dataStart = 4;
@@ -443,10 +443,11 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
       if (!md) continue;
       frango_us_monthly.push({
         year: md.year, month: md.month,
-        usda_feed_cost:        parseNum(r[16]),
-        usda_wholesale_price:  parseNum(r[17]),
-        usda_spread:           parseNum(r[18]),
-        national_composite:    parseNum(r[20]),  // col U
+        usda_feed_cost:          parseNum(r[16]),
+        usda_wholesale_price:    parseNum(r[17]),
+        usda_spread:             parseNum(r[18]),
+        usda_broiler_composite:  parseNum(r[19]),  // col T
+        national_composite:      parseNum(r[20]),  // col U
       });
     }
     result.frango_us_monthly = trimEmpty(frango_us_monthly);

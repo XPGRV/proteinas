@@ -282,3 +282,243 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
 }
 
 window.ContinuousCard = ContinuousCard;
+
+// ── MultiContinuousChart ──────────────────────────────────────────────────────
+function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 360, chartId = 'mc' }) {
+  const svgRef = React.useRef(null);
+  const [hovered, setHovered] = React.useState(null);
+  const [svgW, setSvgW] = React.useState(760);
+
+  React.useEffect(() => {
+    if (!svgRef.current) return;
+    const obs = new ResizeObserver(([e]) => setSvgW(Math.floor(e.contentRect.width)));
+    obs.observe(svgRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  const W = svgW, H = height;
+  const padL = 58, padR = 20, padT = 14, padB = 32;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const valid = React.useMemo(
+    () => rows.filter(r => fields.some(f => r[f.key] != null)),
+    [rows, fields]
+  );
+  const allVals = React.useMemo(
+    () => valid.flatMap(r => fields.map(f => r[f.key]).filter(v => v != null)),
+    [valid, fields]
+  );
+
+  if (!valid.length || !allVals.length) {
+    return (
+      <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>
+        Sem dados
+      </div>
+    );
+  }
+
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+  const span = maxV - minV || 1;
+  const yMin = minV - span * 0.04;
+  const yMax = maxV + span * 0.04;
+
+  const firstOrd  = valid[0].year * 12 + valid[0].month - 1;
+  const lastOrd   = valid[valid.length - 1].year * 12 + valid[valid.length - 1].month - 1;
+  const totalMons = lastOrd - firstOrd || 1;
+
+  const xOf     = row => padL + ((row.year * 12 + row.month - 1 - firstOrd) / totalMons) * chartW;
+  const yOf     = v   => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+  const xOf_ord = ord => padL + ((ord - firstOrd) / totalMons) * chartW;
+
+  const yTicks = Array.from({length: 5}, (_, i) => yMin + (yMax - yMin) * (i / 4));
+
+  const stepMons = totalMons <= 72 ? 6 : 12;
+  const xTicks = [];
+  const tickStart = Math.ceil(firstOrd / stepMons) * stepMons;
+  for (let ord = tickStart; ord <= lastOrd; ord += stepMons) {
+    const yr = Math.floor(ord / 12);
+    const mo = (ord % 12) + 1;
+    const label = stepMons === 6
+      ? `${MONTHS_PT_ABR[mo - 1]}/${String(yr).slice(-2)}`
+      : String(yr);
+    xTicks.push({ x: xOf_ord(ord), label });
+  }
+
+  const buildPath = key => {
+    let path = '', inPath = false;
+    for (const r of valid) {
+      const v = r[key];
+      if (v != null) {
+        const pt = `${xOf(r).toFixed(1)},${yOf(v).toFixed(1)}`;
+        path += inPath ? `L${pt}` : `M${pt}`; inPath = true;
+      } else { inPath = false; }
+    }
+    return path;
+  };
+
+  const onMouseMove = e => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left - padL) / chartW;
+    const ord = firstOrd + px * totalMons;
+    let best = null, bestD = Infinity;
+    for (const r of valid) {
+      const d = Math.abs(r.year * 12 + r.month - 1 - ord);
+      if (d < bestD) { bestD = d; best = r; }
+    }
+    if (best) setHovered({ x: xOf(best), row: best, mouseY: e.clientY - rect.top });
+  };
+
+  const fmt    = v  => v == null ? '—' : Number(v).toFixed(decimals).replace('.', ',');
+  const clipId = `mcc-clip-${chartId}`;
+
+  return (
+    <div style={{position:'relative', animation:'rx-fade-in 0.5s ease-out'}}>
+      <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
+        onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
+        <defs>
+          <clipPath id={clipId}>
+            <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
+          </clipPath>
+        </defs>
+
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)}
+              className="grid-line" style={{opacity: i === 0 ? 0 : 0.6}}/>
+            <text x={padL - 6} y={yOf(v) + 4} textAnchor="end" fontSize={10} fill="var(--fg-dim)">
+              {fmt(v)}
+            </text>
+          </g>
+        ))}
+
+        <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border)" strokeWidth={1}/>
+
+        {xTicks.map((t, i) => (
+          <g key={i}>
+            <line x1={t.x} x2={t.x} y1={padT + chartH} y2={padT + chartH + 4} stroke="var(--fg-dim)" strokeWidth={0.5}/>
+            <text x={t.x} y={padT + chartH + 14} textAnchor="middle" fontSize={10} fill="var(--fg-dim)">{t.label}</text>
+          </g>
+        ))}
+
+        {fields.map(f => {
+          const d = buildPath(f.key);
+          return d ? (
+            <path key={f.key} d={d} fill="none" stroke={f.color} strokeWidth={2}
+              strokeLinejoin="round" clipPath={`url(#${clipId})`}/>
+          ) : null;
+        })}
+
+        {hovered && (
+          <g>
+            <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
+              stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
+            {fields.map(f => {
+              const v = hovered.row[f.key];
+              return v != null ? (
+                <circle key={f.key} cx={hovered.x} cy={yOf(v)} r={4}
+                  fill="var(--bg-panel)" stroke={f.color} strokeWidth={2}/>
+              ) : null;
+            })}
+          </g>
+        )}
+      </svg>
+
+      {hovered && (() => {
+        const r = hovered.row;
+        const isRight = hovered.x > svgW * 0.75;
+        return (
+          <div className="hover-card" style={{
+            left: `${(hovered.x / svgW * 100).toFixed(1)}%`,
+            top: Math.max(10, Math.min(H - 110, hovered.mouseY - 40)),
+            transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+          }}>
+            <div className="hover-month">{MONTHS_PT_ABR[r.month - 1]}/{r.year}</div>
+            <div className="hover-rows">
+              {fields.map(f => (
+                <div key={f.key} className="hover-row">
+                  <span className="hover-year" style={{color: f.color}}>{f.label}</span>
+                  <span className="hover-val">{fmt(r[f.key])}<span className="hover-unit"> {unit}</span></span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ── MultiContinuousCard ───────────────────────────────────────────────────────
+function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', decimals = 2, height = 360 }) {
+  const [range, setRange] = React.useState('5');
+  const rangeNum = range === 'all' ? 'all' : parseInt(range);
+
+  const filteredRows = React.useMemo(() => {
+    if (!rows.length || rangeNum === 'all') return rows;
+    const last = rows[rows.length - 1];
+    const cutOrd = last.year * 12 + last.month - 1 - rangeNum * 12;
+    return rows.filter(r => r.year * 12 + r.month - 1 > cutOrd);
+  }, [rows, rangeNum]);
+
+  const lastRow = filteredRows[filteredRows.length - 1] || null;
+  const fmt = v => v == null ? '—' : Number(v).toFixed(decimals).replace('.', ',');
+
+  return (
+    <section className="card card-full" data-card-id={cardId}>
+      <div className="card-head">
+        <div>
+          <div className="card-eyebrow">{sub}</div>
+          <h3 className="card-title">{title}</h3>
+          <div className="card-price" style={{flexWrap:'wrap', gap:'8px 20px'}}>
+            {fields.map(f => (
+              <span key={f.key} style={{display:'inline-flex', alignItems:'baseline', gap:4}}>
+                <span style={{width:8, height:8, borderRadius:'50%', background:f.color,
+                  display:'inline-block', flexShrink:0, alignSelf:'center', marginRight:2}}/>
+                <span className="card-value" style={{color: f.color}}>{fmt(lastRow?.[f.key])}</span>
+                <span className="card-unit">{unit}</span>
+                <span style={{fontSize:11, color:'var(--fg-dim)', marginLeft:4}}>{f.label}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="card-controls">
+          <div className="card-ctrl-row">
+            <div className="year-seg">
+              {[['3a',3],['5a',5],['10a',10],['Todos','all']].map(([label, val]) => (
+                <button key={label}
+                  className={`year-seg-btn ${range === String(val) ? 'is-on' : ''}`}
+                  onClick={() => setRange(String(val))}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <MultiContinuousChart
+        rows={filteredRows}
+        fields={fields}
+        unit={unit}
+        decimals={decimals}
+        height={height}
+        chartId={cardId}
+      />
+
+      <div className="ciclo-legend" style={{marginTop: 8}}>
+        {fields.map(f => (
+          <span key={f.key} className="legend-year">
+            <span className="legend-line" style={{background: f.color}}/>
+            {f.label}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+window.MultiContinuousCard = MultiContinuousCard;
