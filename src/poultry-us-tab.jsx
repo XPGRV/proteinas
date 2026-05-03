@@ -1078,7 +1078,7 @@ const PoultryUSTab = ({ data, accent, tab }) => {
           data={data}
           seriesKey="spread"
           cardId="us-spread"
-          title="Spread Frango–Ração"
+          title="Spread · Frango - Ração"
           eyebrow="Bloomberg · Proxy XPG − Feed Grain · Margem EUA"
           unit="USD/Kg"
           events={EVENTS_SPREAD}
@@ -1089,39 +1089,39 @@ const PoultryUSTab = ({ data, accent, tab }) => {
         {hasUsda && <>
           <window.PriceCard
             cardId="us-usda-price"
-            title="Broilers · Preço Atacado"
+            title="Broilers · Preço"
             sub="USDA · Broilers Composite Wholesale Price"
             accent="oklch(0.82 0.18 155)"
             data={data}
             dataset="frango_us_monthly"
             field="usda_wholesale_price"
-            unit="USD/lb"
+            unit="INDEX"
             decimals={2}
             fullWidth
             events={EVENTS_FRANGO_US}
           />
           <window.PriceCard
             cardId="us-usda-feed"
-            title="Broilers · Custo de Ração"
+            title="Broilers · Feed Costs"
             sub="USDA · Broilers Feed Costs per Lb"
             accent="oklch(0.82 0.18 155)"
             data={data}
             dataset="frango_us_monthly"
             field="usda_feed_cost"
-            unit="USD/lb"
+            unit="INDEX"
             decimals={2}
             fullWidth
             events={EVENTS_FEED_GRAIN}
           />
           <window.PriceCard
             cardId="us-usda-spread"
-            title="Broilers · Spread Preço–Ração"
+            title="Broilers · Spread · Frango - Ração"
             sub="USDA · Composite Wholesale Price − Feed Costs"
             accent="oklch(0.82 0.18 155)"
             data={data}
             dataset="frango_us_monthly"
             field="usda_spread"
-            unit="USD/lb"
+            unit="INDEX"
             decimals={2}
             fullWidth
             events={EVENTS_SPREAD}
@@ -1134,7 +1134,7 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             data={data}
             dataset="frango_us_monthly"
             field="national_composite"
-            unit="USD/lb"
+            unit="USDc/lb"
             decimals={2}
             fullWidth
             events={EVENTS_FRANGO_US}
