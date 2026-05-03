@@ -464,9 +464,11 @@ function FrangoUSControls({
                 {CUTS.map(s => (
                   <div key={s.key} className={`year-drop-item ${activeSeries === s.key ? 'is-on' : ''}`}
                     onClick={() => selectCut(s.key)}
-                    style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:12}}>
-                    <span style={{display:'flex', alignItems:'center', gap:4}}>
-                      <span className="year-drop-check">{activeSeries === s.key ? '✓' : ''}</span>
+                    style={{justifyContent:'space-between'}}>
+                    <span style={{display:'flex', alignItems:'center', gap:6}}>
+                      <span style={{width:12, flexShrink:0, textAlign:'center', fontSize:10, color:'var(--accent)'}}>
+                        {activeSeries === s.key ? '✓' : ''}
+                      </span>
                       {s.label}
                     </span>
                     {s.ticker && <span style={{opacity:0.5, fontSize:10, flexShrink:0}}>{s.ticker}</span>}
