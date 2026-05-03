@@ -549,12 +549,12 @@ function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', deci
           <h3 className="card-title">{title}</h3>
           <div className="card-price" style={{flexWrap:'wrap', gap:'8px 20px'}}>
             {fields.map(f => (
-              <span key={f.key} style={{display:'inline-flex', alignItems:'baseline', gap:4}}>
+              <span key={f.key} style={{display:'inline-flex', alignItems:'center', gap:4}}>
                 <span style={{width:8, height:8, borderRadius:'50%', background:f.color,
-                  display:'inline-block', flexShrink:0, alignSelf:'center', marginRight:2}}/>
+                  display:'inline-block', flexShrink:0}}/>
                 <span className="card-value" style={{color: f.color}}>{fmt(lastRow?.[f.key])}</span>
                 <span className="card-unit">{unit}</span>
-                <span style={{fontSize:11, color:'var(--fg-dim)', marginLeft:4}}>{f.label}</span>
+                <span style={{fontSize:11, color:'var(--fg-dim)', marginLeft:2}}>{f.label}</span>
               </span>
             ))}
           </div>
