@@ -284,7 +284,7 @@ function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit
 window.ContinuousCard = ContinuousCard;
 
 // ── MultiContinuousChart ──────────────────────────────────────────────────────
-function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 360, chartId = 'mc', chartStyle = 'line' }) {
+function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 360, chartId = 'mc', chartStyle = 'line', pinnedSeries, setPinnedSeries }) {
   const svgRef = React.useRef(null);
   const [hovered, setHovered] = React.useState(null);
   const [svgW, setSvgW] = React.useState(760);
@@ -331,6 +331,9 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
   const xOf     = row => padL + ((row.year * 12 + row.month - 1 - firstOrd) / totalMons) * chartW;
   const yOf     = v   => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
   const xOf_ord = ord => padL + ((ord - firstOrd) / totalMons) * chartW;
+
+  const lineOpacity = key => pinnedSeries ? (pinnedSeries === key ? 1 : 0.15) : 1;
+  const lineWidth   = key => pinnedSeries === key ? 2.5 : 2;
 
   const yTicks = Array.from({length: 5}, (_, i) => yMin + (yMax - yMin) * (i / 4));
 
@@ -380,8 +383,12 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
     if (best) setHovered({ x: xOf(best), row: best, mouseY: e.clientY - rect.top });
   };
 
+  const toggle = key => setPinnedSeries(p => p === key ? null : key);
+
   const fmt    = v  => v == null ? '—' : Number(v).toFixed(decimals).replace('.', ',');
   const clipId = `mcc-clip-${chartId}`;
+
+  const visFields = pinnedSeries ? fields.filter(f => f.key === pinnedSeries) : fields;
 
   return (
     <div style={{position:'relative', animation:'rx-fade-in 0.5s ease-out'}}>
@@ -412,32 +419,81 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
           </g>
         ))}
 
-        {chartStyle === 'area' && fields.map(f => {
-          const d = buildAreaPath(f.key);
-          return d ? (
-            <path key={`area-${f.key}`} d={d} fill={f.color} opacity={0.10}
-              clipPath={`url(#${clipId})`}/>
-          ) : null;
-        })}
-
         {fields.map(f => {
-          const d = buildPath(f.key);
-          return d ? (
-            <path key={f.key} d={d} fill="none" stroke={f.color} strokeWidth={2}
-              strokeLinejoin="round" clipPath={`url(#${clipId})`}/>
-          ) : null;
+          const linePath = buildPath(f.key);
+          if (!linePath) return null;
+          const isPinned = pinnedSeries === f.key;
+          const areaOp   = pinnedSeries ? (isPinned ? 0.15 : 0.03) : 0.10;
+          return (
+            <g key={f.key}>
+              {chartStyle === 'area' && (
+                <path d={buildAreaPath(f.key)} fill={f.color} opacity={areaOp}
+                  clipPath={`url(#${clipId})`}/>
+              )}
+              <path d={linePath} fill="none" stroke={f.color}
+                strokeWidth={lineWidth(f.key)} strokeLinejoin="round"
+                opacity={lineOpacity(f.key)}
+                style={{transition:'opacity 0.25s ease'}}
+                clipPath={`url(#${clipId})`}/>
+              {/* transparent hit area */}
+              <path d={linePath} fill="none" stroke="transparent" strokeWidth={12}
+                style={{cursor:'pointer'}} clipPath={`url(#${clipId})`}
+                onClick={() => toggle(f.key)}/>
+            </g>
+          );
         })}
 
+        {/* Data labels for pinned series */}
+        {pinnedSeries && (() => {
+          const f = fields.find(ff => ff.key === pinnedSeries);
+          if (!f) return null;
+          const MIN_GAP = 32;
+          let lastLabelX = -Infinity;
+          return (
+            <g>
+              {valid.map((r, i) => {
+                const v = r[f.key];
+                if (v == null) return null;
+                const cx = xOf(r), cy = yOf(v);
+                const isLast = i === valid.length - 1;
+                if (!isLast && cx - lastLabelX < MIN_GAP) return null;
+                lastLabelX = cx;
+                const above     = cy - padT > 20;
+                const nearLeft  = cx < padL + 20;
+                const anchor    = nearLeft ? 'start' : 'middle';
+                const lx        = nearLeft ? padL + 2 : cx;
+                return (
+                  <g key={i}>
+                    <circle cx={cx} cy={cy} r={3} fill={f.color} opacity={0.9}/>
+                    <text x={lx} y={above ? cy - 7 : cy + 13} textAnchor={anchor}
+                      style={{fontFamily:'var(--font-mono)', fontSize:10, fill:f.color, fontWeight:500, letterSpacing:'0.02em'}}>
+                      {fmt(v)}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
+
+        {/* Hover crosshair + dots */}
         {hovered && (
           <g>
             <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
               stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
             {fields.map(f => {
               const v = hovered.row[f.key];
-              return v != null ? (
-                <circle key={f.key} cx={hovered.x} cy={yOf(v)} r={4}
-                  fill="var(--bg-panel)" stroke={f.color} strokeWidth={2}/>
-              ) : null;
+              if (v == null) return null;
+              const isPinned = pinnedSeries === f.key;
+              const dimmed   = pinnedSeries && !isPinned;
+              return (
+                <circle key={f.key} cx={hovered.x} cy={yOf(v)}
+                  r={isPinned ? 6 : dimmed ? 3 : 4}
+                  fill="var(--bg-panel)" stroke={f.color}
+                  strokeWidth={isPinned ? 3 : dimmed ? 1.2 : 2}
+                  style={{cursor:'pointer'}}
+                  onClick={() => toggle(f.key)}/>
+              );
             })}
           </g>
         )}
@@ -454,7 +510,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
           }}>
             <div className="hover-month">{MONTHS_PT_ABR[r.month - 1]}/{r.year}</div>
             <div className="hover-rows">
-              {fields.map(f => (
+              {visFields.map(f => (
                 <div key={f.key} className="hover-row">
                   <span className="hover-year" style={{color: f.color}}>{f.label}</span>
                   <span className="hover-val">{fmt(r[f.key])}<span className="hover-unit"> {unit}</span></span>
@@ -470,8 +526,9 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
 
 // ── MultiContinuousCard ───────────────────────────────────────────────────────
 function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', decimals = 2, height = 360 }) {
-  const [range, setRange]           = React.useState('5');
-  const [chartStyle, setChartStyle] = React.useState('area');
+  const [range, setRange]             = React.useState('5');
+  const [chartStyle, setChartStyle]   = React.useState('area');
+  const [pinnedSeries, setPinnedSeries] = React.useState(null);
   const rangeNum = range === 'all' ? 'all' : parseInt(range);
 
   const filteredRows = React.useMemo(() => {
@@ -534,11 +591,20 @@ function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', deci
         height={height}
         chartId={cardId}
         chartStyle={chartStyle}
+        pinnedSeries={pinnedSeries}
+        setPinnedSeries={setPinnedSeries}
       />
 
       <div className="ciclo-legend" style={{marginTop: 8}}>
         {fields.map(f => (
-          <span key={f.key} className="legend-year">
+          <span key={f.key} className="legend-year"
+            style={{
+              userSelect:'none', padding:'2px 6px', cursor:'pointer',
+              opacity: pinnedSeries && pinnedSeries !== f.key ? 0.3 : 1,
+              outline: pinnedSeries === f.key ? `1px solid ${f.color}` : 'none',
+              borderRadius: 4,
+            }}
+            onClick={() => setPinnedSeries(p => p === f.key ? null : f.key)}>
             <span className="legend-line" style={{background: f.color}}/>
             {f.label}
           </span>
