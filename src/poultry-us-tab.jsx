@@ -318,7 +318,7 @@ const FrangoUSChart = ({
         return (
           <div className="hover-card" style={{
             left: `${(xPos / W * 100).toFixed(1)}%`,
-            top: Math.max(10, Math.min(H - 140, mouseY - 40)),
+            top: Math.max(10, Math.min(H - 120, mouseY - 40)),
             transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
             <div className="hover-month">{doyToLabel(hover)}</div>
@@ -340,7 +340,7 @@ const FrangoUSChart = ({
         );
       })()}
 
-      <div className="ciclo-legend" style={{flexWrap:'wrap', gap:4}}>
+      <div className="ciclo-legend">
         {[...selectedYears].sort((a,b)=>b-a).map(yr => (
           <span key={yr} className="legend-year"
             onClick={() => setPinnedYear(p => p === yr ? null : yr)}
@@ -363,6 +363,10 @@ const FrangoUSChart = ({
             <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
               <span style={{display:'inline-block',width:16,height:8,background:'var(--fg)',opacity:0.08,verticalAlign:'middle',marginRight:2,borderRadius:1}}/>
               P25–P75
+            </span>
+            <span className="legend-year" style={{opacity:0.6, userSelect:'none', padding:'2px 6px'}}>
+              <span style={{display:'inline-block',width:16,height:8,background:'var(--fg)',opacity:0.05,verticalAlign:'middle',marginRight:2,borderRadius:1}}/>
+              Mín–Máx
             </span>
           </>
         )}
@@ -935,7 +939,7 @@ const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle, prevFirstT 
         return (
           <div className="hover-card" style={{
             left: `${(xPos / W * 100).toFixed(1)}%`,
-            top: Math.max(10, Math.min(H - 100, mouseY - 40)),
+            top: Math.max(10, Math.min(H - 120, mouseY - 40)),
             transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
             <div className="hover-month">{window.MONTHS_PT[hover.month - 1]}/{hover.year}</div>

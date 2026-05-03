@@ -185,7 +185,7 @@ const EdgebeeefChart = ({
           </g>
         ))}
         {vMin < 0 && vMax > 0 && (
-          <line x1={padL} x2={W-padR} y1={y(0)} y2={y(0)} stroke="var(--fg)" strokeOpacity="0.2" strokeWidth="1"/>
+          <line x1={padL} x2={W-padR} y1={y(0)} y2={y(0)} stroke="var(--fg)" strokeWidth={1.5} strokeOpacity={0.6}/>
         )}
 
         {/* X ticks — months */}
@@ -316,7 +316,7 @@ const EdgebeeefChart = ({
         return (
           <div className="hover-card" style={{
             left: `${(xPos / W * 100).toFixed(1)}%`,
-            top: Math.max(10, Math.min(H - 140, mouseY - 40)),
+            top: Math.max(10, Math.min(H - 120, mouseY - 40)),
             transform: isRightSide ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
           }}>
             <div className="hover-month">{doyToLabel(hover)}</div>
@@ -349,7 +349,7 @@ const EdgebeeefChart = ({
       })()}
 
       {/* Legend */}
-      <div className="ciclo-legend" style={{flexWrap:'wrap', gap:4}}>
+      <div className="ciclo-legend">
         {[...selectedYears].sort((a,b)=>b-a).map(yr => (
           <span key={yr} className="legend-year"
             onClick={() => setPinnedYear(p => p === yr ? null : yr)}
