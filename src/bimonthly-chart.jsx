@@ -737,14 +737,16 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote, continuousOnly = false }) {
-  const [mode, setMode]             = React.useState(continuousOnly ? 'continuous' : 'seasonal');
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote, continuousOnly = false, base100Fields = null }) {
+  const initialMode = (continuousOnly || base100Fields) ? 'continuous' : 'seasonal';
+  const [mode, setMode]             = React.useState(initialMode);
   const [range, setRange]           = React.useState('5');
   const [prevFirstOrd, setPrevFirstOrd] = React.useState(null);
   const [selYears, setSelYears]     = React.useState(null);
   const [activeFieldIdx, setActiveFieldIdx] = React.useState(0);
-  const [chartStyle, setChartStyle] = React.useState('line');
-  const [showStats, setShowStats]   = React.useState(false);
+  const [chartStyle, setChartStyle]     = React.useState('line');
+  const [showStats, setShowStats]       = React.useState(false);
+  const [pinnedBase100, setPinnedBase100] = React.useState(null);
 
   const allRows   = data[dataset] || [];
   const fieldKeys = fields.map(f => f.key);
@@ -784,6 +786,16 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
     return v.length === activeYears.length && v.every(y => activeYears.includes(y));
   });
   const rangeNum = range === 'all' ? 'all' : parseInt(range);
+
+  const base100Rows = React.useMemo(() => {
+    if (!base100Fields) return [];
+    const allRows = data[dataset] || [];
+    const valid = allRows.filter(r => base100Fields.some(f => r[f.key] != null));
+    if (!valid.length || rangeNum === 'all') return valid;
+    const last = valid[valid.length - 1];
+    const cutOrd = last.year * 12 + last.month - 1 - rangeNum * 12;
+    return valid.filter(r => r.year * 12 + r.month - 1 > cutOrd);
+  }, [base100Fields, data, dataset, rangeNum]);
 
   const stats = React.useMemo(() => {
     const latest = years[years.length - 1];
@@ -833,8 +845,17 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
 
             {!continuousOnly && (
               <div className="seg" style={{marginLeft: 16}}>
-                <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
-                <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+                {base100Fields ? (
+                  <>
+                    <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+                    <button className={`seg-btn ${mode === 'base100'    ? 'is-on' : ''}`} onClick={() => setMode('base100')}>Base 100</button>
+                  </>
+                ) : (
+                  <>
+                    <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
+                    <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -882,6 +903,18 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           stats={stats}
           height={height}
         />
+      ) : mode === 'base100' ? (
+        <window.MultiContinuousChart
+          key={`base100-${range}`}
+          rows={base100Rows}
+          fields={base100Fields}
+          unit="Base 100" decimals={1}
+          height={height}
+          chartId={`${cardId}-b100`}
+          chartStyle={chartStyle}
+          pinnedSeries={pinnedBase100}
+          setPinnedSeries={setPinnedBase100}
+        />
       ) : (
         <BimonthlyContChart
           key={range}
@@ -892,6 +925,23 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           prevFirstOrd={prevFirstOrd}
           height={height}
         />
+      )}
+      {mode === 'base100' && base100Fields && (
+        <div className="ciclo-legend" style={{marginTop: 8}}>
+          {base100Fields.map(f => (
+            <span key={f.key} className="legend-year"
+              style={{
+                userSelect:'none', padding:'2px 6px', cursor:'pointer',
+                opacity: pinnedBase100 && pinnedBase100 !== f.key ? 0.3 : 1,
+                outline: pinnedBase100 === f.key ? `1px solid ${f.color}` : 'none',
+                borderRadius: 4,
+              }}
+              onClick={() => setPinnedBase100(p => p === f.key ? null : f.key)}>
+              <span className="legend-line" style={{background: f.color}}/>
+              {f.label}
+            </span>
+          ))}
+        </div>
       )}
       {footerNote && (
         <div style={{padding:'6px 0 4px', fontSize:11, color:'var(--fg-dim)', lineHeight:1.6}}>

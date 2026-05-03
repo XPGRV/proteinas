@@ -76,10 +76,15 @@ const PROCESSADOS_PX_FIELDS = [
   { key: 'growth_px_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
   { key: 'growth_px_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
 ];
-const PROCESSADOS_VOL_BASE100_FIELDS = [
-  { key: 'vol_base100_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
-  { key: 'vol_base100_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
-  { key: 'vol_base100_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
+const PROCESSADOS_VOL_FIELDS = [
+  { key: 'growth_vol_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
+  { key: 'growth_vol_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
+  { key: 'growth_vol_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
+];
+const PROCESSADOS_PX_BASE100_FIELDS = [
+  { key: 'px_base100_ind',   label: 'Industry Avg.', color: 'oklch(0.72 0.15 225)' },
+  { key: 'px_base100_brf',   label: 'BRF',           color: 'oklch(0.78 0.18 145)' },
+  { key: 'px_base100_seara', label: 'Seara',         color: 'oklch(0.76 0.17 48)'  },
 ];
 
 // ── Aba IPCA Processados ──────────────────────────────────────────────────────
@@ -117,17 +122,18 @@ const PoultryIpcaTab = ({ data, accent }) => {
         sub="NIELSEN · Crescimento bimestral, YoY%, de preço."
         accent={accent} data={data} dataset="processados"
         fields={PROCESSADOS_PX_FIELDS}
+        base100Fields={PROCESSADOS_PX_BASE100_FIELDS}
         footerNote={growthFooterNote}
-        continuousOnly
       />
 
-      <window.MultiContinuousCard
+      <window.BimonthlyCard
         cardId="card-growth-vol"
         title="Growth Volume"
-        sub="NIELSEN · Volume Base 100."
-        rows={data.processados || []}
-        fields={PROCESSADOS_VOL_BASE100_FIELDS}
-        unit="Base 100" decimals={1} height={340}
+        sub="NIELSEN · Crescimento bimestral, YoY%, de volume."
+        accent={accent} data={data} dataset="processados"
+        fields={PROCESSADOS_VOL_FIELDS}
+        footerNote={growthFooterNote}
+        continuousOnly
       />
     </main>
   );

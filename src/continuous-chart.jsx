@@ -398,6 +398,12 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
           <clipPath id={clipId}>
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
+          {fields.map(f => (
+            <linearGradient key={f.key} id={`mcc-grad-${chartId}-${f.key}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor={f.color} stopOpacity={0.25}/>
+              <stop offset="100%" stopColor={f.color} stopOpacity={0.01}/>
+            </linearGradient>
+          ))}
         </defs>
 
         {yTicks.map((v, i) => (
@@ -427,7 +433,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
           return (
             <g key={f.key}>
               {chartStyle === 'area' && (
-                <path d={buildAreaPath(f.key)} fill={f.color} opacity={areaOp}
+                <path d={buildAreaPath(f.key)} fill={`url(#mcc-grad-${chartId}-${f.key})`}
                   clipPath={`url(#${clipId})`}/>
               )}
               <path d={linePath} fill="none" stroke={f.color}
@@ -614,4 +620,5 @@ function MultiContinuousCard({ cardId, title, sub, rows, fields, unit = '', deci
   );
 }
 
-window.MultiContinuousCard = MultiContinuousCard;
+window.MultiContinuousCard  = MultiContinuousCard;
+window.MultiContinuousChart = MultiContinuousChart;
