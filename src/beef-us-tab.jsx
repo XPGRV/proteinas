@@ -29,7 +29,7 @@ function buildDailyStats(byYear, histYears) {
 // ── Edgebeef Seasonal Chart (pure rendering) ──────────────────────────────────
 const EdgebeeefChart = ({
   byYear, allYears, selectedYears, pinnedYear, setPinnedYear,
-  chartStyle, showStats, showEvents, events, accent,
+  chartStyle, showStats, showEvents, events, accent, chartId = 'edgebeef',
 }) => {
   const W = 1000, H = 380;
   const padL = 64, padR = 24, padT = 20, padB = 32;
@@ -150,7 +150,7 @@ const EdgebeeefChart = ({
     setMouseY(py);
   };
 
-  const gradId = 'edge-grad';
+  const gradId = `edge-grad-${chartId}`;
 
   return (
     <div className="chart-wrap">
@@ -287,6 +287,7 @@ const EdgebeeefChart = ({
                   r={isPinned ? 5 : isCurrent ? 4 : 3}
                   fill="var(--bg)" stroke={yearColor(yr)}
                   strokeWidth={isPinned ? 2.5 : isCurrent ? 2 : 1.25}
+                  className="rx-no-anim"
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
               );
@@ -561,6 +562,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
         showStats={showStats} showEvents={showEvents}
         events={events || []}
         accent={accent}
+        chartId="us-edgebeef"
       />
     </section>
   );

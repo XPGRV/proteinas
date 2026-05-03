@@ -15,9 +15,14 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
   const [hovered, setHovered] = React.useState(null); // { x, y, row, mouseY }
   const [svgW, setSvgW] = React.useState(760);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!svgRef.current) return;
-    const obs = new ResizeObserver(([e]) => setSvgW(Math.floor(e.contentRect.width)));
+    const initial = Math.floor(svgRef.current.getBoundingClientRect().width);
+    if (initial > 0) setSvgW(initial);
+    const obs = new ResizeObserver(([e]) => {
+      const w = Math.floor(e.contentRect.width);
+      if (w > 0) setSvgW(prev => Math.abs(w - prev) > 2 ? w : prev);
+    });
     obs.observe(svgRef.current);
     return () => obs.disconnect();
   }, []);
@@ -171,7 +176,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
             <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
               stroke="var(--fg-dim)" strokeWidth={1} strokeDasharray="3 2" opacity={0.5}/>
             <circle cx={hovered.x} cy={hovered.y} r={4} fill="var(--bg-panel)"
-              stroke={accent} strokeWidth={2}/>
+              stroke={accent} strokeWidth={2} className="rx-no-anim"/>
           </g>
         )}
       </svg>
@@ -292,9 +297,14 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
   const lastPinnedRef = React.useRef(pinnedSeries);
   if (pinnedSeries) lastPinnedRef.current = pinnedSeries;
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!svgRef.current) return;
-    const obs = new ResizeObserver(([e]) => setSvgW(Math.floor(e.contentRect.width)));
+    const initial = Math.floor(svgRef.current.getBoundingClientRect().width);
+    if (initial > 0) setSvgW(initial);
+    const obs = new ResizeObserver(([e]) => {
+      const w = Math.floor(e.contentRect.width);
+      if (w > 0) setSvgW(prev => Math.abs(w - prev) > 2 ? w : prev);
+    });
     obs.observe(svgRef.current);
     return () => obs.disconnect();
   }, []);
@@ -501,6 +511,7 @@ function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 
                   r={isPinned ? 6 : dimmed ? 3 : 4}
                   fill="var(--bg-panel)" stroke={f.color}
                   strokeWidth={isPinned ? 3 : dimmed ? 1.2 : 2}
+                  className="rx-no-anim"
                   style={{cursor:'pointer'}}
                   onClick={() => toggle(f.key)}/>
               );

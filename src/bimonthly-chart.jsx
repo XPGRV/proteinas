@@ -37,7 +37,7 @@ function makeYearColor(accent) {
 }
 
 // ── Seasonal (eixo bimestral, 1 empresa, anos sobrepostos) ────────────────────
-function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 340 }) {
+function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 340, chartId = 'sea' }) {
   const W = 1000;
   const H = height;
   const padL = 58, padR = 48, padT = 16, padB = 40;
@@ -140,14 +140,14 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
       <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
         onMouseMove={onMouseMove} onMouseLeave={() => setHoverBm(null)}>
         <defs>
-          <clipPath id="bm-sea-clip">
+          <clipPath id={`bm-sea-clip-${chartId}`}>
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
           {(() => {
             const range = yMax - yMin || 1;
             const zeroPct = ((yMax - 0) / range) * 100;
             return displayYears.map(yr => (
-              <linearGradient key={`grad-${yr}`} id={`grad-bm-${yr}`} x1="0" x2="0" y1={y(yMax)} y2={y(yMin)} gradientUnits="userSpaceOnUse">
+              <linearGradient key={`grad-${yr}`} id={`grad-bm-${chartId}-${yr}`} x1="0" x2="0" y1={y(yMax)} y2={y(yMin)} gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.4"/>
                 <stop offset={`${zeroPct}%`} stopColor={yearColor(yr, selectedYears)} stopOpacity="0"/>
                 <stop offset="100%" stopColor={yearColor(yr, selectedYears)} stopOpacity="0.4"/>
@@ -177,7 +177,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 
         {/* Historical band */}
         {showStatsRender && stats && chartStyle !== 'bars' && (
-          <g clipPath="url(#bm-sea-clip)">
+          <g clipPath={`url(#bm-sea-clip-${chartId})`}>
             <path
               d={(() => {
                 const top = stats.map((s, i) => s ? `${i===0?'M':'L'}${x(i+1)},${y(s.max)}` : '').join(' ');
@@ -209,7 +209,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 
         {/* Year series — bars */}
         {showBarsRender && (
-          <g clipPath="url(#bm-sea-clip)">
+          <g clipPath={`url(#bm-sea-clip-${chartId})`}>
             {displayYears.map((yr, idx) => {
               const leaving = isLeaving(yr);
               return (
@@ -246,7 +246,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 
         {/* Year series — lines + area */}
         {chartStyle !== 'bars' && (
-          <g clipPath="url(#bm-sea-clip)">
+          <g clipPath={`url(#bm-sea-clip-${chartId})`}>
             {displayYears.map(yr => {
               const color = yearColor(yr, selectedYears);
               const values = [1,2,3,4,5,6].map(bm => seasonal[yr]?.[bm]);
@@ -259,7 +259,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                 return (
                   <circle key={yr} cx={x(bm)} cy={y(v)} r={4}
                     fill={color} opacity={seriesOpacity(yr)}
-                    clipPath="url(#bm-sea-clip)"/>
+                    clipPath={`url(#bm-sea-clip-${chartId})`}/>
                 );
               }
               const path = buildPath(yr);
@@ -269,7 +269,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                 <g key={yr}>
                   {(showAreaRender || isPinned) && !leaving && (
                     <path d={buildAreaPath(yr)}
-                      fill={`url(#grad-bm-${yr})`}
+                      fill={`url(#grad-bm-${chartId}-${yr})`}
                       style={{
                         '--rx-area-op': seriesOpacity(yr) * 0.7,
                         pointerEvents: 'none'
@@ -346,6 +346,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
                     r={isPinned ? 6 : isCurrent ? 5 : 4}
                     fill="var(--bg)" stroke={yearColor(yr, selectedYears)}
                     strokeWidth={isPinned ? 3 : isCurrent ? 2.5 : 1.5}
+                    className="rx-no-anim"
                     style={{cursor:'pointer'}}
                     onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
                 );
@@ -420,7 +421,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 }
 
 // ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
-function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340, prevFirstOrd = null }) {
+function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340, prevFirstOrd = null, chartId = 'cont' }) {
   const svgRef    = React.useRef(null);
   const [W, setW] = React.useState(1000);
   const [hovered, setHovered]             = React.useState(null);
@@ -547,14 +548,14 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
       <svg ref={svgRef} width="100%" height={H} style={{display:'block', overflow:'visible'}}
         onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
         <defs>
-          <clipPath id="bm-cont-clip">
+          <clipPath id={`bm-cont-clip-${chartId}`}>
             <rect x={padL} y={padT - 2} width={chartW} height={chartH + 6}/>
           </clipPath>
           {(() => {
             const range = yMax - yMin || 1;
             const zeroPct = ((yMax - 0) / range) * 100;
             return fields.map(f => (
-              <linearGradient key={`grad-cont-${f.key}`} id={`grad-cont-${f.key}`}
+              <linearGradient key={`grad-cont-${chartId}-${f.key}`} id={`grad-cont-${chartId}-${f.key}`}
                 x1="0" x2="0" y1={yOf(yMax)} y2={yOf(yMin)} gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor={f.color} stopOpacity="0.4"/>
                 <stop offset={`${zeroPct}%`} stopColor={f.color} stopOpacity="0"/>
@@ -599,7 +600,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
         ))}
 
         {/* Linhas + hitbox clicável */}
-        <g clipPath="url(#bm-cont-clip)">
+        <g clipPath={`url(#bm-cont-clip-${chartId})`}>
           {(() => {
             // Quando expandindo: só a porção nova (à esquerda) anima; o restante já aparece visível
             const hasPartial = prevFirstOrd != null && prevFirstOrd > firstOrd;
@@ -617,7 +618,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
               return (
                 <g key={f.key}>
                   {(showAreaRender || isPinned) && (
-                    <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${f.key})`}
+                    <path d={buildAreaPath(f.key)} fill={`url(#grad-cont-${chartId}-${f.key})`}
                       style={{ '--bm-area-op': lineOpacity(f.key) * 0.7, pointerEvents: 'none' }}
                       className={`bm-area ${areaLeaving && !isPinned ? 'bm-area-leaving' : ''}`}/>
                   )}
@@ -685,6 +686,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
                   r={isPinned ? 6 : dimmed ? 3 : 5}
                   fill="var(--bg-panel)" stroke={f.color}
                   strokeWidth={isPinned ? 3 : dimmed ? 1.2 : 2.5}
+                  className="rx-no-anim"
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedCompany(p => p === f.key ? null : f.key)}/>
               );
@@ -905,6 +907,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           showStats={showStats}
           stats={stats}
           height={height}
+          chartId={`${cardId}-sea`}
         />
       ) : mode === 'base100' ? (
         <window.MultiContinuousChart
@@ -927,6 +930,7 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
           chartStyle={chartStyle}
           prevFirstOrd={prevFirstOrd}
           height={height}
+          chartId={`${cardId}-cont`}
         />
       )}
       {mode === 'base100' && base100Fields && (

@@ -68,7 +68,7 @@ function buildDailyStatsUS(byYear, histYears) {
 // ── Chart ─────────────────────────────────────────────────────────────────────
 const FrangoUSChart = ({
   byYear, allYears, selectedYears, pinnedYear, setPinnedYear,
-  chartStyle, showStats, showEvents, events, accent, unit,
+  chartStyle, showStats, showEvents, events, accent, unit, chartId = 'us',
 }) => {
   const W = 1000, H = 380;
   const padL = 68, padR = 24, padT = 20, padB = 32;
@@ -175,7 +175,7 @@ const FrangoUSChart = ({
     setMouseY(py);
   };
 
-  const gradId = 'frango-us-grad';
+  const gradId = `frango-us-grad-${chartId}`;
 
   return (
     <div className="chart-wrap">
@@ -293,6 +293,7 @@ const FrangoUSChart = ({
                   r={yr === pinnedYear ? 5 : yr === latestYear ? 4 : 3}
                   fill="var(--bg)" stroke={yearColor(yr)}
                   strokeWidth={yr === pinnedYear ? 2.5 : yr === latestYear ? 2 : 1.25}
+                  className="rx-no-anim"
                   style={{cursor:'pointer'}}
                   onClick={() => setPinnedYear(p => p === yr ? null : yr)}/>
               );
@@ -662,6 +663,7 @@ const FrangoUSPriceCard = ({ data, accent }) => {
         events={EVENTS_FRANGO_US}
         accent={accent}
         unit={seriesMeta.unit}
+        chartId="us-frango-price"
       />
     </section>
   );
@@ -759,6 +761,7 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
         events={events}
         accent={accent}
         unit={unit}
+        chartId={cardId}
       />
     </section>
   );
