@@ -538,6 +538,9 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         growth_px_brf:   parseNum(r[20]), // col U — BRF Px
         growth_vol_seara:parseNum(r[21]), // col V — Seara Vol
         growth_px_seara: parseNum(r[22]), // col W — Seara Px
+        vol_base100_ind:   parseNum(r[24]), // col Y — Industry Avg Vol Base 100
+        vol_base100_brf:   parseNum(r[25]), // col Z  — BRF Vol Base 100
+        vol_base100_seara: parseNum(r[26]), // col AA — Seara Vol Base 100
       };
       if (Object.values(row).every((v, i) => i < 2 || v == null)) continue; // skip all-null
       processados.push(row);

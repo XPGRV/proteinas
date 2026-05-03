@@ -737,8 +737,8 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote }) {
-  const [mode, setMode]             = React.useState('seasonal');
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote, continuousOnly = false }) {
+  const [mode, setMode]             = React.useState(continuousOnly ? 'continuous' : 'seasonal');
   const [range, setRange]           = React.useState('5');
   const [prevFirstOrd, setPrevFirstOrd] = React.useState(null);
   const [selYears, setSelYears]     = React.useState(null);
@@ -831,10 +831,12 @@ function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, heig
               </div>
             )}
 
-            <div className="seg" style={{marginLeft: 16}}>
-              <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
-              <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
-            </div>
+            {!continuousOnly && (
+              <div className="seg" style={{marginLeft: 16}}>
+                <button className={`seg-btn ${mode === 'seasonal'   ? 'is-on' : ''}`} onClick={() => setMode('seasonal')}>Sazonal</button>
+                <button className={`seg-btn ${mode === 'continuous' ? 'is-on' : ''}`} onClick={() => setMode('continuous')}>Contínuo</button>
+              </div>
+            )}
           </div>
 
           {/* Row 2: Stats (seasonal) + Style + Fields (seasonal) */}
