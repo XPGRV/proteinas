@@ -1065,7 +1065,7 @@ const NC_WEEKLY_COLORS = [
   'oklch(0.65 0.18 280)',  // lilás
 ];
 
-function NcWeeklyChart({ rows, fields, chartStyle }) {
+function NcWeeklyChart({ rows, fields, chartStyle, pinnedSeries, setPinnedSeries }) {
   const W = 1000, H = 360;
   const padL = 64, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
@@ -1179,11 +1179,20 @@ function NcWeeklyChart({ rows, fields, chartStyle }) {
 
         <g clipPath={`url(#${clipId})`}>
           {chartStyle === 'area' && fields.map((f, i) => (
-            <path key={`area-${f.key}`} d={buildAreaPath(f.key)} fill={`url(#${gradId}-${i})`}/>
+            <path key={`area-${f.key}`} d={buildAreaPath(f.key)} fill={`url(#${gradId}-${i})`}
+              opacity={pinnedSeries && pinnedSeries !== f.key ? 0.05 : 1}/>
           ))}
           {fields.map(f => (
-            <path key={f.key} d={buildPath(f.key)} fill="none" stroke={f.color}
-              strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>
+            <g key={f.key}>
+              <path d={buildPath(f.key)} fill="none" stroke={f.color}
+                strokeWidth={pinnedSeries === f.key ? 2.5 : 1.5}
+                strokeLinejoin="round" strokeLinecap="round"
+                opacity={pinnedSeries && pinnedSeries !== f.key ? 0.1 : 1}/>
+              {/* hitbox invisível mais largo para facilitar o clique */}
+              <path d={buildPath(f.key)} fill="none" stroke="transparent" strokeWidth={10}
+                style={{cursor:'pointer'}}
+                onClick={() => setPinnedSeries(p => p === f.key ? null : f.key)}/>
+            </g>
           ))}
         </g>
 
@@ -1194,8 +1203,15 @@ function NcWeeklyChart({ rows, fields, chartStyle }) {
             {fields.map(f => {
               const v = hover[f.key];
               if (v == null) return null;
-              return <circle key={f.key} cx={xOf(hover)} cy={yOf(v)} r={4}
-                fill="var(--bg)" stroke={f.color} strokeWidth={2}/>;
+              const isPinned = pinnedSeries === f.key;
+              const isDimmed = pinnedSeries && !isPinned;
+              return <circle key={f.key} cx={xOf(hover)} cy={yOf(v)}
+                r={isPinned ? 5 : 4}
+                fill="var(--bg)" stroke={f.color}
+                strokeWidth={isPinned ? 2.5 : 2}
+                opacity={isDimmed ? 0.2 : 1}
+                style={{cursor:'pointer'}}
+                onClick={() => setPinnedSeries(p => p === f.key ? null : f.key)}/>;
             })}
           </g>
         )}
@@ -1233,7 +1249,14 @@ function NcWeeklyChart({ rows, fields, chartStyle }) {
 
       <div className="ciclo-legend">
         {fields.map(f => (
-          <span key={f.key} className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
+          <span key={f.key} className="legend-year"
+            onClick={() => setPinnedSeries(p => p === f.key ? null : f.key)}
+            style={{
+              cursor:'pointer', userSelect:'none', padding:'2px 6px',
+              opacity: pinnedSeries && pinnedSeries !== f.key ? 0.3 : 1,
+              outline: pinnedSeries === f.key ? `1px solid ${f.color}` : 'none',
+              borderRadius: 4,
+            }}>
             <span className="legend-line" style={{background: f.color}}/>
             {f.label}
           </span>
@@ -1244,8 +1267,9 @@ function NcWeeklyChart({ rows, fields, chartStyle }) {
 }
 
 function NcWeeklyCard({ data, modeToggle }) {
-  const [range, setRange]           = React.useState('5');
-  const [chartStyle, setChartStyle] = React.useState('line');
+  const [range, setRange]               = React.useState('5');
+  const [chartStyle, setChartStyle]     = React.useState('line');
+  const [pinnedSeries, setPinnedSeries] = React.useState(null);
 
   const allRows = React.useMemo(() => data.frango_us_nc_weekly || [], [data]);
   const ncCols  = data.frango_us_nc_cols || [
@@ -1311,7 +1335,8 @@ function NcWeeklyCard({ data, modeToggle }) {
         </div>
       </div>
 
-      <NcWeeklyChart rows={rows} fields={fields} chartStyle={chartStyle}/>
+      <NcWeeklyChart rows={rows} fields={fields} chartStyle={chartStyle}
+        pinnedSeries={pinnedSeries} setPinnedSeries={setPinnedSeries}/>
     </section>
   );
 }
