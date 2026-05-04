@@ -455,34 +455,29 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
 
   // ── NationalComposite semanal ─────────────────────────────────────────────────
   // Aba 'NationalComposite' da FrangoUS.xlsm:
-  //   col C (2) = Dia início da semana (eixo X)
-  //   col D (3) = National Composite Whole Bird
-  //   col E (4) = National Composite WOGS
-  //   col F (5) = National Composite
+  //   col A (0) = Trimestre (ignorar), col B (1) = Mês (ignorar)
+  //   col C (2) = Dia início da semana · col D (3) = Whole Bird
+  //   col E (4) = WOGS · col F (5) = National Composite
+  // Dados: 02/09/2022 → 01/05/2026, semanais.
   if (parsePoultryUS && findSheet('NationalComposite')) {
-    const ncRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('NationalComposite')], { header: 1, raw: false });
-    // Detecta início dos dados: primeira linha onde col C é uma data válida
-    let dataStart = 1;
-    for (let i = 0; i < Math.min(25, ncRaw.length); i++) {
-      const d = parseDate((ncRaw[i] || [])[2]);
-      if (d && d.year > 1990) { dataStart = i; break; }
-    }
+    // raw:true → datas chegam como número serial do Excel; XLSX.SSF converte com dia exato
+    const ncRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('NationalComposite')], { header: 1, raw: true });
     const nc_cols = [
       { key: 'nc_w1', label: 'Whole Bird' },
       { key: 'nc_w2', label: 'WOGS' },
       { key: 'nc_w3', label: 'National Composite' },
     ];
     const nc_weekly = [];
-    for (let i = dataStart; i < ncRaw.length; i++) {
+    for (let i = 0; i < ncRaw.length; i++) {
       const r = ncRaw[i] || [];
       if (!r[2]) continue;
       const d = parseDate(r[2]);
-      if (!d || d.year < 1990) continue;
+      // Aceita apenas datas dentro do intervalo esperado (2020-2030)
+      if (!d || d.year < 2020 || d.year > 2030) continue;
       const v1 = parseNum(r[3]), v2 = parseNum(r[4]), v3 = parseNum(r[5]);
       if (v1 == null && v2 == null && v3 == null) continue;
       nc_weekly.push({ year: d.year, month: d.month, day: d.day || 1, nc_w1: v1, nc_w2: v2, nc_w3: v3 });
     }
-    // Garante ordem cronológica (planilha pode ter os dados do mais recente pro mais antigo)
     nc_weekly.sort((a, b) => (a.year - b.year) || (a.month - b.month) || (a.day - b.day));
     result.frango_us_nc_weekly = nc_weekly;
     result.frango_us_nc_cols   = nc_cols;
