@@ -454,40 +454,31 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
   }
 
   // ── NationalComposite semanal ─────────────────────────────────────────────────
-  // Aba 'NationalComposite' da FrangoUS.xlsm — detecta automaticamente coluna de
-  // data (col A ou B) e lê as 3 séries imediatamente seguintes.
-  // raw: false → SheetJS converte datas Excel para strings automaticamente.
+  // Aba 'NationalComposite' da FrangoUS.xlsm:
+  //   col C (2) = Dia início da semana (eixo X)
+  //   col D (3) = National Composite Whole Bird
+  //   col E (4) = National Composite WOGS
+  //   col F (5) = National Composite
   if (parsePoultryUS && findSheet('NationalComposite')) {
     const ncRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('NationalComposite')], { header: 1, raw: false });
-    // Detecta linha de início e coluna de data (tenta col 0 e col 1)
-    let dataStart = -1, hdrRow = 0, dateCol = 0, dataColStart = 1;
-    outer: for (let i = 0; i < Math.min(25, ncRaw.length); i++) {
-      const r = ncRaw[i] || [];
-      for (const dc of [0, 1]) {
-        const d = parseDate(r[dc]);
-        if (d && d.year > 1990) {
-          dataStart = i; hdrRow = Math.max(0, i - 1);
-          dateCol = dc; dataColStart = dc + 1;
-          break outer;
-        }
-      }
+    // Detecta início dos dados: primeira linha onde col C é uma data válida
+    let dataStart = 1;
+    for (let i = 0; i < Math.min(25, ncRaw.length); i++) {
+      const d = parseDate((ncRaw[i] || [])[2]);
+      if (d && d.year > 1990) { dataStart = i; break; }
     }
-    if (dataStart < 0) dataStart = 1;
-    // Lê labels do cabeçalho (linha anterior aos dados)
-    const hdr = ncRaw[hdrRow] || [];
-    const nc_cols = [0, 1, 2].map((offset, i) => {
-      const label = hdr[dataColStart + offset];
-      return { key: `nc_w${i + 1}`, label: label ? String(label).trim() : `Série ${i + 1}` };
-    });
+    const nc_cols = [
+      { key: 'nc_w1', label: 'Whole Bird' },
+      { key: 'nc_w2', label: 'WOGS' },
+      { key: 'nc_w3', label: 'National Composite' },
+    ];
     const nc_weekly = [];
     for (let i = dataStart; i < ncRaw.length; i++) {
       const r = ncRaw[i] || [];
-      if (!r[dateCol]) continue;
-      const d = parseDate(r[dateCol]);
+      if (!r[2]) continue;
+      const d = parseDate(r[2]);
       if (!d || d.year < 1990) continue;
-      const v1 = parseNum(r[dataColStart]);
-      const v2 = parseNum(r[dataColStart + 1]);
-      const v3 = parseNum(r[dataColStart + 2]);
+      const v1 = parseNum(r[3]), v2 = parseNum(r[4]), v3 = parseNum(r[5]);
       if (v1 == null && v2 == null && v3 == null) continue;
       nc_weekly.push({ year: d.year, month: d.month, day: d.day || 1, nc_w1: v1, nc_w2: v2, nc_w3: v3 });
     }
