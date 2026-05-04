@@ -482,6 +482,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
       if (v1 == null && v2 == null && v3 == null) continue;
       nc_weekly.push({ year: d.year, month: d.month, day: d.day || 1, nc_w1: v1, nc_w2: v2, nc_w3: v3 });
     }
+    // Garante ordem cronológica (planilha pode ter os dados do mais recente pro mais antigo)
+    nc_weekly.sort((a, b) => (a.year - b.year) || (a.month - b.month) || (a.day - b.day));
     result.frango_us_nc_weekly = nc_weekly;
     result.frango_us_nc_cols   = nc_cols;
   }
