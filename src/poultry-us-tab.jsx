@@ -1058,6 +1058,296 @@ const PoultryBeefCard = ({ data }) => {
 
 const USDC_LB_TO_USD_KG = 0.0220462; // ÷100 (USDc→USD) × 2.20462 (lb→kg)
 
+// ── National Composite · gráfico semanal ─────────────────────────────────────
+const NC_WEEKLY_COLORS = [
+  'oklch(0.76 0.20 45)',   // âmbar
+  'oklch(0.72 0.18 155)',  // verde
+  'oklch(0.65 0.18 280)',  // lilás
+];
+
+function NcWeeklyChart({ rows, fields, chartStyle }) {
+  const W = 1000, H = 360;
+  const padL = 64, padR = 24, padT = 20, padB = 32;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const [hover, setHover] = React.useState(null);
+  const [mouseY, setMouseY] = React.useState(0);
+
+  const tOf = r => r.year + (r.month - 1) / 12 + (r.day - 1) / 365.25;
+
+  if (!rows.length) return (
+    <div style={{height: H, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>
+      Sem dados semanais — faça upload da planilha FrangoUS.xlsm
+    </div>
+  );
+
+  const allVals = rows.flatMap(r => fields.map(f => r[f.key]).filter(v => v != null));
+  if (!allVals.length) return null;
+
+  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+  const spanV = maxV - minV || 1;
+  const vMin = minV - spanV * 0.04, vMax = maxV + spanV * 0.04;
+
+  const tFirst = tOf(rows[0]), tLast = tOf(rows[rows.length - 1]);
+  const span = tLast - tFirst || 1;
+  const xOf = r => padL + ((tOf(r) - tFirst) / span) * chartW;
+  const yOf = v => padT + (1 - (v - vMin) / (vMax - vMin)) * chartH;
+
+  // Y ticks
+  const yTicks = Array.from({length: 5}, (_, i) => vMin + (vMax - vMin) * (i / 4));
+
+  // X ticks
+  const spanYears = tLast - tFirst;
+  const stepMons = spanYears <= 3.5 ? 6 : spanYears <= 6 ? 12 : 24;
+  const firstOrd = rows[0].year * 12 + rows[0].month - 1;
+  const lastOrd  = rows[rows.length - 1].year * 12 + rows[rows.length - 1].month - 1;
+  const tickStart = Math.ceil(firstOrd / stepMons) * stepMons;
+  const xTicks = [];
+  for (let ord = tickStart; ord <= lastOrd; ord += stepMons) {
+    const yr = Math.floor(ord / 12), mo = (ord % 12) + 1;
+    const xx = padL + ((yr + (mo - 1) / 12 - tFirst) / span) * chartW;
+    const label = stepMons === 6
+      ? `${window.MONTHS_PT[mo - 1]}/${String(yr).slice(-2)}`
+      : String(yr);
+    xTicks.push({ x: xx, label });
+  }
+
+  const buildPath = key => {
+    let path = '', inPath = false;
+    for (const r of rows) {
+      const v = r[key];
+      if (v != null) {
+        const pt = `${xOf(r).toFixed(1)},${yOf(v).toFixed(1)}`;
+        path += inPath ? `L${pt}` : `M${pt}`; inPath = true;
+      } else { inPath = false; }
+    }
+    return path;
+  };
+
+  const buildAreaPath = key => {
+    const pts = rows.filter(r => r[key] != null);
+    if (!pts.length) return '';
+    const line = pts.map(r => `${xOf(r).toFixed(1)},${yOf(r[key]).toFixed(1)}`).join('L');
+    const base = (padT + chartH).toFixed(1);
+    return `M${line}L${xOf(pts[pts.length-1]).toFixed(1)},${base}L${xOf(pts[0]).toFixed(1)},${base}Z`;
+  };
+
+  const gradId = 'nc-wkly-grad', clipId = 'nc-wkly-clip';
+
+  const onMove = e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (W / rect.width);
+    const py = (e.clientY - rect.top)  * (H / rect.height);
+    const t = tFirst + ((px - padL) / chartW) * span;
+    let best = null, bestD = Infinity;
+    for (const r of rows) { const d = Math.abs(tOf(r) - t); if (d < bestD) { bestD = d; best = r; } }
+    setHover(best || null);
+    setMouseY(py);
+  };
+
+  return (
+    <div className="chart-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" preserveAspectRatio="xMidYMid meet"
+        onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        <defs>
+          {fields.map((f, i) => (
+            <linearGradient key={f.key} id={`${gradId}-${i}`} x1="0" x2="0"
+              y1={padT} y2={padT + chartH} gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stopColor={f.color} stopOpacity="0.22"/>
+              <stop offset="100%" stopColor={f.color} stopOpacity="0.01"/>
+            </linearGradient>
+          ))}
+          <clipPath id={clipId}>
+            <rect x={padL} y={padT} width={chartW} height={chartH + 4}/>
+          </clipPath>
+        </defs>
+
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line x1={padL} x2={W - padR} y1={yOf(v)} y2={yOf(v)} className="grid-line"/>
+            <text x={padL - 6} y={yOf(v)} className="tick-label" textAnchor="end" dominantBaseline="middle">
+              {window.fmt(v, {decimals: 2})}
+            </text>
+          </g>
+        ))}
+        {xTicks.map((t, i) => (
+          <g key={i}>
+            <line x1={t.x} x2={t.x} y1={padT} y2={H - padB} className="grid-line" opacity="0.3"/>
+            <text x={t.x} y={H - padB + 16} className="tick-label" textAnchor="middle">{t.label}</text>
+          </g>
+        ))}
+
+        <g clipPath={`url(#${clipId})`}>
+          {chartStyle === 'area' && fields.map((f, i) => (
+            <path key={`area-${f.key}`} d={buildAreaPath(f.key)} fill={`url(#${gradId}-${i})`}/>
+          ))}
+          {fields.map(f => (
+            <path key={f.key} d={buildPath(f.key)} fill="none" stroke={f.color}
+              strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>
+          ))}
+        </g>
+
+        {hover && (
+          <g>
+            <line x1={xOf(hover)} x2={xOf(hover)} y1={padT} y2={H - padB}
+              stroke="var(--fg)" strokeOpacity="0.2" strokeWidth="1"/>
+            {fields.map(f => {
+              const v = hover[f.key];
+              if (v == null) return null;
+              return <circle key={f.key} cx={xOf(hover)} cy={yOf(v)} r={4}
+                fill="var(--bg)" stroke={f.color} strokeWidth={2}/>;
+            })}
+          </g>
+        )}
+
+        <line x1={padL} x2={W - padR} y1={H - padB} y2={H - padB} className="axis-line"/>
+        <line x1={padL} x2={padL}     y1={padT}     y2={H - padB} className="axis-line"/>
+      </svg>
+
+      {hover && (() => {
+        const xPos = xOf(hover), isRight = xPos > W * 0.75;
+        return (
+          <div className="hover-card" style={{
+            left: `${(xPos / W * 100).toFixed(1)}%`,
+            top: Math.max(10, Math.min(H - 120, mouseY - 40)),
+            transform: isRight ? 'translateX(calc(-100% - 16px))' : 'translateX(16px)',
+          }}>
+            <div className="hover-month">
+              {String(hover.day).padStart(2,'0')}/{window.MONTHS_PT[hover.month - 1]}/{hover.year}
+            </div>
+            <div className="hover-rows">
+              {fields.map(f => {
+                const v = hover[f.key];
+                if (v == null) return null;
+                return (
+                  <div key={f.key} className="hover-row">
+                    <span className="hover-year" style={{color: f.color}}>{f.label}</span>
+                    <span className="hover-val">{window.fmt(v, {decimals: 2})}<span className="hover-unit"> USDc/lb</span></span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      <div className="ciclo-legend">
+        {fields.map(f => (
+          <span key={f.key} className="legend-year" style={{userSelect:'none', padding:'2px 6px'}}>
+            <span className="legend-line" style={{background: f.color}}/>
+            {f.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NcWeeklyCard({ data, modeToggle }) {
+  const [range, setRange]           = React.useState('5');
+  const [chartStyle, setChartStyle] = React.useState('line');
+
+  const allRows = React.useMemo(() => data.frango_us_nc_weekly || [], [data]);
+  const ncCols  = data.frango_us_nc_cols || [
+    { key: 'nc_w1', label: 'Série 1' },
+    { key: 'nc_w2', label: 'Série 2' },
+    { key: 'nc_w3', label: 'Série 3' },
+  ];
+  const fields = ncCols.map((c, i) => ({
+    key: c.key, label: c.label,
+    color: NC_WEEKLY_COLORS[i] || 'oklch(0.7 0.15 0)',
+  }));
+
+  const rangeNum = range === 'all' ? 'all' : parseInt(range);
+  const rows = React.useMemo(() => {
+    if (!allRows.length || rangeNum === 'all') return allRows;
+    const last = allRows[allRows.length - 1];
+    const lastT = last.year + (last.month - 1) / 12 + (last.day - 1) / 365.25;
+    const cutT  = lastT - rangeNum;
+    return allRows.filter(r => r.year + (r.month - 1) / 12 + (r.day - 1) / 365.25 >= cutT);
+  }, [allRows, rangeNum]);
+
+  const lastRow = allRows[allRows.length - 1] || null;
+
+  return (
+    <section className="card card-full" data-card-id="us-national-composite">
+      <div className="card-head">
+        <div>
+          <div className="card-eyebrow">USDA · National Composite · Semanal</div>
+          <h3 className="card-title">National Composite</h3>
+          <div className="card-price" style={{flexWrap:'wrap', gap:'8px 20px'}}>
+            {fields.map(f => (
+              <span key={f.key} style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                <span style={{width:8, height:8, borderRadius:'50%', background:f.color, display:'inline-block', flexShrink:0}}/>
+                <span className="card-value" style={{color: f.color}}>
+                  {lastRow?.[f.key] != null ? window.fmt(lastRow[f.key], {decimals:2}) : '—'}
+                </span>
+                <span className="card-unit">USDc/lb</span>
+                <span style={{fontSize:11, color:'var(--fg-dim)', marginLeft:2}}>{f.label}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="card-controls">
+          <div className="card-ctrl-row">
+            <div className="year-seg">
+              {[['3a','3'],['5a','5'],['10a','10'],['Todos','all']].map(([label, val]) => (
+                <button key={label}
+                  className={`year-seg-btn ${range === val ? 'is-on' : ''}`}
+                  onClick={() => setRange(val)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{marginLeft:12}}>{modeToggle}</div>
+          </div>
+          <div className="card-ctrl-row">
+            <div className="seg">
+              <button className={`seg-btn ${chartStyle==='line'?'is-on':''}`} onClick={() => setChartStyle('line')}>Linha</button>
+              <button className={`seg-btn ${chartStyle==='area'?'is-on':''}`} onClick={() => setChartStyle('area')}>Área</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <NcWeeklyChart rows={rows} fields={fields} chartStyle={chartStyle}/>
+    </section>
+  );
+}
+
+function NationalCompositeSection({ data, accent }) {
+  const [mode, setMode] = React.useState('mensal');
+
+  const modeToggle = (
+    <div className="seg">
+      <button className={`seg-btn ${mode==='semanal'?'is-on':''}`} onClick={() => setMode('semanal')}>Semanal</button>
+      <button className={`seg-btn ${mode==='mensal'?'is-on':''}`}  onClick={() => setMode('mensal')}>Mensal</button>
+    </div>
+  );
+
+  if (mode === 'semanal') {
+    return <NcWeeklyCard data={data} modeToggle={modeToggle}/>;
+  }
+
+  return (
+    <window.PriceCard
+      cardId="us-national-composite"
+      title="National Composite"
+      sub="USDA · National Composite Price"
+      accent="oklch(0.82 0.18 155)"
+      data={data}
+      dataset="frango_us_monthly"
+      field="national_composite"
+      unit="USDc/lb"
+      decimals={2}
+      fullWidth
+      events={EVENTS_FRANGO_US}
+      headerExtra={modeToggle}
+    />
+  );
+}
+
 // ── Tab principal ─────────────────────────────────────────────────────────────
 const PoultryUSTab = ({ data, accent, tab }) => {
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
@@ -1166,19 +1456,7 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             fullWidth
             events={EVENTS_SPREAD}
           />
-          <window.PriceCard
-            cardId="us-national-composite"
-            title="National Composite"
-            sub="USDA · National Composite Price"
-            accent="oklch(0.82 0.18 155)"
-            data={data}
-            dataset="frango_us_monthly"
-            field="national_composite"
-            unit="USDc/lb"
-            decimals={2}
-            fullWidth
-            events={EVENTS_FRANGO_US}
-          />
+          <NationalCompositeSection data={data} accent={accent}/>
           {combinedPriceRows.length > 0 && (
             <window.MultiContinuousCard
               cardId="us-price-comparison"
