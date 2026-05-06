@@ -173,7 +173,7 @@ const SIcon = {
 };
 
 function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
-  const [openGroup, setOpenGroup] = useState(activeDataset);
+  const [openGroups, setOpenGroups] = useState(() => new Set([activeDataset]));
 
   const onPick = (ds, sub) => {
     setActiveDataset(ds);
@@ -181,8 +181,13 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
   };
 
   const toggleGroup = (groupId) => {
-    setOpenGroup(prev => prev === groupId ? null : groupId);
+    setOpenGroups(prev => {
+      const next = new Set(prev);
+      next.has(groupId) ? next.delete(groupId) : next.add(groupId);
+      return next;
+    });
   };
+  const openGroup = { has: id => openGroups.has(id) };
 
   const isBR        = activeDataset === 'beef_br';
   const isUS        = activeDataset === 'beef_us';
@@ -204,7 +209,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
         <span className="sidebar-item-icon" style={isActive ? undefined : { color: 'var(--fg-dim)', opacity: 0.6 }}>{icon}</span>
         <span style={labelStyle}>{label}</span>
       </div>
-      <Chevron open={openGroup === groupId}/>
+      <Chevron open={openGroup.has(groupId)}/>
     </div>
   );
 
@@ -226,7 +231,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
 
         <div className="sidebar-group">
           <GroupHeader groupId="beef_br" icon={SIcon.cow} label="Beef BR" isActive={isBR}/>
-          {openGroup === 'beef_br' && (<>
+          {openGroup.has('beef_br') && (<>
             <button className={`sidebar-item ${isBR && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('beef_br', 'precos')}>
               <span className="sidebar-item-icon">{SIcon.bar}</span>
               <span className="sidebar-item-label">Preços & Spreads</span>
@@ -245,7 +250,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
 
         <div className="sidebar-group" style={{marginTop:6}}>
           <GroupHeader groupId="poultry_br" icon={SIcon.chicken} label="Poultry BR" isActive={isPoultry}/>
-          {openGroup === 'poultry_br' && (<>
+          {openGroup.has('poultry_br') && (<>
             <button className={`sidebar-item ${isPoultry && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('poultry_br', 'precos')}>
               <span className="sidebar-item-icon">{SIcon.bar}</span>
               <span className="sidebar-item-label">Preços & Spreads</span>
@@ -268,7 +273,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
         <div className="sidebar-group" style={{marginTop:6}}>
           <GroupHeader groupId="poultry_us" icon={SIcon.chicken} isActive={isPoultryUS}
             label="Poultry US" labelStyle={{textTransform:'uppercase', letterSpacing:'0.08em', fontSize:11}}/>
-          {openGroup === 'poultry_us' && (<>
+          {openGroup.has('poultry_us') && (<>
             <button className={`sidebar-item ${isPoultryUS && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('poultry_us', 'precos')}>
               <span className="sidebar-item-icon">{SIcon.bar}</span>
               <span className="sidebar-item-label">Preços & Spreads</span>
