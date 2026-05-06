@@ -1392,6 +1392,19 @@ function BroilerProductionSection({ data }) {
   }
   return (
     <main className="main">
+      <window.PriceCard
+        cardId="us-plantel-matrizes"
+        title="Plantel de Matrizes"
+        sub="USDA · Broiler Breeders · FrangoUS col Z"
+        accent={chartAccent}
+        data={data}
+        dataset="frango_us_monthly"
+        field="plantel_matrizes"
+        unit="000 cab"
+        decimals={0}
+        fullWidth
+        events={EVENTS_FRANGO_US}
+      />
       <window.ProductionCard
         data={data}
         accent={chartAccent}
@@ -1527,19 +1540,6 @@ const PoultryUSTab = ({ data, accent, tab }) => {
             decimals={2}
             fullWidth
             events={EVENTS_SPREAD}
-          />
-          <window.PriceCard
-            cardId="us-plantel-matrizes"
-            title="Plantel de Matrizes"
-            sub="USDA · Broiler Breeders · FrangoUS col Z"
-            accent="oklch(0.82 0.18 155)"
-            data={data}
-            dataset="frango_us_monthly"
-            field="plantel_matrizes"
-            unit="000 cab"
-            decimals={0}
-            fullWidth
-            events={EVENTS_FRANGO_US}
           />
           <NationalCompositeSection data={data} accent={accent}/>
           {combinedPriceRows.length > 0 && (
