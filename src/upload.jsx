@@ -600,7 +600,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
     }
 
     // Plantel e Produtividade das Matrizes — fórmulas cross-sheet, lê direto da origem
-    const plantelMap = {}, produtividadeMap = {};
+    const plantelMap = {}, produtividadeMap = {}, pintosMap = {};
     if (findSheet('Production')) {
       const prodRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('Production')], { header: 1, raw: false, defval: null });
       for (let i = 0; i < prodRaw.length; i++) {
@@ -612,6 +612,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         if (vc != null) plantelMap[`${md.year}-${md.month}`] = vc;
         const vd = parseNum(r[3]); // col D — Produtividade das Matrizes
         if (vd != null) produtividadeMap[`${md.year}-${md.month}`] = vd;
+        const vg = parseNum(r[6]); // col G — Pintos que Eclodiram
+        if (vg != null) pintosMap[`${md.year}-${md.month}`] = vg;
       }
     }
 
@@ -631,6 +633,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         plantel_matrizes:        plantelMap[`${md.year}-${md.month}`]      ?? null,
         produtividade_matrizes:  produtividadeMap[`${md.year}-${md.month}`] ?? null,
         ovos_incubados:          parseNum(r[30]),  // col AE — EGGSESUS
+        pintos_eclodiram:        pintosMap[`${md.year}-${md.month}`] ?? null,
       });
     }
     result.frango_us_monthly = trimEmpty(frango_us_monthly);
