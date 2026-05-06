@@ -599,8 +599,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
       if (usdaRaw[i] && usdaRaw[i][1] && parseMonthTag(usdaRaw[i][1])) { dataStart = i; break; }
     }
 
-    // Plantel de Matrizes — fórmula cross-sheet (=Production!C...), lê direto da origem
-    const plantelMap = {};
+    // Plantel e Produtividade das Matrizes — fórmulas cross-sheet, lê direto da origem
+    const plantelMap = {}, produtividadeMap = {};
     if (findSheet('Production')) {
       const prodRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('Production')], { header: 1, raw: false, defval: null });
       for (let i = 0; i < prodRaw.length; i++) {
@@ -608,8 +608,10 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         if (!r) continue;
         const md = parseMonthTag(r[0]) || parseMonthTag(r[1]);
         if (!md) continue;
-        const v = parseNum(r[2]); // col C
-        if (v != null) plantelMap[`${md.year}-${md.month}`] = v;
+        const vc = parseNum(r[2]); // col C — Plantel de Matrizes
+        if (vc != null) plantelMap[`${md.year}-${md.month}`] = vc;
+        const vd = parseNum(r[3]); // col D — Produtividade das Matrizes
+        if (vd != null) produtividadeMap[`${md.year}-${md.month}`] = vd;
       }
     }
 
@@ -626,7 +628,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         usda_spread:             parseNum(r[18]),
         usda_broiler_composite:  parseNum(r[19]),  // col T
         national_composite:      parseNum(r[20]),  // col U
-        plantel_matrizes:        plantelMap[`${md.year}-${md.month}`] ?? null,
+        plantel_matrizes:        plantelMap[`${md.year}-${md.month}`]      ?? null,
+        produtividade_matrizes:  produtividadeMap[`${md.year}-${md.month}`] ?? null,
       });
     }
     result.frango_us_monthly = trimEmpty(frango_us_monthly);

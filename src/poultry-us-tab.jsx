@@ -1425,6 +1425,19 @@ function BroilerProductionSection({ data }) {
         fullWidth
         events={EVENTS_FRANGO_US}
       />
+      <window.PriceCard
+        cardId="us-produtividade-matrizes"
+        title="Produtividade das Matrizes"
+        sub="USDA · Broiler Breeders · Rate of Lay"
+        accent={chartAccent}
+        data={data}
+        dataset="frango_us_monthly"
+        field="produtividade_matrizes"
+        unit="eggs/100"
+        decimals={1}
+        fullWidth
+        events={EVENTS_FRANGO_US}
+      />
     </main>
   );
 }
