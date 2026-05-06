@@ -270,12 +270,16 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
         <div className="sidebar-group" style={{marginTop:6}}>
           <GroupHeader groupId="poultry_us" icon={SIcon.chicken} isActive={isPoultryUS}
             label="Poultry US" labelStyle={{textTransform:'uppercase', letterSpacing:'0.08em', fontSize:11}}/>
-          {openGroup === 'poultry_us' && (
+          {openGroup === 'poultry_us' && (<>
             <button className={`sidebar-item ${isPoultryUS && tab==='precos' ? 'is-on' : ''}`} onClick={() => onPick('poultry_us', 'precos')}>
               <span className="sidebar-item-icon">{SIcon.bar}</span>
               <span className="sidebar-item-label">Preços & Spreads</span>
             </button>
-          )}
+            <button className={`sidebar-item ${isPoultryUS && tab==='producao' ? 'is-on' : ''}`} onClick={() => onPick('poultry_us', 'producao')}>
+              <span className="sidebar-item-icon">{SIcon.abates}</span>
+              <span className="sidebar-item-label">Produção</span>
+            </button>
+          </>)}
         </div>
       </div>
 

@@ -1375,6 +1375,15 @@ function NationalCompositeSection({ data, accent }) {
 
 // ── Tab principal ─────────────────────────────────────────────────────────────
 const PoultryUSTab = ({ data, accent, tab }) => {
+  if (tab === 'producao') {
+    return (
+      <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
+        <div style={{fontSize:16,fontWeight:500,color:'var(--fg)'}}>Em breve</div>
+        <div style={{fontSize:13,textAlign:'center',maxWidth:320}}>Esta seção ainda não tem conteúdo.</div>
+      </main>
+    );
+  }
+
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
     return (
       <main className="main" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,minHeight:'60vh',color:'var(--fg-dim)'}}>
