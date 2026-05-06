@@ -382,8 +382,8 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
 
         for (const snap of snapshotCols) {
           const v = parseNum(row[snap.col]);
-          
-          if (v == null) continue;
+
+          if (v == null || v <= 0) continue;
 
           const qEndMonth = quarter * 3;
           const colorFC   = isForecastCell(ri, snap.col);
@@ -393,7 +393,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
           const isForecast = colorFC !== null
             ? colorFC
             : (year > snap.year || (year === snap.year && qEndMonth + 3 >= snap.month));
-          
+
           if (!window.PARSER_LOG) window.PARSER_LOG = [];
           window.PARSER_LOG.push({ snap: snap.label, year, quarter, isForecast });
 
@@ -491,7 +491,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
 
         for (const snap of snapshotCols) {
           const v = parseNum(row[snap.col]);
-          if (v == null) continue;
+          if (v == null || v <= 0) continue;
           const qEndMonth  = quarter * 3;
           const colorFC    = isForecastCell(ri, snap.col);
           const isForecast = colorFC !== null
