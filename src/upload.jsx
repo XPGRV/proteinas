@@ -598,6 +598,21 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
     for (let i = 2; i < Math.min(10, usdaRaw.length); i++) {
       if (usdaRaw[i] && usdaRaw[i][1] && parseMonthTag(usdaRaw[i][1])) { dataStart = i; break; }
     }
+
+    // Plantel de Matrizes — fórmula cross-sheet (=Production!C...), lê direto da origem
+    const plantelMap = {};
+    if (findSheet('Production')) {
+      const prodRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('Production')], { header: 1, raw: false, defval: null });
+      for (let i = 0; i < prodRaw.length; i++) {
+        const r = prodRaw[i];
+        if (!r) continue;
+        const md = parseMonthTag(r[0]) || parseMonthTag(r[1]);
+        if (!md) continue;
+        const v = parseNum(r[2]); // col C
+        if (v != null) plantelMap[`${md.year}-${md.month}`] = v;
+      }
+    }
+
     const frango_us_monthly = [];
     for (let i = dataStart; i < usdaRaw.length; i++) {
       const r = usdaRaw[i];
@@ -611,7 +626,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         usda_spread:             parseNum(r[18]),
         usda_broiler_composite:  parseNum(r[19]),  // col T
         national_composite:      parseNum(r[20]),  // col U
-        plantel_matrizes:        parseNum(r[25]),  // col Z
+        plantel_matrizes:        plantelMap[`${md.year}-${md.month}`] ?? null,
       });
     }
     result.frango_us_monthly = trimEmpty(frango_us_monthly);
