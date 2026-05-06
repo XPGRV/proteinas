@@ -1433,7 +1433,7 @@ function BroilerProductionSection({ data }) {
         data={data}
         dataset="frango_us_monthly"
         field="produtividade_matrizes"
-        unit="eggs/100"
+        unit="eggs/100 matrizes"
         decimals={1}
         fullWidth
         events={EVENTS_FRANGO_US}
@@ -1441,7 +1441,7 @@ function BroilerProductionSection({ data }) {
       <window.PriceCard
         cardId="us-ovos-incubados"
         title="Ovos Incubados"
-        sub="USDA · Broiler Eggs Set In Incubators"
+        sub="Bloomberg · EGGSESUS Index · Broiler Eggs Set In Incubators"
         accent={chartAccent}
         data={data}
         dataset="frango_us_monthly"
