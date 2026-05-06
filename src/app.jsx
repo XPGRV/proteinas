@@ -175,8 +175,6 @@ const SIcon = {
 function Sidebar({ tab, setTab, activeDataset, setActiveDataset }) {
   const [openGroup, setOpenGroup] = useState(activeDataset);
 
-  useEffect(() => { setOpenGroup(activeDataset); }, [activeDataset]);
-
   const onPick = (ds, sub) => {
     setActiveDataset(ds);
     if (sub) setTab(sub);
