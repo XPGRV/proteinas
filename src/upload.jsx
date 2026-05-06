@@ -611,6 +611,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         usda_spread:             parseNum(r[18]),
         usda_broiler_composite:  parseNum(r[19]),  // col T
         national_composite:      parseNum(r[20]),  // col U
+        plantel_matrizes:        parseNum(r[25]),  // col Z
       });
     }
     result.frango_us_monthly = trimEmpty(frango_us_monthly);
