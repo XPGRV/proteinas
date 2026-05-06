@@ -1374,7 +1374,8 @@ function NationalCompositeSection({ data, accent }) {
 }
 
 // ── Broiler Production Section ────────────────────────────────────────────────
-function BroilerProductionSection({ data, accent }) {
+function BroilerProductionSection({ data }) {
+  const chartAccent = 'oklch(0.78 0.15 160)';
   const [pairIdx, setPairIdx] = React.useState(0);
   if (!data.broiler_production?.snapshots?.length) {
     return (
@@ -1393,7 +1394,7 @@ function BroilerProductionSection({ data, accent }) {
     <main className="main">
       <window.ProductionCard
         data={data}
-        accent={accent}
+        accent={chartAccent}
         productionKey="broiler_production"
         summariesFile="ldp_pdf_summaries_broiler.txt"
         eyebrow="USDA · Produção Broiler trimestral · 000 lb"
@@ -1404,7 +1405,7 @@ function BroilerProductionSection({ data, accent }) {
       />
       <window.AnnualProductionCard
         data={data}
-        accent={accent}
+        accent={chartAccent}
         productionKey="broiler_production"
         eyebrow="USDA · Produção Broiler anual · 000 lb"
         title="Revisão de Forecast · Anual"
@@ -1418,7 +1419,7 @@ function BroilerProductionSection({ data, accent }) {
 // ── Tab principal ─────────────────────────────────────────────────────────────
 const PoultryUSTab = ({ data, accent, tab }) => {
   if (tab === 'producao') {
-    return <BroilerProductionSection data={data} accent={accent} />;
+    return <BroilerProductionSection data={data} />;
   }
 
   if (!data.frango_us_daily || !data.frango_us_daily.length) {
