@@ -1438,6 +1438,19 @@ function BroilerProductionSection({ data }) {
         fullWidth
         events={EVENTS_FRANGO_US}
       />
+      <window.PriceCard
+        cardId="us-ovos-incubados"
+        title="Ovos Incubados"
+        sub="USDA · Broiler Eggs Set In Incubators"
+        accent={chartAccent}
+        data={data}
+        dataset="frango_us_monthly"
+        field="ovos_incubados"
+        unit="000"
+        decimals={0}
+        fullWidth
+        events={EVENTS_FRANGO_US}
+      />
     </main>
   );
 }

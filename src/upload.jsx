@@ -630,6 +630,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
         national_composite:      parseNum(r[20]),  // col U
         plantel_matrizes:        plantelMap[`${md.year}-${md.month}`]      ?? null,
         produtividade_matrizes:  produtividadeMap[`${md.year}-${md.month}`] ?? null,
+        ovos_incubados:          parseNum(r[30]),  // col AE — EGGSESUS
       });
     }
     result.frango_us_monthly = trimEmpty(frango_us_monthly);
