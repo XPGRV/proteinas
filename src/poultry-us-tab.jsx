@@ -266,19 +266,39 @@ const FrangoUSChart = ({
           if (!best) return null;
           const cx = xFn(best.doy), cy = yFn(best.value);
           const isPinned = ev.year === pinnedYear;
-          const nearRight = cx > W - padR - 80;
-          const anchor = nearRight ? 'end' : 'middle';
-          const lx = nearRight ? cx - 8 : cx;
+
+          const leftThird  = padL + chartW / 3;
+          const rightThird = padL + (chartW * 2) / 3;
+          let anchor, lx;
+          if (cx < leftThird)       { anchor = 'start'; lx = Math.max(padL, cx); }
+          else if (cx > rightThird) { anchor = 'end';   lx = Math.min(W - padR, cx); }
+          else                      { anchor = 'middle'; lx = cx; }
+
+          const wrapLines = (() => {
+            const words = ev.label.split(' ');
+            const lines = [];
+            let cur = '';
+            for (const w of words) {
+              const candidate = cur ? cur + ' ' + w : w;
+              if (candidate.length <= 48) { cur = candidate; }
+              else { if (cur) lines.push(cur); cur = w; }
+            }
+            if (cur) lines.push(cur);
+            return lines;
+          })();
+
           return (
             <g key={i} className={eventsLeaving ? 'rx-events-leaving' : ''}>
               <window.EventDot cx={cx} cy={cy} r={isPinned ? 5 : 3}
                 fill={isPinned ? 'var(--bg)' : EVENT_COLOR} stroke={EVENT_COLOR} strokeWidth={1.5}
                 delaySec={0}/>
-              {isPinned && <line className="rx-event-beam" x1={cx} y1={padT+12} x2={cx} y2={cy-6} stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>}
+              {isPinned && <line className="rx-event-beam" x1={cx} y1={padT + wrapLines.length * 13 + 4} x2={cx} y2={cy-6} stroke={EVENT_COLOR} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.6}/>}
               {isPinned && (
                 <text x={lx} y={padT} textAnchor={anchor} dominantBaseline="hanging"
                   style={{fontFamily:'var(--font-mono)', fontSize:10, fill:EVENT_COLOR, fontWeight:600}}>
-                  {ev.label}
+                  {wrapLines.map((line, li) => (
+                    <tspan key={li} x={lx} dy={li === 0 ? 0 : 13}>{line}</tspan>
+                  ))}
                 </text>
               )}
             </g>
