@@ -1449,7 +1449,7 @@ function BroilerProductionSection({ data }) {
         decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1461,7 +1461,7 @@ function BroilerProductionSection({ data }) {
         decimals={1}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1473,7 +1473,7 @@ function BroilerProductionSection({ data }) {
         decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1485,7 +1485,7 @@ function BroilerProductionSection({ data }) {
         decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1498,7 +1498,7 @@ function BroilerProductionSection({ data }) {
         scale={100}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1510,7 +1510,7 @@ function BroilerProductionSection({ data }) {
         decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1522,7 +1522,7 @@ function BroilerProductionSection({ data }) {
         decimals={2}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
       <FrangoUSSimpleCard
         data={data}
@@ -1534,7 +1534,7 @@ function BroilerProductionSection({ data }) {
         decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
-        defaultYears={10}
+        defaultYears={5}
       />
     </main>
   );
@@ -1598,7 +1598,7 @@ const PoultryUSTab = ({ data, accent, tab }) => {
           unit="USD/Kg"
           events={EVENTS_FEED_GRAIN}
           accent={accent}
-          defaultYears={10}
+          defaultYears={5}
         />
         <FrangoUSSimpleCard
           data={data}
