@@ -31,6 +31,12 @@
 <body>
   <div id="root"></div>
 
+  <script>
+    /* Aplica theme/accent antes do primeiro paint para evitar flash de estilo */
+    document.documentElement.dataset.theme   = 'aurora';
+    document.documentElement.dataset.density = 'comfortable';
+    document.documentElement.style.setProperty('--accent', 'oklch(0.82 0.18 155)');
+  </script>
   <script src="src/reactive.js?v=20"></script>
   <script type="text/babel" src="src/data-utils.jsx?v=20"></script>
   <script type="text/babel" src="src/upload.jsx?v=20"></script>
