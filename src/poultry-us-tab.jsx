@@ -68,7 +68,7 @@ function buildDailyStatsUS(byYear, histYears) {
 // ── Chart ─────────────────────────────────────────────────────────────────────
 const FrangoUSChart = ({
   byYear, allYears, selectedYears, pinnedYear, setPinnedYear,
-  chartStyle, showStats, showEvents, events, accent, unit, chartId = 'us',
+  chartStyle, showStats, showEvents, events, accent, unit, decimals = 3, chartId = 'us',
 }) => {
   const W = 1000, H = 380;
   const padL = 68, padR = 24, padT = 20, padB = 32;
@@ -206,7 +206,7 @@ const FrangoUSChart = ({
           <g key={v}>
             <line x1={padL} x2={W-padR} y1={yFn(v)} y2={yFn(v)} className="grid-line"/>
             <text x={padL-6} y={yFn(v)} className="tick-label" textAnchor="end" dominantBaseline="middle">
-              {window.fmt(v, {decimals: v % 1 === 0 ? 2 : 3})}
+              {window.fmt(v, {decimals})}
             </text>
           </g>
         ))}
@@ -326,13 +326,13 @@ const FrangoUSChart = ({
               {rows.map(({yr, pt}) => (
                 <div key={yr} className="hover-row">
                   <span className="hover-year" style={{color: yearColor(yr)}}>{yr}</span>
-                  <span className="hover-val">{window.fmt(pt.value, {decimals:3})}<span className="hover-unit"> {unit}</span></span>
+                  <span className="hover-val">{window.fmt(pt.value, {decimals})}<span className="hover-unit"> {unit}</span></span>
                 </div>
               ))}
               {showStats && statEntry && (
                 <div className="hover-row hover-stat">
                   <span className="hover-year">média {statEntry.n}a</span>
-                  <span className="hover-val">{window.fmt(statEntry.mean, {decimals:3})}</span>
+                  <span className="hover-val">{window.fmt(statEntry.mean, {decimals})}</span>
                 </div>
               )}
             </div>
@@ -676,7 +676,7 @@ const FrangoUSPriceCard = ({ data, accent }) => {
 };
 
 // ── Card genérico para Feed Grain e Spread ────────────────────────────────────
-const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, events, accent, defaultYears }) => {
+const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, events, accent, defaultYears, decimals = 3, scale = 1 }) => {
   const allPoints = React.useMemo(() => data.frango_us_daily || [], [data]);
 
   const [chartStyle, setChartStyle] = React.useState('line');
@@ -690,11 +690,11 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
       const v = r[seriesKey];
       if (v == null) continue;
       if (!out[r.year]) out[r.year] = [];
-      out[r.year].push({ doy: MONTH_DOY_US[r.month - 1] + r.day, value: v });
+      out[r.year].push({ doy: MONTH_DOY_US[r.month - 1] + r.day, value: v * scale });
     }
     for (const yr of Object.keys(out)) out[yr].sort((a, b) => a.doy - b.doy);
     return out;
-  }, [allPoints, seriesKey]);
+  }, [allPoints, seriesKey, scale]);
 
   const allYears = React.useMemo(() => Object.keys(byYear).map(Number).sort((a,b)=>a-b), [byYear]);
 
@@ -739,7 +739,7 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
           <h3 className="card-title">{title}</h3>
           <div className="card-price">
             {latestRaw && (<>
-              <span className="card-value">{window.fmt(latestRaw[seriesKey], {decimals:3})}</span>
+              <span className="card-value">{window.fmt(latestRaw[seriesKey] * scale, {decimals})}</span>
               <span className="card-unit">{unit}</span>
               <span className={`card-delta ${yoy == null ? '' : yoy >= 0 ? 'is-up' : 'is-down'}`}>
                 {fmtPct(yoy)}<span className="card-delta-label"> YoY</span>
@@ -767,6 +767,7 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
         events={events}
         accent={accent}
         unit={unit}
+        decimals={decimals}
         chartId={cardId}
       />
     </section>
@@ -1443,8 +1444,9 @@ function BroilerProductionSection({ data }) {
         seriesKey="ovos_incubados"
         cardId="us-ovos-incubados"
         title="Ovos Incubados"
-        eyebrow="Bloomberg · BBG_Dados · Broiler Eggs Set In Incubators"
-        unit="000"
+        eyebrow="Bloomberg · EGGSESUS Index · Broiler Eggs Set In Incubators"
+        unit="000 Eggs"
+        decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1454,8 +1456,9 @@ function BroilerProductionSection({ data }) {
         seriesKey="hatchability"
         cardId="us-hatchability"
         title="Hatchability"
-        eyebrow="Bloomberg · BBG_Dados · Taxa de Eclosão"
+        eyebrow="Bloomberg · EGGSHCUS Index · Broiler Eggs Hatched Ratio"
         unit="%"
+        decimals={1}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1465,8 +1468,9 @@ function BroilerProductionSection({ data }) {
         seriesKey="pintos_eclodiram"
         cardId="us-pintos-eclodiram"
         title="Pintos que Eclodiram"
-        eyebrow="Bloomberg · BBG_Dados · Broiler-Type Chicks Hatched"
-        unit="000"
+        eyebrow="Bloomberg · Cálculo Próprio · Eggs Sets * Hatchability"
+        unit="000 Chicks"
+        decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1476,8 +1480,9 @@ function BroilerProductionSection({ data }) {
         seriesKey="chicks_placed"
         cardId="us-chicks-placed"
         title="Chicks Placed"
-        eyebrow="Bloomberg · BBG_Dados · Broiler Chicks Placed"
-        unit="000"
+        eyebrow="Bloomberg · EGGSCPUS Index · Broiler Chicks Placed"
+        unit="000 Chicks"
+        decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1487,8 +1492,10 @@ function BroilerProductionSection({ data }) {
         seriesKey="mortality"
         cardId="us-mortality"
         title="Mortality"
-        eyebrow="Bloomberg · BBG_Dados · Taxa de Mortalidade"
+        eyebrow="Bloomberg · Cálculo Próprio · Chicks Placed - Slaughter"
         unit="%"
+        decimals={1}
+        scale={100}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1498,8 +1505,9 @@ function BroilerProductionSection({ data }) {
         seriesKey="abates_frango"
         cardId="us-abates-frango"
         title="Abates de Frango"
-        eyebrow="Bloomberg · BBG_Dados · Broiler Slaughter"
-        unit="000"
+        eyebrow="Bloomberg · POSLHDYC Index · Poultry Slaughter Head Count"
+        unit="000 Heads"
+        decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1509,8 +1517,9 @@ function BroilerProductionSection({ data }) {
         seriesKey="peso_medio"
         cardId="us-peso-medio"
         title="Peso Médio"
-        eyebrow="Bloomberg · BBG_Dados · Average Live Weight"
+        eyebrow="Bloomberg · POSLAWYC Index · Poultry Slaughter Average Weight"
         unit="lb"
+        decimals={2}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
@@ -1519,9 +1528,10 @@ function BroilerProductionSection({ data }) {
         data={data}
         seriesKey="producao"
         cardId="us-producao"
-        title="Produção"
-        eyebrow="Bloomberg · BBG_Dados · Broiler Production"
-        unit="000 lb"
+        title="Produção de Frango"
+        eyebrow="Bloomberg · Cálculo Próprio · Poultry Slaughter Head Count * Poultry Slaughter Avg. Weight"
+        unit="Ton"
+        decimals={0}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={10}
