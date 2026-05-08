@@ -238,6 +238,12 @@ body {
 
 .sidebar-spacer { flex: 1; }
 
+.sidebar-divider {
+  height: 1px;
+  margin: 10px 12px;
+  background: color-mix(in oklch, var(--border) 70%, transparent);
+}
+
 /* === Sidebar upload zone === */
 .sidebar-upload-zone {
   margin: 4px 8px;

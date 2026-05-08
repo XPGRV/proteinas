@@ -13,6 +13,7 @@ import './bimonthly-chart.jsx'
 import './continuous-chart.jsx'
 import './poultry-br-tab.jsx'
 import './poultry-us-tab.jsx'
+import './macro-tab.jsx'
 import './app.jsx'
 
 // Aplica tema antes do primeiro paint
