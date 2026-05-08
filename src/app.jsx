@@ -248,7 +248,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset, onUpload }) {
       </div>
 
       <div className="sidebar-section">
-        <div className="sidebar-section-label">Mercados</div>
+        <div className="sidebar-section-label">Proteínas</div>
 
         <div className="sidebar-group">
           <GroupHeader groupId="beef_br" icon={SIcon.cow} label="Beef BR" isActive={isBR}/>
@@ -307,13 +307,12 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset, onUpload }) {
         </div>
       </div>
 
-      <div className="sidebar-divider"/>
-
-      <div className="sidebar-section">
-        <div className="sidebar-section-label">Cenário</div>
+      <div style={{display:'flex', flexDirection:'column', gap:2}}>
+        <div className="sidebar-divider" style={{margin:'0 4px 6px'}}/>
+        <div className="sidebar-section-label" style={{paddingTop:0}}>Cenário</div>
         <button className={`sidebar-item ${isMacro ? 'is-on' : ''}`} onClick={() => onPick('macro')}>
-          <span className="sidebar-item-icon" style={isMacro ? { color: 'oklch(0.74 0.16 290)' } : {}}>{SIcon.globe}</span>
-          <span className="sidebar-item-label">Macro</span>
+          <span className="sidebar-item-icon">{SIcon.globe}</span>
+          <span className="sidebar-item-label" style={{textTransform:'uppercase', letterSpacing:'0.1em', fontSize:11}}>MACRO</span>
         </button>
       </div>
 
