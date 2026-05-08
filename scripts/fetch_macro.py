@@ -7,10 +7,9 @@ IGP-M       - BCB SGS 189   (variação mensal %, fonte FGV via BCB)
 TJLP        - BCB SGS 4175  (taxa % a.m., fim de período)
 PTAX        - BCB SGS 1     (R$/USD, fim de período — série diária, chunked)
 PTAX diária - BCB SGS 1     (últimos 2 anos, dados diários)
-CPI-US      - BLS CUUR0000SA0 (All items, not seasonally adjusted)
 """
 
-import json, os, sys, time, urllib.request
+import json, os, sys, urllib.request
 from datetime import datetime, timedelta, timezone
 
 OUT_PATH = os.path.join(os.path.dirname(__file__), '..', 'public', 'macro-data.json')
@@ -93,42 +92,6 @@ def fetch_bcb_chunked(code, label, start_year=2000, chunk=5):
     return all_rows
 
 
-# ── BLS CPI-US ───────────────────────────────────────────────────────────────
-
-def fetch_cpi_us():
-    series_id    = 'CUUR0000SA0'
-    current_year = datetime.now().year
-    all_rows     = {}
-
-    print('  BLS CPI-US...', end=' ', flush=True)
-    for start in range(2005, current_year + 1, 3):
-        end = min(start + 2, current_year)
-        url = (f'https://api.bls.gov/publicAPI/v1/timeseries/data/{series_id}'
-               f'?startyear={start}&endyear={end}')
-        try:
-            resp = get_json(url)
-            status = resp.get('status', '')
-            if status != 'REQUEST_SUCCEEDED':
-                msgs = resp.get('message', [])
-                print(f'[{start}-{end}: BLS status={status} {msgs}]', end=' ')
-                time.sleep(3)
-                continue
-            for s in resp.get('Results', {}).get('series', []):
-                for pt in s.get('data', []):
-                    period = pt.get('period', '')
-                    if not period.startswith('M') or period == 'M13':
-                        continue
-                    all_rows[(int(pt['year']), int(period[1:]))] = float(pt['value'])
-        except Exception as e:
-            print(f'[{start}-{end}: {e}]', end=' ')
-        time.sleep(1)  # evita rate-limit entre chunks
-
-    rows = [{'year': y, 'month': m, 'value': v}
-            for (y, m), v in sorted(all_rows.items())]
-    print(f'{len(rows)} pontos')
-    return rows
-
-
 # ── main ─────────────────────────────────────────────────────────────────────
 
 def main():
@@ -139,7 +102,6 @@ def main():
     tjlp_raw  = fetch_bcb(4175, 'TJLP')                            # mensal — request único
     selic_raw = fetch_bcb_chunked(432,  'SELIC target', 1994, 5)  # diária — chunked desde 1994
     ptax_raw  = fetch_bcb_chunked(1,    'PTAX R$/USD',  1990, 5)  # diária — chunked desde 1990
-    cpi_raw   = fetch_cpi_us()
 
     cutoff_2y = (datetime.now() - timedelta(days=730)).strftime('%d/%m/%Y')
     ptax_daily_raw = fetch_bcb(1, 'PTAX diária 2a', start=cutoff_2y)  # últimos 2 anos
@@ -153,7 +115,6 @@ def main():
             'tjlp':       to_monthly_last(tjlp_raw),
             'ptax':       to_monthly_last(ptax_raw),
             'ptax_daily': to_daily(ptax_daily_raw),
-            'cpi_us':     cpi_raw,
         },
     }
 

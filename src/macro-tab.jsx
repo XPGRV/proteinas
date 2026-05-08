@@ -10,7 +10,6 @@ const SERIES_META = [
   { id: 'selic',  label: 'SELIC',  eyebrow: 'BCB SGS 432 · Meta',            unit: '% a.a.', decimals: 2 },
   { id: 'igpm',   label: 'IGP-M',  eyebrow: 'BCB SGS 189 · FGV',             unit: '%',      decimals: 2 },
   { id: 'tjlp',   label: 'TJLP',   eyebrow: 'BCB SGS 4175',                  unit: '% a.a.', decimals: 2 },
-  { id: 'cpi_us', label: 'CPI-US', eyebrow: 'BLS CUUR0000SA0 · All Items',   unit: 'idx',    decimals: 1 },
 ];
 
 const PTAX_META = { id: 'ptax', label: 'PTAX', eyebrow: 'BCB SGS 1 · Fim de Mês', unit: 'R$/USD', decimals: 2 };
