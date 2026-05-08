@@ -3,6 +3,7 @@ name: Update Macro Data
 on:
   schedule:
     - cron: '0 11 * * 1-5'  # dias úteis, 11h UTC (8h BRT)
+    - cron: '0 21 * * 1-5'  # dias úteis, 21h UTC (18h BRT)
   workflow_dispatch:         # permite rodar manualmente
 
 permissions:
