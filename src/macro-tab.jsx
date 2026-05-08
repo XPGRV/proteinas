@@ -215,11 +215,29 @@ function PtaxDailyChart({ rows, accent, unit, decimals, height = 220, chartStyle
 function MacroCard({ meta, rows }) {
   const [range,      setRange]      = useState(null);
   const [chartStyle, setChartStyle] = useState('line');
+  const [viewMode,   setViewMode]   = useState('mom');  // 'mom' | 'acum' — só IPCA
 
-  const filtered = useMemo(() => filterRows(rows, range), [rows, range]);
+  const isIpca = meta.id === 'ipca';
 
-  const latest = rows[rows.length - 1];
-  const prev   = rows[rows.length - 2];
+  // Série acumulada 12m calculada sobre todo o histórico (para não perder dados nas bordas após filtro)
+  const accRows = useMemo(() => {
+    if (!isIpca) return rows;
+    return rows.map((row, i) => {
+      const slice = rows.slice(Math.max(0, i - 11), i + 1);
+      const value = slice.length === 12
+        ? slice.reduce((s, r) => s + r.value, 0)
+        : null;
+      return { ...row, value };
+    });
+  }, [rows, isIpca]);
+
+  const sourceRows = isIpca && viewMode === 'acum' ? accRows : rows;
+  const filtered   = useMemo(() => filterRows(sourceRows, range), [sourceRows, range]);
+
+  const displayUnit = isIpca && viewMode === 'acum' ? '% a.a.' : meta.unit;
+
+  const latest = sourceRows[sourceRows.length - 1];
+  const prev   = sourceRows[sourceRows.length - 2];
   const val    = latest?.value ?? null;
   const delta  = val != null && prev?.value != null ? val - prev.value : null;
   const isUp   = delta != null ? delta >= 0 : null;
@@ -238,7 +256,7 @@ function MacroCard({ meta, rows }) {
           <h3 className="card-title">{meta.label}</h3>
           <div className="card-price">
             <span className="card-value">{fmtN(val, meta.decimals)}</span>
-            <span className="card-unit">{meta.unit}</span>
+            <span className="card-unit">{displayUnit}</span>
             {fmtD(delta, meta.decimals) && (
               <span className={`card-delta ${isUp ? 'is-up' : 'is-down'}`}>
                 {fmtD(delta, meta.decimals)}
@@ -263,6 +281,12 @@ function MacroCard({ meta, rows }) {
               </div>
             </div>
             <div className="card-ctrl-row">
+              {isIpca && (
+                <div className="seg">
+                  <button className={`seg-btn ${viewMode==='mom'  ? 'is-on' : ''}`} onClick={() => setViewMode('mom')}>%MoM</button>
+                  <button className={`seg-btn ${viewMode==='acum' ? 'is-on' : ''}`} onClick={() => setViewMode('acum')}>Acumulado</button>
+                </div>
+              )}
               <div className="seg">
                 <button className={`seg-btn ${chartStyle==='line' ? 'is-on' : ''}`} onClick={() => setChartStyle('line')}>Linha</button>
                 <button className={`seg-btn ${chartStyle==='area' ? 'is-on' : ''}`} onClick={() => setChartStyle('area')}>Área</button>
@@ -276,7 +300,7 @@ function MacroCard({ meta, rows }) {
         rows={filtered}
         field="value"
         accent={CHART_GREEN}
-        unit={meta.unit}
+        unit={displayUnit}
         decimals={meta.decimals}
         height={220}
         chartStyle={chartStyle}
