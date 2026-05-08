@@ -34,7 +34,7 @@ const EdgebeeefChart = ({
   chartStyle, showStats, showEvents, events, accent, chartId = 'edgebeef',
   unit = 'USD/cwt', decimals = 1,
 }) => {
-  const W = 1000, H = 380;
+  const W = 1000, H = 260;
   const padL = 64, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
@@ -573,7 +573,7 @@ const EdgebeeefCard = ({ data, accent, events }) => {
 
 // ── Ciclo do Boi US ───────────────────────────────────────────────────────────
 const CicloBoiUS = ({ data, accent, events = [], showEvents = true }) => {
-  const W = 1000, H = 340;
+  const W = 1000, H = 260;
   const padL = 56, padR = 64, padT = 20, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;

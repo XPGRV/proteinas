@@ -411,7 +411,7 @@ function AbatesTab({ data, accent }) {
         title="Abates Totais" sub={abatesSub}
         accent={accent} data={data}
         dataset={abatesDataset} field={abatesField}
-        unit="cab." big fullWidth height={420}
+        unit="cab." big fullWidth
         headerExtra={
           <div className="seg" style={{marginBottom: 4}}>
             <button className={`seg-btn ${abatesSource==='sidra'?'is-on':''}`} onClick={() => setAbatesSource('sidra')}>SIDRA</button>
@@ -441,7 +441,7 @@ function AbatesTab({ data, accent }) {
         title="% Fêmeas no Abate" sub="SIF · sazonal mês-a-mês"
         accent={accent} data={data}
         dataset="beef" field="pct_femeas"
-        unit="%" decimals={0} height={340}/>
+        unit="%" decimals={0}/>
 
     </main>
   );
@@ -582,7 +582,7 @@ function DailySeasonalCard({ data, accent, dailyKey, usdDailyKey, cardId, title,
 function PriceCard({
   title, sub, accent, data, dataset, field, usdField,
   unit, usdUnit, hasUSD, decimals, big,
-  fullWidth, height = 320, headerExtra, cardId, events: eventsProp, footerNote,
+  fullWidth, height = 260, headerExtra, cardId, events: eventsProp, footerNote,
 }) {
   const eventsData = eventsProp !== undefined ? eventsProp : (window.EVENTS || []);
   const years = useMemo(() => window.availableYears(data, dataset, field), [data, dataset, field]);

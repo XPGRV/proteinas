@@ -151,7 +151,7 @@ function ProductionChart({
   events = [],
   showEvents = true,
 }) {
-  const W = 1000, H = 340;
+  const W = 1000, H = 260;
   const padL = 72, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
@@ -938,7 +938,7 @@ function buildAnnualSeries(records) {
 function AnnualProductionChart({ annualB, annualA, compYears, allYears, showForecast, accent, pair }) {
   const fmtSnap = s => { if (!s) return ''; const [mo, yr] = s.split('-'); return (PT_MON_ABBR[mo]||mo)+'-'+yr; };
   const { useState } = React;
-  const W = 1000, H = 300;
+  const W = 1000, H = 260;
   const padL = 72, padR = 24, padT = 20, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;

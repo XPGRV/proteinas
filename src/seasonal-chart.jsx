@@ -6,7 +6,7 @@ const SeasonalChart = ({
   data, dataset, field, selectedYears,
   showStats, showEvents, events,
   chartStyle, accent, unit, decimals, big,
-  height = 360,
+  height = 260,
   hideAvg = false,
 }) => {
   const W = 1000;

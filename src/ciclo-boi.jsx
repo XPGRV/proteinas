@@ -3,7 +3,7 @@ import React from 'react'
 // Ciclo do Boi — série temporal contínua: %Fêmeas no abate + MM12
 
 const CicloDoBoi = ({ data, accent, events = [], showEvents = true }) => {
-  const W = 1000, H = 340;
+  const W = 1000, H = 260;
   const padL = 52, padR = 24, padT = 20, padB = 40;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;

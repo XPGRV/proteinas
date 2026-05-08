@@ -73,7 +73,7 @@ const FrangoUSChart = ({
   byYear, allYears, selectedYears, pinnedYear, setPinnedYear,
   chartStyle, showStats, showEvents, events, accent, unit, decimals = 3, chartId = 'us',
 }) => {
-  const W = 1000, H = 380;
+  const W = 1000, H = 260;
   const padL = 68, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
@@ -809,7 +809,7 @@ function filterRatioByRange(rows, rangeYears) {
 }
 
 const PoultryBeefChart = ({ allRows, filteredRows, mean, chartStyle, prevFirstT = null }) => {
-  const W = 1000, H = 340;
+  const W = 1000, H = 260;
   const padL = 64, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
@@ -1090,7 +1090,7 @@ const NC_WEEKLY_COLORS = [
 ];
 
 function NcWeeklyChart({ rows, fields, chartStyle, pinnedSeries, setPinnedSeries }) {
-  const W = 1000, H = 360;
+  const W = 1000, H = 260;
   const padL = 64, padR = 24, padT = 20, padB = 32;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
@@ -1690,7 +1690,6 @@ const PoultryUSTab = ({ data, accent, tab }) => {
               ]}
               unit="USD/Kg"
               decimals={3}
-              height={380}
             />
           )}
         </>}

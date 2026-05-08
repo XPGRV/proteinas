@@ -12,7 +12,7 @@ function filterByRangeYears(rows, field, rangeYears) {
   return valid.filter(r => r.year * 12 + r.month - 1 > cutOrd);
 }
 
-function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height = 360, events = [], showEvents = true, chartStyle = 'line', zeroBaseline = false, highlightZero = false }) {
+function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height = 260, events = [], showEvents = true, chartStyle = 'line', zeroBaseline = false, highlightZero = false }) {
   const svgRef = React.useRef(null);
   const [hovered, setHovered] = React.useState(null); // { x, y, row, mouseY }
   const [svgW, setSvgW] = React.useState(760);
@@ -243,7 +243,7 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
 }
 
 // ── ContinuousCard ────────────────────────────────────────────────────────────
-function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit = '', decimals = 1, height = 360, events: eventsProp, footerNote }) {
+function ContinuousCard({ cardId, title, sub, accent, data, dataset, field, unit = '', decimals = 1, height = 260, events: eventsProp, footerNote }) {
   const [range, setRange]           = React.useState('5');
   const [chartStyle, setChartStyle] = React.useState('area');
 
@@ -325,7 +325,7 @@ window.ContinuousCard  = ContinuousCard;
 window.ContinuousChart = ContinuousChart;
 
 // ── MultiContinuousChart ──────────────────────────────────────────────────────
-function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 360, chartId = 'mc', chartStyle = 'line', pinnedSeries, setPinnedSeries }) {
+function MultiContinuousChart({ rows, fields, unit = '', decimals = 2, height = 260, chartId = 'mc', chartStyle = 'line', pinnedSeries, setPinnedSeries }) {
   const svgRef = React.useRef(null);
   const [hovered, setHovered] = React.useState(null);
   const [svgW, setSvgW] = React.useState(760);

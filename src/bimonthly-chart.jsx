@@ -39,7 +39,7 @@ function makeYearColor(accent) {
 }
 
 // ── Seasonal (eixo bimestral, 1 empresa, anos sobrepostos) ────────────────────
-function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 340, chartId = 'sea' }) {
+function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chartStyle = 'line', showStats, stats, height = 260, chartId = 'sea' }) {
   const W = 1000;
   const H = height;
   const padL = 58, padR = 48, padT = 16, padB = 40;
@@ -423,7 +423,7 @@ function BimonthlySeasonalChart({ bmRows, fieldKey, accent, selectedYears, chart
 }
 
 // ── Continuous (3 linhas, eixo temporal bimestral) ────────────────────────────
-function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 340, prevFirstOrd = null, chartId = 'cont' }) {
+function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', height = 260, prevFirstOrd = null, chartId = 'cont' }) {
   const svgRef    = React.useRef(null);
   const [W, setW] = React.useState(1000);
   const [hovered, setHovered]             = React.useState(null);
@@ -744,7 +744,7 @@ function BimonthlyContChart({ bmRows, fields, rangeYears, chartStyle = 'line', h
 }
 
 // ── BimonthlyCard ─────────────────────────────────────────────────────────────
-function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 340, footerNote, footerNoteBase100, continuousOnly = false, base100Fields = null }) {
+function BimonthlyCard({ cardId, title, sub, data, dataset, fields, accent, height = 260, footerNote, footerNoteBase100, continuousOnly = false, base100Fields = null }) {
   const initialMode = (continuousOnly || base100Fields) ? 'continuous' : 'seasonal';
   const [mode, setMode]             = React.useState(initialMode);
   const [range, setRange]           = React.useState('5');

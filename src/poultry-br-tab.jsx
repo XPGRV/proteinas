@@ -41,7 +41,7 @@ const PoultryProducaoTab = ({ data, accent }) => {
         title="Abates de Frango" sub={sub}
         accent={accent} data={data}
         dataset="frango" field={field}
-        unit="cab." big fullWidth height={420}
+        unit="cab." big fullWidth
         events={FRANGO_EVENTS}
         headerExtra={
           <div className="seg" style={{marginBottom:4}}>
@@ -56,7 +56,7 @@ const PoultryProducaoTab = ({ data, accent }) => {
         title="Chick Placed" sub="APINCO · Pintos destinados ao abate"
         accent={accent} data={data}
         dataset="frango" field="chick_placed"
-        unit="cab." big fullWidth height={420}
+        unit="cab." big fullWidth
         events={FRANGO_EVENTS}
         footerNote={
           <span>
@@ -115,7 +115,7 @@ const PoultryIpcaTab = ({ data, accent }) => {
         title="IPCA Processados"
         sub="Cálculo próprio · Subitens ponderados (Ham = 15,8%, Hot Dog = 7,2%, Sausage = 52,3%, Mortadella = 8,4%, Salami = 1,4%, Margarine = 14,9%)"
         accent={accent} data={data} dataset="processados"
-        field="ipca_base100" unit="Base 100" decimals={1} height={400}
+        field="ipca_base100" unit="Base 100" decimals={1}
       />
 
       <window.BimonthlyCard
