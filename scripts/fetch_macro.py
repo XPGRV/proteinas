@@ -40,7 +40,7 @@ def to_monthly_last(rows):
             for (y, m), v in sorted(monthly.items())]
 
 
-def fetch_bcb(code, label, start='01/01/2000'):
+def fetch_bcb(code, label, start='01/01/1990'):
     """Single-request fetch — adequado para séries mensais/esparsas."""
     url = (f'https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados'
            f'?formato=json&dataInicial={start}')
@@ -113,8 +113,8 @@ def main():
     ipca_raw  = fetch_bcb(433,  'IPCA mensal %')                  # mensal — request único
     igpm_raw  = fetch_bcb(189,  'IGP-M mensal %')                  # mensal — request único
     tjlp_raw  = fetch_bcb(4175, 'TJLP')                            # mensal — request único
-    selic_raw = fetch_bcb_chunked(432,  'SELIC target', 2000, 5)  # diária — chunked
-    ptax_raw  = fetch_bcb_chunked(1,    'PTAX R$/USD',  2000, 5)  # diária — chunked
+    selic_raw = fetch_bcb_chunked(432,  'SELIC target', 1994, 5)  # diária — chunked desde 1994
+    ptax_raw  = fetch_bcb_chunked(1,    'PTAX R$/USD',  1990, 5)  # diária — chunked desde 1990
     cpi_raw   = fetch_cpi_us()
 
     result = {
