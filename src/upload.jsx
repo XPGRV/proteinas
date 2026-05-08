@@ -960,4 +960,110 @@ function formatRelative(iso) {
   } catch { return ''; }
 }
 
-Object.assign(window, { parseWorkbook, UploadWidget });
+const META_LABELS = { br: 'BeefBR', us: 'BeefUS', poultry_br: 'FrangoBR', poultry_us: 'FrangoUS' };
+
+const SidebarUpload = ({ onLoad }) => {
+  const [status, setStatus] = React.useState(null);
+  const [dragging, setDragging] = React.useState(false);
+  const inputRef = React.useRef(null);
+
+  const processFiles = async (fileList) => {
+    const files = Array.from(fileList).filter(f => /\.(xlsx|xls|xlsm)$/i.test(f.name));
+    if (!files.length) return;
+
+    let fullData = { ...(window.__dashboardData || {}) };
+    let fullMeta = { ...(window.__dashboardMeta || {}) };
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const label = files.length > 1 ? `${i + 1}/${files.length} · ${file.name}` : file.name;
+        setStatus({ kind: 'loading', msg: label });
+
+        const ab = await file.arrayBuffer();
+        const nameLC = file.name.toLowerCase();
+        const forceUS        = nameLC.includes('beefus');
+        const forcePoultryBR = nameLC.includes('frango') && !nameLC.includes('us');
+        const forcePoultryUS = nameLC.includes('frangous') || (nameLC.includes('frango') && nameLC.includes('us'));
+        const forcePoultry   = forcePoultryBR || forcePoultryUS;
+        const parsed = await parseWorkbook(ab, {
+          parseBR: !forceUS && !forcePoultry,
+          parseUS: forceUS,
+          parsePoultryUS: forcePoultryUS,
+        });
+        fullData = { ...fullData, ...parsed };
+        const metaKey = forceUS ? 'us' : forcePoultryUS ? 'poultry_us' : forcePoultryBR ? 'poultry_br' : 'br';
+        fullMeta = { ...fullMeta, [metaKey]: { source: file.name, updated: new Date().toISOString() } };
+      }
+
+      window.__dashboardData = fullData;
+      window.__dashboardMeta = fullMeta;
+
+      try {
+        localStorage.setItem('dashboard_data', JSON.stringify(fullData));
+        localStorage.setItem('dashboard_meta', JSON.stringify(fullMeta));
+        localStorage.setItem('dashboard_version', '5');
+      } catch (_) {}
+
+      setStatus({ kind: 'loading', msg: '☁ Salvando na nuvem…' });
+      let cloudOk = false;
+      try {
+        const payload = JSON.stringify({ data: fullData, meta: fullMeta });
+        const res = await fetch(
+          `${window.__SB_URL}/storage/v1/object/dashboard/data.json`,
+          { method: 'POST', headers: { 'Authorization': `Bearer ${window.__SB_KEY}`, 'Content-Type': 'application/json', 'x-upsert': 'true' }, body: payload }
+        );
+        cloudOk = res.ok;
+        if (!res.ok) console.warn('Supabase upload HTTP', res.status, await res.text());
+      } catch (e) {
+        console.warn('Supabase upload falhou:', e);
+      }
+
+      onLoad(fullData, fullMeta);
+      const tabs = Object.keys(fullMeta).map(k => META_LABELS[k]).filter(Boolean).join(' · ');
+      setStatus({ kind: 'ok', msg: `✓ ${tabs} · ${cloudOk ? '☁ ok' : '⚠ offline'}` });
+      setTimeout(() => setStatus(null), 5000);
+    } catch (e) {
+      console.error(e);
+      setStatus({ kind: 'err', msg: 'Erro: ' + (e.message || 'falha ao ler planilha') });
+    }
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    setDragging(false);
+    processFiles(e.dataTransfer.files);
+  };
+
+  return (
+    <div
+      className={`sidebar-upload-zone${dragging ? ' is-drag' : ''}`}
+      onDragOver={e => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); }}
+      onDrop={onDrop}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".xlsx,.xls,.xlsm"
+        multiple
+        style={{ display: 'none' }}
+        onChange={e => { processFiles(e.target.files); e.target.value = ''; }}
+      />
+      <button className="sidebar-upload-btn" onClick={() => inputRef.current.click()}>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M7.5 2v8M4 5l3.5-3.5L11 5M2 13h11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span>Atualizar planilhas</span>
+      </button>
+      <div className="sidebar-upload-hint">
+        {status
+          ? <span className={`upload-status is-${status.kind}`}>{status.msg}</span>
+          : <span>arraste 1 ou mais arquivos</span>
+        }
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { parseWorkbook, UploadWidget, SidebarUpload });
