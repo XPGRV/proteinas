@@ -1056,12 +1056,11 @@ const SidebarUpload = ({ onLoad }) => {
         </svg>
         <span>Atualizar planilhas</span>
       </button>
-      <div className="sidebar-upload-hint">
-        {status
-          ? <span className={`upload-status is-${status.kind}`}>{status.msg}</span>
-          : <span>arraste 1 ou mais arquivos</span>
-        }
-      </div>
+      {status && (
+        <div className="sidebar-upload-hint">
+          <span className={`upload-status is-${status.kind}`}>{status.msg}</span>
+        </div>
+      )}
     </div>
   );
 };

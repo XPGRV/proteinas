@@ -300,7 +300,7 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset, onUpload }) {
       <div className="sidebar-spacer"/>
 
       <div className="sidebar-section">
-        <div className="sidebar-section-label">Dados</div>
+        <div className="sidebar-section-label">Base de Dados</div>
         <window.SidebarUpload onLoad={onUpload}/>
       </div>
     </aside>
