@@ -21,8 +21,22 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Buscar dados macro
-        run: python scripts/fetch_macro.py
+      - name: Buscar dados macro (com fallback)
+        run: |
+          cp public/macro-data.json public/macro-data.json.bak
+          python scripts/fetch_macro.py || true
+          python - <<'EOF'
+          import json
+          with open('public/macro-data.json') as f:
+              d = json.load(f)
+          has = any(len(v) > 0 for v in d.get('series', {}).values())
+          if not has:
+              import shutil
+              shutil.copy('public/macro-data.json.bak', 'public/macro-data.json')
+              print('APIs falharam — usando dados do repositório como fallback.')
+          else:
+              print('Dados novos OK.')
+          EOF
 
       - uses: actions/setup-node@v4
         with:
