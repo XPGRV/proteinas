@@ -253,23 +253,25 @@ body {
 .sidebar-upload-btn {
   width: 100%;
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 10px;
-  background: none;
-  border: none;
-  border-radius: 6px;
+  padding: 9px 12px;
+  background: color-mix(in oklch, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent);
+  border-radius: 7px;
   font-size: 13px;
+  font-weight: 500;
   font-family: inherit;
-  color: var(--fg-dim);
+  color: var(--accent);
   cursor: pointer;
   text-align: left;
-  transition: background 0.13s, color 0.13s;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.12s;
 }
 .sidebar-upload-btn:hover {
-  background: color-mix(in oklch, var(--accent) 12%, transparent);
-  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 28%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 15%, transparent);
+  transform: translateY(-1px);
 }
-.sidebar-upload-btn svg { flex: 0 0 auto; opacity: 0.7; }
-.sidebar-upload-btn:hover svg { opacity: 1; }
+.sidebar-upload-btn:active { transform: translateY(0); }
+.sidebar-upload-btn svg { flex: 0 0 auto; }
 .sidebar-upload-hint {
   font-size: 9.5px;
   text-transform: uppercase;
