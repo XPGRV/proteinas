@@ -1,4 +1,4 @@
-const { } = React;
+import React from 'react'
 
 function MacroTab() {
   return (
