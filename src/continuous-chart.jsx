@@ -12,7 +12,7 @@ function filterByRangeYears(rows, field, rangeYears) {
   return valid.filter(r => r.year * 12 + r.month - 1 > cutOrd);
 }
 
-function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height = 360, events = [], showEvents = true, chartStyle = 'line' }) {
+function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height = 360, events = [], showEvents = true, chartStyle = 'line', zeroBaseline = false, highlightZero = false }) {
   const svgRef = React.useRef(null);
   const [hovered, setHovered] = React.useState(null); // { x, y, row, mouseY }
   const [svgW, setSvgW] = React.useState(760);
@@ -77,10 +77,29 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
     xTicks.push({ x: xOf_ord(ord), label });
   }
 
-  // SVG path
-  const pts = valid.map(r => `${xOf(r).toFixed(1)},${yOf(r[field]).toFixed(1)}`);
-  const linePath = `M${pts.join('L')}`;
-  const areaPath = `${linePath}L${xOf(valid[valid.length-1]).toFixed(1)},${(padT+chartH).toFixed(1)}L${padL},${(padT+chartH).toFixed(1)}Z`;
+  // Split data into continuous segments (gap > 2 months = new subpath)
+  const segments = [];
+  let seg = [valid[0]];
+  for (let i = 1; i < valid.length; i++) {
+    const gap = valid[i].year * 12 + valid[i].month - (valid[i-1].year * 12 + valid[i-1].month);
+    if (gap > 2) { segments.push(seg); seg = [valid[i]]; }
+    else seg.push(valid[i]);
+  }
+  segments.push(seg);
+
+  const linePath = segments
+    .map(s => 'M' + s.map(r => `${xOf(r).toFixed(1)},${yOf(r[field]).toFixed(1)}`).join('L'))
+    .join('');
+
+  const zeroY       = yOf(0);
+  const zeroInChart = zeroY >= padT && zeroY <= padT + chartH;
+  const baseY       = (zeroBaseline && zeroInChart) ? zeroY : padT + chartH;
+  const areaPath    = segments.map(s => {
+    const pts = s.map(r => `${xOf(r).toFixed(1)},${yOf(r[field]).toFixed(1)}`);
+    const x0  = xOf(s[0]).toFixed(1);
+    const xN  = xOf(s[s.length - 1]).toFixed(1);
+    return `M${pts.join('L')}L${xN},${baseY.toFixed(1)}L${x0},${baseY.toFixed(1)}Z`;
+  }).join(' ');
 
   // Hover
   const onMouseMove = (e) => {
@@ -137,6 +156,13 @@ function ContinuousChart({ rows, field, accent, unit = '', decimals = 1, height 
 
         {/* Axis baseline */}
         <line x1={padL} x2={W - padR} y1={padT + chartH} y2={padT + chartH} stroke="var(--border)" strokeWidth={1}/>
+
+        {/* Zero line highlight */}
+        {highlightZero && zeroInChart && (
+          <line x1={padL} x2={W - padR} y1={zeroY} y2={zeroY}
+            stroke="var(--fg-dim)" strokeWidth={1.5} opacity={0.55}
+            clipPath={`url(#${clipId})`}/>
+        )}
 
         {/* X labels */}
         {xTicks.map((t, i) => (

@@ -218,6 +218,18 @@ function MacroCard({ meta, rows }) {
   const [viewMode,   setViewMode]   = useState('mom');  // 'mom' | 'acum' — só IPCA
 
   const isIpca = meta.id === 'ipca';
+  const isIgpm = meta.id === 'igpm';
+
+  const rangeOpts = (isIpca || isIgpm)
+    ? [
+        { label: 'LTM',   years: 1    },
+        { label: '3a',    years: 3    },
+        { label: '5a',    years: 5    },
+        { label: '10a',   years: 10   },
+        { label: '20a',   years: 20   },
+        { label: 'Todos', years: null },
+      ]
+    : RANGE_OPTS;
 
   // Série acumulada 12m calculada sobre todo o histórico (para não perder dados nas bordas após filtro)
   const accRows = useMemo(() => {
@@ -271,7 +283,7 @@ function MacroCard({ meta, rows }) {
           <div className="card-controls">
             <div className="card-ctrl-row">
               <div className="year-seg">
-                {RANGE_OPTS.map(o => (
+                {rangeOpts.map(o => (
                   <button key={o.label}
                     className={`year-seg-btn ${range === o.years ? 'is-on' : ''}`}
                     onClick={() => setRange(o.years)}>
@@ -304,6 +316,8 @@ function MacroCard({ meta, rows }) {
         decimals={meta.decimals}
         height={220}
         chartStyle={chartStyle}
+        zeroBaseline={isIgpm}
+        highlightZero={isIgpm}
       />
     </section>
   );
