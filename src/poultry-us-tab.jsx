@@ -1495,6 +1495,7 @@ function BroilerProductionSection({ data }) {
         eyebrow="FrangoUS · Col AF · Broiler Eggs Hatched Ratio"
         unit="%"
         decimals={2}
+        scale={100}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={5}
