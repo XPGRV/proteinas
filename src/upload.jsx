@@ -828,7 +828,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
   if (parseSelic && findSheet('BBG_Dados')) {
     const bgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: false });
     const SELIC_SNAPS = [
-      { label: 'abr-26', year: 2026, month: 4, dateCol: 7, valueCol: 5 },
+      { label: 'abr-26', year: 2026, month: 4, dateCol: 3, valueCol: 5 },
       { label: 'mai-26', year: 2026, month: 5, dateCol: 7, valueCol: 9 },
     ];
     const bySnapshot = {};
@@ -838,8 +838,7 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
       for (let i = 1; i < bgRaw.length; i++) {
         const r  = bgRaw[i];
         if (!r) continue;
-        // Try snap's dateCol first, fall back to col D (3) if empty
-        const pd = parseDate(r[snap.dateCol]) || parseDate(r[3]);
+        const pd = parseDate(r[snap.dateCol]);
         if (!pd) continue;
         const value = parseNum(r[snap.valueCol]);
         if (value == null) continue;
