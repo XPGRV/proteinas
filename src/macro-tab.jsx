@@ -238,18 +238,23 @@ function SelicSnapshotCard({ selicSnapshots }) {
         <div className="card-head-right">
           <div className="card-controls">
             <div className="card-ctrl-row">
-              <div className="year-seg">
-                {snapshots.map(s => {
-                  const meta = parseSnapLabel(s);
-                  return (
-                    <button key={s}
-                      className={`year-seg-btn ${selectedSnap === s ? 'is-on' : ''}`}
-                      onClick={() => setSelectedSnap(s)}>
-                      {meta.display}
-                    </button>
-                  );
-                })}
-              </div>
+              <select
+                value={selectedSnap}
+                onChange={e => setSelectedSnap(e.target.value)}
+                style={{
+                  background: 'var(--bg-input, var(--bg-panel))',
+                  color: 'var(--fg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                {snapshots.map(s => (
+                  <option key={s} value={s}>{parseSnapLabel(s).display}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
