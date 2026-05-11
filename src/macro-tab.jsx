@@ -2,8 +2,14 @@ import React from 'react'
 
 const { useState, useEffect, useMemo, useRef, useLayoutEffect } = React;
 
-const MONTHS_ABR  = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const CHART_GREEN = 'oklch(0.70 0.19 160)';
+const MONTHS_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+const SNAP_COLORS = [
+  'oklch(0.70 0.19 160)',
+  'oklch(0.62 0.20 240)',
+  'oklch(0.75 0.18 55)',
+  'oklch(0.65 0.20 310)',
+];
 
 function niceYTicks(dataMin, dataMax, count = 5) {
   const range = dataMax - dataMin || 1;
@@ -29,12 +35,19 @@ function parseSnapLabel(label) {
   return { month: mo, year: yr, display: `${MONTHS_ABR[mo - 1]}/${m[2]}` };
 }
 
-// ── SelicSnapshotChart ────────────────────────────────────────────────────────
+function ordToMoYr(ord) {
+  const mo = ((ord % 12) || 12);
+  const yr = (ord - mo) / 12;
+  return { mo, yr };
+}
 
-function SelicSnapshotChart({ rows, snapYear, snapMonth, accent, height = 240 }) {
+// ── SelicSnapshotChart (multi-series) ────────────────────────────────────────
+
+function SelicSnapshotChart({ series, height = 240 }) {
   const svgRef = useRef(null);
   const [svgW, setSvgW] = useState(760);
-  const [hovered, setHovered] = useState(null);
+  const [hovOrd, setHovOrd] = useState(null);
+  const [hovMouse, setHovMouse] = useState({ x: 0, y: 0 });
 
   useLayoutEffect(() => {
     if (!svgRef.current) return;
@@ -53,68 +66,71 @@ function SelicSnapshotChart({ rows, snapYear, snapMonth, accent, height = 240 })
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
-  const valid = useMemo(() => rows.filter(r => r.value != null), [rows]);
+  const allPoints = useMemo(() =>
+    series.flatMap(s => s.rows.filter(r => r.value != null)), [series]);
 
-  if (!valid.length) return (
+  if (!allPoints.length) return (
     <div style={{height, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--fg-dim)', fontSize:13}}>
       Sem dados
     </div>
   );
 
-  const firstOrd = valid[0].year * 12 + valid[0].month;
-  const lastOrd  = valid[valid.length - 1].year * 12 + valid[valid.length - 1].month;
+  const allOrds = useMemo(() => {
+    const set = new Set(allPoints.map(r => r.year * 12 + r.month));
+    return [...set].sort((a, b) => a - b);
+  }, [allPoints]);
+
+  const firstOrd = allOrds[0];
+  const lastOrd  = allOrds[allOrds.length - 1];
   const span     = lastOrd - firstOrd || 1;
 
-  const xOf = r => padL + ((r.year * 12 + r.month - firstOrd) / span) * chartW;
+  const xOfOrd = ord => padL + ((ord - firstOrd) / span) * chartW;
+  const xOf    = r   => xOfOrd(r.year * 12 + r.month);
 
-  const vals = valid.map(r => r.value);
+  const vals = allPoints.map(r => r.value);
   const { ticks: yTicks, lo: yMin, hi: yMax } = niceYTicks(Math.min(...vals), Math.max(...vals));
-  const yOf  = v => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
-
-  // Split into solid (historical) and dashed (forecast) paths
-  const solidRows = valid.filter(r => !r.isForecast);
-  const dotRows   = valid.filter(r => r.isForecast);
-  const lastSolid = solidRows[solidRows.length - 1];
-  // Connect dashed path from the last solid point
-  const dotFull   = lastSolid ? [lastSolid, ...dotRows] : dotRows;
+  const yOf = v => padT + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
 
   const toPath = pts => pts.length < 2 ? '' :
     `M${pts.map(r => `${xOf(r).toFixed(1)},${yOf(r.value).toFixed(1)}`).join('L')}`;
 
-  const solidPath = toPath(solidRows);
-  const dotPath   = toPath(dotFull);
+  const seriesPaths = useMemo(() => series.map(s => {
+    const valid     = s.rows.filter(r => r.value != null);
+    const solidRows = valid.filter(r => !r.isForecast);
+    const dotRows   = valid.filter(r => r.isForecast);
+    const lastSolid = solidRows[solidRows.length - 1];
+    const dotFull   = lastSolid ? [lastSolid, ...dotRows] : dotRows;
+    return { solidPath: toPath(solidRows), dotPath: toPath(dotFull), valid };
+  }), [series, svgW, yMin, yMax]);
 
-  // Vertical marker at snapshot month
-  const snapOrd = snapYear * 12 + snapMonth;
-  const snapX   = padL + ((snapOrd - firstOrd) / span) * chartW;
-
-  // X-axis ticks — adaptive density
-  const totalMonths = span;
-  const tickStep = totalMonths <= 12 ? 1 : totalMonths <= 24 ? 3 : totalMonths <= 48 ? 6 : 12;
-  const xTicks = valid
-    .filter(r => (r.year * 12 + r.month - firstOrd) % tickStep === 0)
-    .map(r => ({ x: xOf(r), label: `${MONTHS_ABR[r.month - 1]}/${String(r.year).slice(2)}` }));
+  const tickStep = span <= 12 ? 1 : span <= 24 ? 3 : span <= 48 ? 6 : 12;
+  const xTicks = allOrds
+    .filter(ord => (ord - firstOrd) % tickStep === 0)
+    .map(ord => {
+      const { mo, yr } = ordToMoYr(ord);
+      return { x: xOfOrd(ord), label: `${MONTHS_ABR[mo - 1]}/${String(yr).slice(2)}` };
+    });
 
   const onMouseMove = e => {
     if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const px   = (e.clientX - rect.left - padL) / chartW;
-    const target = firstOrd + px * span;
-    let best = null, bestD = Infinity;
-    for (const r of valid) {
-      const d = Math.abs(r.year * 12 + r.month - target);
-      if (d < bestD) { bestD = d; best = r; }
-    }
-    if (best) setHovered({ x: xOf(best), y: yOf(best.value), row: best, mouseY: e.clientY - rect.top });
+    const rect    = svgRef.current.getBoundingClientRect();
+    const px      = (e.clientX - rect.left - padL) / chartW;
+    const target  = firstOrd + px * span;
+    const closest = allOrds.reduce((best, ord) =>
+      Math.abs(ord - target) < Math.abs(best - target) ? ord : best, allOrds[0]);
+    setHovOrd(closest);
+    setHovMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
   const fmt = v => v == null ? '—' : v.toFixed(2).replace('.', ',');
+
+  const hovX = hovOrd != null ? xOfOrd(hovOrd) : null;
 
   return (
     <div style={{position:'relative', animation:'rx-fade-in 0.5s ease-out'}}>
       <svg ref={svgRef} className="chart-svg" width="100%" height={H}
         style={{display:'block', overflow:'visible'}}
-        onMouseMove={onMouseMove} onMouseLeave={() => setHovered(null)}>
+        onMouseMove={onMouseMove} onMouseLeave={() => setHovOrd(null)}>
 
         {/* Y grid + labels */}
         {yTicks.map((v, i) => (
@@ -138,64 +154,96 @@ function SelicSnapshotChart({ rows, snapYear, snapMonth, accent, height = 240 })
           </g>
         ))}
 
-        {/* Snapshot vertical marker */}
-        {snapX >= padL && snapX <= W - padR && (
-          <line x1={snapX} x2={snapX} y1={padT} y2={padT + chartH}
-            stroke={accent} strokeWidth={1} strokeDasharray="3 3" strokeOpacity={0.45}/>
-        )}
+        {/* Snapshot vertical markers */}
+        {series.map((s, i) => {
+          const snapOrd = s.snapYear * 12 + s.snapMonth;
+          const sx = xOfOrd(snapOrd);
+          if (sx < padL || sx > W - padR) return null;
+          return (
+            <line key={i} x1={sx} x2={sx} y1={padT} y2={padT + chartH}
+              stroke={s.color} strokeWidth={1} strokeDasharray="3 3" strokeOpacity={0.4}/>
+          );
+        })}
 
-        {/* Solid historical path */}
-        {solidPath && (
-          <path d={solidPath} fill="none" stroke={accent} strokeWidth={2.5} strokeLinejoin="round"/>
-        )}
+        {/* Series paths */}
+        {seriesPaths.map((sp, i) => (
+          <g key={i}>
+            {sp.solidPath && (
+              <path d={sp.solidPath} fill="none" stroke={series[i].color} strokeWidth={2.5} strokeLinejoin="round"/>
+            )}
+            {sp.dotPath && (
+              <path d={sp.dotPath} fill="none" stroke={series[i].color} strokeWidth={2} strokeLinejoin="round"
+                strokeDasharray="6 4" strokeOpacity={0.75}/>
+            )}
+          </g>
+        ))}
 
-        {/* Dashed forecast path */}
-        {dotPath && (
-          <path d={dotPath} fill="none" stroke={accent} strokeWidth={2} strokeLinejoin="round"
-            strokeDasharray="6 4" strokeOpacity={0.7}/>
-        )}
-
-        {/* Hover crosshair + dot */}
-        {hovered && (
+        {/* Hover crosshair + dots */}
+        {hovOrd != null && hovX != null && (
           <g>
-            <line x1={hovered.x} x2={hovered.x} y1={padT} y2={padT + chartH}
+            <line x1={hovX} x2={hovX} y1={padT} y2={padT + chartH}
               stroke="var(--fg)" strokeOpacity={0.2} strokeWidth={1}/>
-            <circle cx={hovered.x} cy={hovered.y} r={4} fill="var(--bg-panel)"
-              stroke={accent} strokeWidth={2} className="rx-no-anim"/>
+            {series.map((s, i) => {
+              const pt = s.rows.find(r => r.year * 12 + r.month === hovOrd && r.value != null);
+              if (!pt) return null;
+              return (
+                <circle key={i} cx={hovX} cy={yOf(pt.value)} r={4}
+                  fill="var(--bg-panel)" stroke={s.color} strokeWidth={2} className="rx-no-anim"/>
+              );
+            })}
           </g>
         )}
       </svg>
 
       {/* Legend */}
-      <div style={{display:'flex', gap:16, padding:'6px 0 0', fontSize:11, color:'var(--fg-dim)'}}>
-        <span style={{display:'flex', alignItems:'center', gap:5}}>
-          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={accent} strokeWidth="2.5"/></svg>
+      <div style={{display:'flex', gap:16, flexWrap:'wrap', padding:'6px 0 0', fontSize:11, color:'var(--fg-dim)'}}>
+        {series.map((s, i) => (
+          <span key={i} style={{display:'flex', alignItems:'center', gap:5}}>
+            <svg width="20" height="10">
+              <line x1="0" y1="4" x2="20" y2="4" stroke={s.color} strokeWidth="2.5"/>
+              <line x1="0" y1="8" x2="20" y2="8" stroke={s.color} strokeWidth="2" strokeDasharray="5 3" strokeOpacity="0.75"/>
+            </svg>
+            {parseSnapLabel(s.label).display}
+          </span>
+        ))}
+        <span style={{display:'flex', alignItems:'center', gap:5, marginLeft:'auto'}}>
+          <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="var(--fg-dim)" strokeWidth="2"/></svg>
           Realizado
         </span>
         <span style={{display:'flex', alignItems:'center', gap:5}}>
-          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke={accent} strokeWidth="2" strokeDasharray="5 3" strokeOpacity="0.7"/></svg>
+          <svg width="16" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="var(--fg-dim)" strokeWidth="2" strokeDasharray="5 3" strokeOpacity="0.75"/></svg>
           Projetado
         </span>
       </div>
 
       {/* Hover tooltip */}
-      {hovered && (() => {
-        const r   = hovered.row;
-        const TW  = 160;
-        const rawL = hovered.x > svgW * 0.65 ? hovered.x - TW - 16 : hovered.x + 16;
+      {hovOrd != null && (() => {
+        const { mo, yr } = ordToMoYr(hovOrd);
+        const TW  = 180;
+        const rawL = hovMouse.x > svgW * 0.65 ? hovMouse.x - TW - 16 : hovMouse.x + 16;
+        const tooltipRows = series.map(s => ({
+          label: parseSnapLabel(s.label).display,
+          color: s.color,
+          point: s.rows.find(r => r.year * 12 + r.month === hovOrd && r.value != null),
+        }));
         return (
           <div className="hover-card" style={{
             left: Math.max(4, Math.min(svgW - TW - 4, rawL)),
-            top:  Math.max(10, Math.min(H - 80, hovered.mouseY - 40)),
+            top:  Math.max(10, Math.min(H - 80, hovMouse.y - 40)),
+            minWidth: TW,
           }}>
-            <div className="hover-month">{MONTHS_ABR[r.month - 1]}/{r.year}</div>
+            <div className="hover-month">{MONTHS_ABR[mo - 1]}/{yr}</div>
             <div className="hover-rows">
-              <div className="hover-row">
-                <span className="hover-val" style={{color: accent}}>
-                  {fmt(r.value)}<span className="hover-unit"> % a.a.</span>
-                </span>
-                {r.isForecast && <span style={{fontSize:10, color:'var(--fg-dim)', marginLeft:6}}>projetado</span>}
-              </div>
+              {tooltipRows.map((tr, i) => (
+                <div key={i} className="hover-row">
+                  <span style={{fontSize:10, color:'var(--fg-dim)', minWidth:40}}>{tr.label}</span>
+                  <span className="hover-val" style={{color: tr.color}}>
+                    {tr.point ? fmt(tr.point.value) : '—'}
+                    {tr.point && <span className="hover-unit"> % a.a.</span>}
+                  </span>
+                  {tr.point?.isForecast && <span style={{fontSize:9, color:'var(--fg-dim)', marginLeft:4}}>proj.</span>}
+                </div>
+              ))}
             </div>
           </div>
         );
@@ -208,18 +256,41 @@ function SelicSnapshotChart({ rows, snapYear, snapMonth, accent, height = 240 })
 
 function SelicSnapshotCard({ selicSnapshots }) {
   const { snapshots, bySnapshot } = selicSnapshots;
-  const [selectedSnap, setSelectedSnap] = useState(snapshots[snapshots.length - 1]);
+  const [selectedSnaps, setSelectedSnaps] = useState(snapshots);
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef(null);
 
-  const allRows  = bySnapshot[selectedSnap] || [];
-  const snapMeta = parseSnapLabel(selectedSnap);
+  useEffect(() => {
+    if (!dropOpen) return;
+    const handler = e => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropOpen]);
 
-  // Mostra só 6 meses de historico antes do snapshot + forecast completo
-  const rows = useMemo(() => {
-    const cutOrd = snapMeta.year * 12 + snapMeta.month - 6;
-    return allRows.filter(r => r.isForecast || (r.year * 12 + r.month) >= cutOrd);
-  }, [allRows, snapMeta.year, snapMeta.month]);
+  const toggleSnap = s => setSelectedSnaps(prev =>
+    prev.includes(s)
+      ? prev.length > 1 ? prev.filter(x => x !== s) : prev  // manter ao menos 1
+      : [...prev, s]
+  );
 
-  const latest = useMemo(() => [...rows].filter(r => !r.isForecast).at(-1), [rows]);
+  const series = useMemo(() => selectedSnaps.map((s, i) => {
+    const meta    = parseSnapLabel(s);
+    const allRows = bySnapshot[s] || [];
+    const cutOrd  = meta.year * 12 + meta.month - 6;
+    const rows    = allRows.filter(r => r.isForecast || (r.year * 12 + r.month) >= cutOrd);
+    return { label: s, rows, color: SNAP_COLORS[i % SNAP_COLORS.length], snapYear: meta.year, snapMonth: meta.month };
+  }), [selectedSnaps, bySnapshot]);
+
+  const latestSnap   = snapshots[snapshots.length - 1];
+  const latestMeta   = parseSnapLabel(latestSnap);
+  const latestRows   = bySnapshot[latestSnap] || [];
+  const latestPoint  = [...latestRows].filter(r => !r.isForecast).at(-1);
+
+  const btnLabel = selectedSnaps.length === snapshots.length
+    ? 'Todos ▾'
+    : selectedSnaps.map(s => parseSnapLabel(s).display).join(', ') + ' ▾';
 
   return (
     <section className="card card-full">
@@ -227,45 +298,45 @@ function SelicSnapshotCard({ selicSnapshots }) {
         <div>
           <div className="card-eyebrow">BCB · Revisões de Mercado · Bloomberg</div>
           <h3 className="card-title">SELIC</h3>
-          {latest && (
+          {latestPoint && (
             <div className="card-price">
-              <span className="card-value">{latest.value.toFixed(2).replace('.', ',')}</span>
+              <span className="card-value">{latestPoint.value.toFixed(2).replace('.', ',')}</span>
               <span className="card-unit">% a.a.</span>
-              <span className="card-date">snapshot {snapMeta.display}</span>
+              <span className="card-date">snapshot {latestMeta.display}</span>
             </div>
           )}
         </div>
         <div className="card-head-right">
           <div className="card-controls">
             <div className="card-ctrl-row">
-              <select
-                value={selectedSnap}
-                onChange={e => setSelectedSnap(e.target.value)}
-                style={{
-                  background: 'var(--bg-input, var(--bg-panel))',
-                  color: 'var(--fg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                {snapshots.map(s => (
-                  <option key={s} value={s}>{parseSnapLabel(s).display}</option>
-                ))}
-              </select>
+              <div className="year-drop-wrap" ref={dropRef}>
+                <button
+                  className={`year-seg-btn ${dropOpen ? 'is-active' : ''}`}
+                  onClick={() => setDropOpen(o => !o)}
+                >
+                  {btnLabel}
+                </button>
+                {dropOpen && (
+                  <div className="year-drop">
+                    {snapshots.map(s => {
+                      const on = selectedSnaps.includes(s);
+                      return (
+                        <div key={s}
+                          className={`year-drop-item ${on ? 'is-on' : ''}`}
+                          onClick={() => toggleSnap(s)}>
+                          <span className="year-drop-check">{on ? '✓' : ''}</span>
+                          {parseSnapLabel(s).display}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <SelicSnapshotChart
-        rows={rows}
-        snapYear={snapMeta.year}
-        snapMonth={snapMeta.month}
-        accent={CHART_GREEN}
-        height={240}
-      />
+      <SelicSnapshotChart series={series} height={240} />
     </section>
   );
 }
