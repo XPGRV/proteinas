@@ -871,13 +871,12 @@ const snapshotDefs = [];
     const snapshots  = [];
     for (const snap of snapshotDefs) {
       const snapOrd = snap.year * 12 + snap.month;
-      const cutOrd  = snapOrd - 6;
       const entries = [];
 
-      // 6 meses de histórico antes do snapshot (linha sólida)
+      // Histórico completo até o mês da snapshot — corte aplicado no frontend
       for (const e of Object.values(histMap)) {
         const ord = e.year * 12 + e.month;
-        if (ord >= cutOrd && ord <= snapOrd)
+        if (ord <= snapOrd)
           entries.push({ year: e.year, month: e.month, value: e.value, isForecast: false });
       }
 

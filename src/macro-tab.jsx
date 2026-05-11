@@ -275,13 +275,19 @@ function SelicSnapshotCard({ selicSnapshots }) {
       : [...prev, s]
   );
 
-  const series = useMemo(() => selectedSnaps.map((s, i) => {
-    const meta    = parseSnapLabel(s);
-    const allRows = bySnapshot[s] || [];
-    const cutOrd  = meta.year * 12 + meta.month - 6;
-    const rows    = allRows.filter(r => r.isForecast || (r.year * 12 + r.month) >= cutOrd);
-    return { label: s, rows, color: SNAP_COLORS[i % SNAP_COLORS.length], snapYear: meta.year, snapMonth: meta.month };
-  }), [selectedSnaps, bySnapshot]);
+  const series = useMemo(() => {
+    // Corte global = mês mais antigo entre todos os snapshots selecionados (6m antes do mais antigo)
+    const globalCutOrd = Math.min(...selectedSnaps.map(s => {
+      const meta = parseSnapLabel(s);
+      return meta.year * 12 + meta.month - 6;
+    }));
+    return selectedSnaps.map((s, i) => {
+      const meta    = parseSnapLabel(s);
+      const allRows = bySnapshot[s] || [];
+      const rows    = allRows.filter(r => r.isForecast || (r.year * 12 + r.month) >= globalCutOrd);
+      return { label: s, rows, color: SNAP_COLORS[i % SNAP_COLORS.length], snapYear: meta.year, snapMonth: meta.month };
+    });
+  }, [selectedSnaps, bySnapshot]);
 
   const latestSnap   = snapshots[snapshots.length - 1];
   const latestMeta   = parseSnapLabel(latestSnap);
