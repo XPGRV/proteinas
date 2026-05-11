@@ -838,7 +838,14 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
     console.log('[SELIC] row1:', JSON.stringify(row1));
     const snapshotDefs = [];
     for (let c = 0; c < row0.length; c++) {
-      const tag = parseMonthTag(String(row0[c] || '').trim());
+      const cell = row0[c];
+      // "abr/26" pode estar armazenada como data Excel → Date object com cellDates:true
+      let tag = null;
+      if (cell instanceof Date) {
+        tag = { year: cell.getUTCFullYear(), month: cell.getUTCMonth() + 1 };
+      } else {
+        tag = parseMonthTag(String(cell || '').trim());
+      }
       if (!tag) continue;
       // Procura "CDI" nas próximas 5 colunas (row 2)
       let cdiCol = -1;
