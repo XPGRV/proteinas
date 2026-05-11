@@ -210,8 +210,14 @@ function SelicSnapshotCard({ selicSnapshots }) {
   const { snapshots, bySnapshot } = selicSnapshots;
   const [selectedSnap, setSelectedSnap] = useState(snapshots[snapshots.length - 1]);
 
-  const rows    = bySnapshot[selectedSnap] || [];
+  const allRows  = bySnapshot[selectedSnap] || [];
   const snapMeta = parseSnapLabel(selectedSnap);
+
+  // Show only 12 months of history before snapshot + full forecast
+  const rows = useMemo(() => {
+    const cutOrd = snapMeta.year * 12 + snapMeta.month - 12;
+    return allRows.filter(r => r.isForecast || (r.year * 12 + r.month) >= cutOrd);
+  }, [allRows, snapMeta.year, snapMeta.month]);
 
   const latest = useMemo(() => [...rows].filter(r => !r.isForecast).at(-1), [rows]);
 
