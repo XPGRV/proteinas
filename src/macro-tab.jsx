@@ -470,18 +470,11 @@ function MacroTab() {
     </main>
   );
 
+  const selicRows = series['selic'];
   return (
     <main className="main">
-      {SERIES_META.map(meta => {
-        const rows = series[meta.id];
-        if (!rows?.length) return null;
-        return <MacroCard key={meta.id} meta={meta} rows={rows} />;
-      })}
-      {series['ptax']?.length > 0 && (
-        <PtaxCard
-          rows={series['ptax']}
-          dailyRows={series['ptax_daily'] ?? []}
-        />
+      {selicRows?.length > 0 && (
+        <MacroCard meta={SERIES_META.find(m => m.id === 'selic')} rows={selicRows} />
       )}
     </main>
   );
