@@ -58,7 +58,7 @@ function trimSifLag(arr, field, lagMonths = 2) {
   });
 }
 
-async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, parsePoultryUS = false } = {}) {
+async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, parsePoultryUS = false, parseSelic = false } = {}) {
   if (!window.XLSX) {
     await new Promise((res, rej) => {
       const s = document.createElement('script');
@@ -822,6 +822,38 @@ async function parseWorkbook(arrayBuffer, { parseBR = true, parseUS = true, pars
     if (processados.length) result.processados = processados;
   }
 
+  // ── SELIC Snapshots (Planilha - Selic.xlsm · aba BBG_Dados) ──────────────────
+  // Snapshot Abr/26: dates col D (3), values col F (5)
+  // Snapshot Mai/26: dates col H (7), values col J (9)
+  if (parseSelic && findSheet('BBG_Dados')) {
+    const bgRaw = XLSX.utils.sheet_to_json(wb.Sheets[findSheet('BBG_Dados')], { header: 1, raw: false });
+    const SELIC_SNAPS = [
+      { label: 'abr-26', year: 2026, month: 4, dateCol: 3, valueCol: 5 },
+      { label: 'mai-26', year: 2026, month: 5, dateCol: 7, valueCol: 9 },
+    ];
+    const bySnapshot = {};
+    const snapshots  = [];
+    for (const snap of SELIC_SNAPS) {
+      const entries = [];
+      for (let i = 1; i < bgRaw.length; i++) {
+        const r  = bgRaw[i];
+        if (!r) continue;
+        const pd = parseDate(r[snap.dateCol]);
+        if (!pd) continue;
+        const value = parseNum(r[snap.valueCol]);
+        if (value == null) continue;
+        const isForecast = pd.year * 12 + pd.month > snap.year * 12 + snap.month;
+        entries.push({ year: pd.year, month: pd.month, value, isForecast });
+      }
+      if (entries.length > 0) {
+        entries.sort((a, b) => (a.year * 12 + a.month) - (b.year * 12 + b.month));
+        bySnapshot[snap.label] = entries;
+        snapshots.push(snap.label);
+      }
+    }
+    if (snapshots.length > 0) result.selic_snapshots = { snapshots, bySnapshot };
+  }
+
   if (Object.keys(result).length === 0) throw new Error(`Nenhuma aba reconhecida. Abas encontradas: ${sheets.join(', ')}`);
   return result;
 }
@@ -840,11 +872,12 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       // Detecção pelo nome do arquivo para evitar ler abas erradas
       // (BeefBR.xlsm também tem BBG_Dados mas não deve atualizar o BeefUS)
       const nameLC       = file.name.toLowerCase();
-      const forceUS      = nameLC.includes('beefus');
+      const forceUS        = nameLC.includes('beefus');
       const forcePoultryBR = nameLC.includes('frango') && !nameLC.includes('us');
       const forcePoultryUS = nameLC.includes('frangous') || (nameLC.includes('frango') && nameLC.includes('us'));
-      const forcePoultry = forcePoultryBR || forcePoultryUS;
-      const parsed = await parseWorkbook(ab, { parseBR: !forceUS && !forcePoultry, parseUS: forceUS, parsePoultryUS: forcePoultryUS });
+      const forcePoultry   = forcePoultryBR || forcePoultryUS;
+      const forceSelic     = nameLC.includes('selic');
+      const parsed = await parseWorkbook(ab, { parseBR: !forceUS && !forcePoultry && !forceSelic, parseUS: forceUS, parsePoultryUS: forcePoultryUS, parseSelic: forceSelic });
 
       // Mescla com dados existentes para preservar beef_us / edgebeef_daily
       const fullData = { ...(window.__dashboardData || {}), ...parsed };
@@ -852,7 +885,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
 
       // Meta separado por planilha — não sobrescreve o log da outra aba
       const metaEntry = { source: file.name, updated: new Date().toISOString() };
-      const metaKey   = forceUS ? 'us' : forcePoultryUS ? 'poultry_us' : forcePoultryBR ? 'poultry_br' : 'br';
+      const metaKey   = forceSelic ? 'selic' : forceUS ? 'us' : forcePoultryUS ? 'poultry_us' : forcePoultryBR ? 'poultry_br' : 'br';
       const prevMeta  = window.__dashboardMeta || {};
       const fullMeta  = { ...prevMeta, [metaKey]: metaEntry };
       window.__dashboardMeta = fullMeta;
@@ -905,6 +938,7 @@ const UploadWidget = ({ onLoad, lastUpdate, currentSource }) => {
       if (parsed.frango_mi_daily)       parts.push(`${parsed.frango_mi_daily.length} Frango MI diário`);
       if (parsed.feed_grain_daily)      parts.push(`${parsed.feed_grain_daily.length} Feed Grain diário`);
       if (parsed.frango_spread_mi_daily) parts.push(`${parsed.frango_spread_mi_daily.length} Spread MI diário`);
+      if (parsed.selic_snapshots) parts.push(`${parsed.selic_snapshots.snapshots.length} snapshots SELIC`);
       const cloudBadge = cloudOk ? ' · ☁ nuvem atualizada' : ' · ⚠ nuvem offline';
       setStatus({ kind: 'ok', msg: `✓ ${parts.join(' · ')}${cloudBadge}` });
       setTimeout(() => setStatus(null), 5000);
@@ -994,13 +1028,15 @@ const SidebarUpload = ({ onLoad }) => {
         const forcePoultryBR = nameLC.includes('frango') && !nameLC.includes('us');
         const forcePoultryUS = nameLC.includes('frangous') || (nameLC.includes('frango') && nameLC.includes('us'));
         const forcePoultry   = forcePoultryBR || forcePoultryUS;
+        const forceSelic     = nameLC.includes('selic');
         const parsed = await parseWorkbook(ab, {
-          parseBR: !forceUS && !forcePoultry,
+          parseBR: !forceUS && !forcePoultry && !forceSelic,
           parseUS: forceUS,
           parsePoultryUS: forcePoultryUS,
+          parseSelic: forceSelic,
         });
         fullData = { ...fullData, ...parsed };
-        const metaKey = forceUS ? 'us' : forcePoultryUS ? 'poultry_us' : forcePoultryBR ? 'poultry_br' : 'br';
+        const metaKey = forceSelic ? 'selic' : forceUS ? 'us' : forcePoultryUS ? 'poultry_us' : forcePoultryBR ? 'poultry_br' : 'br';
         fullMeta = { ...fullMeta, [metaKey]: { source: file.name, updated: new Date().toISOString() } };
       }
 

@@ -170,7 +170,7 @@ function App({ data: propData, initialData, initialMeta }) {
         ) : activeDataset === 'poultry_us' ? (
           <window.PoultryUSTab data={data} accent={accent} tab={tab}/>
         ) : activeDataset === 'macro' ? (
-          <window.MacroTab accent={accent}/>
+          <window.MacroTab data={data} accent={accent}/>
         ) : tab === 'precos' ? (
           <PrecosTab data={data} accent={accent}/>
         ) : (
@@ -318,12 +318,10 @@ function Sidebar({ tab, setTab, activeDataset, setActiveDataset, onUpload }) {
 
       <div className="sidebar-spacer"/>
 
-      {!isMacro && (
-        <div className="sidebar-section">
-          <div className="sidebar-section-label">Base de Dados</div>
-          <window.SidebarUpload onLoad={onUpload}/>
-        </div>
-      )}
+      <div className="sidebar-section">
+        <div className="sidebar-section-label">Base de Dados</div>
+        <window.SidebarUpload onLoad={onUpload}/>
+      </div>
     </aside>
   );
 }
@@ -337,6 +335,8 @@ function TopBar({ meta, onUpload, activeDataset }) {
     ? (meta?.poultry_br ?? null)
     : activeDataset === 'poultry_us'
     ? (meta?.poultry_us ?? null)
+    : activeDataset === 'macro'
+    ? (meta?.selic ?? null)
     : (meta?.br ?? (meta?.updated ? meta : null));
   return (
     <header className="topbar topbar-slim">
@@ -346,9 +346,7 @@ function TopBar({ meta, onUpload, activeDataset }) {
         </h1>
       </div>
       <div className="topbar-spacer"/>
-      {activeDataset !== 'macro' && (
-        <window.UploadWidget onLoad={onUpload} lastUpdate={currentMeta?.updated} currentSource={currentMeta?.source}/>
-      )}
+      <window.UploadWidget onLoad={onUpload} lastUpdate={currentMeta?.updated} currentSource={currentMeta?.source}/>
     </header>
   );
 }
