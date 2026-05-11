@@ -1556,7 +1556,7 @@ function BroilerProductionSection({ data }) {
         seriesKey="peso_medio"
         cardId="us-peso-medio"
         title="Peso Médio"
-        eyebrow="BLOOMBERG · POLSAWYC · Poultry Slaughter Average Weight"
+        eyebrow="BLOOMBERG · POLSAWYC Index · Poultry Slaughter Average Weight"
         unit="lb"
         decimals={2}
         events={EVENTS_FRANGO_US}
