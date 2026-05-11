@@ -1465,7 +1465,7 @@ function BroilerProductionSection({ data }) {
         decimals={0}
         fullWidth
         events={EVENTS_FRANGO_US}
-        footerNote="OBS: O plantel de matrizes representa o número de galinhas "mães" que existem nas granjas. São esses animais que botam os ovos férteis que, depois de chocados, vão originar os pintinhos destinados ao abate. Quanto maior o plantel de matrizes, maior tende a ser a produção de frangos no futuro."
+        footerNote={'OBS: O plantel de matrizes representa o número de galinhas "mães" que existem nas granjas. São esses animais que botam os ovos férteis que, depois de chocados, vão originar os pintinhos destinados ao abate. Quanto maior o plantel de matrizes, maior tende a ser a produção de frangos no futuro.'}
       />
       <window.PriceCard
         cardId="us-produtividade-matrizes"
