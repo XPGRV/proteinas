@@ -375,7 +375,7 @@ function SelicSnapshotCard({ selicSnapshots }) {
 
   const btnLabel = selectedSnaps.length === 1
     ? `${parseSnapLabel(selectedSnaps[0]).display} ▾`
-    : `Snapshots ▾`;
+    : `Projeções ▾`;
 
   return (
     <section className="card card-full">
@@ -387,7 +387,7 @@ function SelicSnapshotCard({ selicSnapshots }) {
             <div className="card-price">
               <span className="card-value">{latestPoint.value.toFixed(2).replace('.', ',')}</span>
               <span className="card-unit">% a.a.</span>
-              <span className="card-date">snapshot {latestMeta.display}</span>
+              <span className="card-date">projeção {latestMeta.display}</span>
             </div>
           )}
         </div>
