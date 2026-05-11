@@ -30,12 +30,15 @@ document.documentElement.style.setProperty('--accent', 'oklch(0.82 0.18 155)')
 
   let data = null, meta = null
 
-  // 1. Supabase — versão mais recente do último upload
+  // 1. Supabase — versão mais recente do último upload (timeout 5s)
   try {
+    const ctrl = new AbortController()
+    const tid  = setTimeout(() => ctrl.abort(), 5000)
     const resp = await fetch(
       `${SB_URL}/storage/v1/object/public/dashboard/data.json?t=${Date.now()}`,
-      { cache: 'no-store' }
+      { cache: 'no-store', signal: ctrl.signal }
     )
+    clearTimeout(tid)
     if (resp.ok) {
       const json = await resp.json()
       if (json?.data) { data = json.data; meta = json.meta || null }
