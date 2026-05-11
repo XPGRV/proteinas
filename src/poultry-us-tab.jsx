@@ -1543,7 +1543,7 @@ function BroilerProductionSection({ data }) {
         seriesKey="abates_frango"
         cardId="us-abates-frango"
         title="Abates de Frango"
-        eyebrow="FrangoUS · Col AN · Poultry Slaughter Head Count"
+        eyebrow="BLOOMBERG · POSLHDYC Index · Poultry Slaughter Head Count"
         unit="000 Heads"
         decimals={0}
         events={EVENTS_FRANGO_US}
@@ -1556,7 +1556,7 @@ function BroilerProductionSection({ data }) {
         seriesKey="peso_medio"
         cardId="us-peso-medio"
         title="Peso Médio"
-        eyebrow="FrangoUS · Col AP · Poultry Slaughter Average Weight"
+        eyebrow="BLOOMBERG · POLSAWYC · Poultry Slaughter Average Weight"
         unit="lb"
         decimals={2}
         events={EVENTS_FRANGO_US}
@@ -1569,7 +1569,7 @@ function BroilerProductionSection({ data }) {
         seriesKey="producao"
         cardId="us-producao"
         title="Produção de Frango"
-        eyebrow="FrangoUS · Col AR · Broiler Production"
+        eyebrow="Cálculo Próprio · Broiler Production"
         unit="000 Ton"
         decimals={0}
         events={EVENTS_FRANGO_US}
