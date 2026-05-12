@@ -842,6 +842,8 @@ const snapshotDefs = [];
       let tag = null;
       if (cell instanceof Date) {
         tag = { year: cell.getUTCFullYear(), month: cell.getUTCMonth() + 1 };
+      } else if (typeof cell === 'number' && cell > 20000) {
+        try { const p = XLSX.SSF.parse_date_code(cell); if (p) tag = { year: p.y, month: p.m }; } catch(_) {}
       } else {
         tag = parseMonthTag(String(cell || '').trim());
       }
