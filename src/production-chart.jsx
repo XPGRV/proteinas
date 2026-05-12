@@ -278,7 +278,8 @@ function ProductionChart({
       return pts.map((p, j) => `${j===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
     };
 
-    return { solidPath: toPath(solidPts), dashedPath: toPath(dashedPts) };
+    const splitFraction = lastRealIdx >= 0 ? (lastRealIdx + 0.5) / 4 : 0;
+    return { solidPath: toPath(solidPts), dashedPath: toPath(dashedPts), splitFraction };
   };
 
   const buildAreaPath = vals => {
@@ -381,7 +382,9 @@ function ProductionChart({
           const isSel   = selYear === yr;
           const dimmed  = selYear != null && !isSel;
           const leaving = isLeaving(yr);
-          const { solidPath, dashedPath } = buildMixed(vals.values, vals.forecast);
+          const { solidPath, dashedPath, splitFraction } = buildMixed(vals.values, vals.forecast);
+          const dashedDelay    = `${(splitFraction * 1.2).toFixed(3)}s`;
+          const dashedDuration = `${((1 - splitFraction) * 1.2).toFixed(3)}s`;
           return (
             <g key={yr}>
               {showAreaRender && (
@@ -406,7 +409,8 @@ function ProductionChart({
                   opacity={dimmed ? 0.2 : (isLast ? 1 : 0.8)}
                   strokeDasharray="10 8"
                   strokeLinejoin="round" strokeLinecap="round"
-                  className={`rx-dashed-line ${leaving ? 'rx-leaving' : ''}`}/>
+                  className={`rx-dashed-line ${leaving ? 'rx-leaving' : ''}`}
+                  style={{ animationDelay: dashedDelay, animationDuration: dashedDuration }}/>
               )}
               {/* Invisible wide click target — só quando o ano está ativo */}
               {!leaving && (
@@ -435,8 +439,9 @@ function ProductionChart({
           const b     = indexedB[yr];
           const isSel = selYear === yr;
           const dimmed = selYear != null && !isSel;
-          const { solidPath: aSolid, dashedPath: aDashed } = a ? buildMixed(a.values, a.forecast) : {};
-          const { solidPath: bSolid, dashedPath: bDashed } = b ? buildMixed(b.values, b.forecast) : {};
+          const { solidPath: aSolid, dashedPath: aDashed, splitFraction: aFrac } = a ? buildMixed(a.values, a.forecast) : {};
+          const { solidPath: bSolid, dashedPath: bDashed, splitFraction: bFrac } = b ? buildMixed(b.values, b.forecast) : {};
+          const dashedStyle = f => f != null ? { animationDelay: `${(f * 1.2).toFixed(3)}s`, animationDuration: `${((1 - f) * 1.2).toFixed(3)}s` } : {};
           // no bFullPath needed — click targets built individually below
           return (
             <g key={yr}>
@@ -444,14 +449,14 @@ function ProductionChart({
               {a && (
                 <g opacity={dimmed ? 0.08 : 0.38}>
                   {aSolid  && <path d={aSolid}  fill="none" stroke={clr} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={2} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.9" className="rx-dashed-line"/>}
+                  {aDashed && <path d={aDashed} fill="none" stroke={clr} strokeWidth={2} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" strokeOpacity="0.9" className="rx-dashed-line" style={dashedStyle(aFrac)}/>}
                 </g>
               )}
               {/* Line B — newer snapshot, full opacity */}
               {b && (
                 <g opacity={dimmed ? 0.12 : 1}>
                   {bSolid  && <path d={bSolid}  fill="none" stroke={clr} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"/>}
-                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={3} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" className="rx-dashed-line"/>}
+                  {bDashed && <path d={bDashed} fill="none" stroke={clr} strokeWidth={3} strokeDasharray="10 8" strokeLinejoin="round" strokeLinecap="round" className="rx-dashed-line" style={dashedStyle(bFrac)}/>}
                 </g>
               )}
               {/* (iii) Click targets — cover solid + dashed for BOTH A and B */}

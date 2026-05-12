@@ -107,7 +107,8 @@ function SelicSnapshotChart({ series, height = 320 }) {
     const dotRows   = valid.filter(r => r.isForecast);
     const lastSolid = solidRows[solidRows.length - 1];
     const dotFull   = lastSolid ? [lastSolid, ...dotRows] : dotRows;
-    return { solidPath: toPath(solidRows), dotPath: toPath(dotFull), valid, solidRows, dotRows };
+    const splitFraction = lastSolid ? Math.max(0, Math.min(1, (lastSolid.year * 12 + lastSolid.month - firstOrd) / span)) : 0;
+    return { solidPath: toPath(solidRows), dotPath: toPath(dotFull), valid, solidRows, dotRows, splitFraction };
   });
 
   // X-axis: generate every month in range regardless of data gaps
@@ -195,7 +196,8 @@ function SelicSnapshotChart({ series, height = 320 }) {
               )}
               {sp.dotPath && (
                 <path d={sp.dotPath} fill="none" stroke={s.color} strokeWidth={sw * 0.85} strokeLinejoin="round"
-                  strokeDasharray="6 4" strokeOpacity={0.8} className="rx-dashed-line"/>
+                  strokeDasharray="6 4" strokeOpacity={0.8} className="rx-dashed-line"
+                  style={{ animationDelay: `${(sp.splitFraction * 1.2).toFixed(3)}s`, animationDuration: `${((1 - sp.splitFraction) * 1.2).toFixed(3)}s` }}/>
               )}
             </g>
           );

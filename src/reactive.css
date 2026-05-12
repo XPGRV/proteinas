@@ -309,9 +309,13 @@
 .chart-svg circle {
   transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-/* Dashed forecast lines: reveal left→right (clip-path, so dash pattern is preserved) */
+/* Dashed forecast lines: reveal left→right via clip-path (preserves dash pattern).
+   animationDelay and animationDuration are set inline per-element to sync with solid line. */
 .chart-svg .rx-dashed-line {
-  animation: rx-stat-mean-reveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-name: rx-stat-mean-reveal;
+  animation-duration: 1.2s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
   transition: opacity 0.5s ease;
 }
 .chart-svg path[stroke-dasharray]:not(.rx-dashed-line) { transition: opacity 0.5s ease; }
