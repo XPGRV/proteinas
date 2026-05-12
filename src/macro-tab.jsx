@@ -4,11 +4,14 @@ const { useState, useEffect, useMemo, useRef, useLayoutEffect } = React;
 
 const MONTHS_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-const SNAP_COLORS = [
-  'oklch(0.70 0.19 160)',
-  'oklch(0.62 0.20 240)',
-  'oklch(0.75 0.18 55)',
-  'oklch(0.65 0.20 310)',
+const SEASONAL_PALETTE = [
+  'oklch(0.75 0.15 200)',  // age 1 — teal
+  'oklch(0.68 0.16 255)',  // age 2 — azul
+  'oklch(0.74 0.15 310)',  // age 3 — roxo
+  'oklch(0.78 0.17 35)',   // age 4 — laranja
+  'oklch(0.80 0.15 60)',   // age 5 — amarelo
+  'oklch(0.72 0.16 0)',    // age 6 — vermelho
+  'oklch(0.76 0.13 170)',  // age 7 — verde-água
 ];
 
 function niceYTicks(dataMin, dataMax, count = 5) {
@@ -336,7 +339,7 @@ function SelicSnapshotChart({ series, height = 320 }) {
 
 // ── SelicSnapshotCard ─────────────────────────────────────────────────────────
 
-function SelicSnapshotCard({ selicSnapshots }) {
+function SelicSnapshotCard({ selicSnapshots, accent }) {
   const { snapshots, bySnapshot } = selicSnapshots;
   const [selectedSnaps, setSelectedSnaps] = useState(snapshots);
   const [dropOpen, setDropOpen] = useState(false);
@@ -358,17 +361,25 @@ function SelicSnapshotCard({ selicSnapshots }) {
   );
 
   const series = useMemo(() => {
+    const sortedByRecency = [...selectedSnaps].sort((a, b) => {
+      const ma = parseSnapLabel(a), mb = parseSnapLabel(b);
+      return (mb.year * 12 + mb.month) - (ma.year * 12 + ma.month);
+    });
+    const snapColor = s => {
+      const age = sortedByRecency.indexOf(s);
+      return age === 0 ? (accent || 'oklch(0.70 0.19 160)') : SEASONAL_PALETTE[(age - 1) % SEASONAL_PALETTE.length];
+    };
     const globalCutOrd = Math.min(...selectedSnaps.map(s => {
       const meta = parseSnapLabel(s);
       return meta.year * 12 + meta.month - 6;
     }));
-    return selectedSnaps.map((s, i) => {
+    return selectedSnaps.map(s => {
       const meta    = parseSnapLabel(s);
       const allRows = bySnapshot[s] || [];
       const rows    = allRows.filter(r => r.isForecast || (r.year * 12 + r.month) >= globalCutOrd);
-      return { label: s, rows, color: SNAP_COLORS[i % SNAP_COLORS.length], snapYear: meta.year, snapMonth: meta.month };
+      return { label: s, rows, color: snapColor(s), snapYear: meta.year, snapMonth: meta.month };
     });
-  }, [selectedSnaps, bySnapshot]);
+  }, [selectedSnaps, bySnapshot, accent]);
 
   const latestSnap  = snapshots[snapshots.length - 1];
   const latestMeta  = parseSnapLabel(latestSnap);
@@ -447,7 +458,7 @@ function MacroTab({ data: propData, accent }) {
   if (selicSnapshots?.snapshots?.length > 0) {
     return (
       <main className="main">
-        <SelicSnapshotCard selicSnapshots={selicSnapshots} />
+        <SelicSnapshotCard selicSnapshots={selicSnapshots} accent={accent} />
       </main>
     );
   }
