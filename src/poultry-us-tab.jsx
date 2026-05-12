@@ -1516,6 +1516,7 @@ function BroilerProductionSection({ data }) {
         eyebrow="USDA · FrangoUS · Broiler Eggs — Loss Rate"
         unit="%"
         decimals={2}
+        scale={100}
         events={EVENTS_FRANGO_US}
         accent={chartAccent}
         defaultYears={5}
