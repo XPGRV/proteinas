@@ -195,7 +195,7 @@ function SelicSnapshotChart({ series, height = 320 }) {
               )}
               {sp.dotPath && (
                 <path d={sp.dotPath} fill="none" stroke={s.color} strokeWidth={sw * 0.85} strokeLinejoin="round"
-                  strokeDasharray="6 4" strokeOpacity={0.8}/>
+                  strokeDasharray="6 4" strokeOpacity={0.8} className="rx-dashed-line"/>
               )}
             </g>
           );

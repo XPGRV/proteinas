@@ -309,8 +309,12 @@
 .chart-svg circle {
   transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-/* Don't transition the dashed-line draw-on */
-.chart-svg path[stroke-dasharray] { transition: opacity 0.5s ease; }
+/* Dashed forecast lines: reveal left→right (clip-path, so dash pattern is preserved) */
+.chart-svg .rx-dashed-line {
+  animation: rx-stat-mean-reveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+  transition: opacity 0.5s ease;
+}
+.chart-svg path[stroke-dasharray]:not(.rx-dashed-line) { transition: opacity 0.5s ease; }
 
 /* === Undraw animation: linha "volta" da direita pra esquerda quando ano sai === */
 .chart-svg path.rx-leaving[stroke]:not([stroke="transparent"]) {
