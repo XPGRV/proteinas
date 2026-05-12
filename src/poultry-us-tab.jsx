@@ -725,6 +725,17 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
     return out;
   }, [allPoints, seriesKey, scale, monthly]);
 
+  const scaledData = React.useMemo(() => {
+    if (!monthly || scale === 1) return data;
+    return {
+      ...data,
+      frango_us_monthly: (data.frango_us_monthly || []).map(r => ({
+        ...r,
+        [seriesKey]: r[seriesKey] != null ? r[seriesKey] * scale : null,
+      })),
+    };
+  }, [data, monthly, scale, seriesKey]);
+
   const allYears = React.useMemo(() => Object.keys(byYear).map(Number).sort((a,b)=>a-b), [byYear]);
 
   const initYears = () => allYears.slice(-(defaultYears || 5));
@@ -792,18 +803,34 @@ const FrangoUSSimpleCard = ({ data, seriesKey, cardId, title, eyebrow, unit, eve
           chartStyle={chartStyle} setChartStyle={setChartStyle}
         />
       </div>
-      <FrangoUSChart
-        byYear={byYear} allYears={allYears}
-        selectedYears={selectedYears}
-        pinnedYear={pinnedYear} setPinnedYear={setPinnedYear}
-        chartStyle={chartStyle}
-        showStats={showStats} showEvents={showEvents}
-        events={events}
-        accent={accent}
-        unit={unit}
-        decimals={decimals}
-        chartId={cardId}
-      />
+      {monthly ? (
+        <window.SeasonalChart
+          data={scaledData}
+          dataset="frango_us_monthly"
+          field={seriesKey}
+          selectedYears={selectedYears}
+          showStats={showStats}
+          showEvents={showEvents}
+          events={events}
+          chartStyle={chartStyle}
+          accent={accent}
+          unit={unit}
+          decimals={decimals}
+        />
+      ) : (
+        <FrangoUSChart
+          byYear={byYear} allYears={allYears}
+          selectedYears={selectedYears}
+          pinnedYear={pinnedYear} setPinnedYear={setPinnedYear}
+          chartStyle={chartStyle}
+          showStats={showStats} showEvents={showEvents}
+          events={events}
+          accent={accent}
+          unit={unit}
+          decimals={decimals}
+          chartId={cardId}
+        />
+      )}
       {obs && (
         <div style={{padding:'6px 0 4px', fontSize:11, color:'var(--fg-dim)', lineHeight:1.6}}>
           {obs}
